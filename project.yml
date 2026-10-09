@@ -1,0 +1,98 @@
+name: Clockin
+options:
+  bundleIdPrefix: com.moha
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: TWG8JGKXSA
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+targets:
+  Clockin:
+    type: application
+    platform: iOS
+    sources:
+      - Clockin
+      - Shared
+    entitlements:
+      path: Clockin/Clockin.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.moha.clockin
+    info:
+      path: Clockin/Info.plist
+      properties:
+        CFBundleDisplayName: Clockin
+        UILaunchScreen:
+          UIColorName: Paper
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSSupportsLiveActivities: true
+        CFBundleURLTypes:
+          - CFBundleURLName: com.moha.clockin
+            CFBundleURLSchemes: [clockin]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.moha.clockin
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: BurntOrange
+    dependencies:
+      - target: ClockinWidgets
+  ClockinWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - ClockinWidgets
+      - Shared
+      - path: Clockin/Assets.xcassets
+        buildPhase: resources
+    entitlements:
+      path: ClockinWidgets/ClockinWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.moha.clockin
+    info:
+      path: ClockinWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Clockin
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.moha.clockin.widgets
+        SKIP_INSTALL: YES
+  ClockinTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - ClockinTests
+    dependencies:
+      - target: Clockin
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.moha.clockin.tests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Clockin:
+    build:
+      targets:
+        Clockin: all
+        ClockinTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - ClockinTests

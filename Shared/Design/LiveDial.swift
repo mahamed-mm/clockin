@@ -1,0 +1,146 @@
+import AppIntents
+import SwiftUI
+
+/// How a timer should be drawn outside the app (Live Activity, widget,
+/// StandBy), where nothing can redraw a custom view between updates.
+enum TimerReading: Equatable {
+    /// Running: the system animates anything built from this range.
+    case running(ClosedRange<Date>)
+    /// Paused: a frozen fraction of time left and the seconds left.
+    case paused(fraction: Double, remaining: TimeInterval)
+    case done
+
+    init(state: FocusActivityAttributes.ContentState, done: Bool) {
+        if done {
+            self = .done
+        } else if let remaining = state.pausedRemaining {
+            self = .paused(fraction: min(1, remaining / max(state.plannedDuration, 1)), remaining: remaining)
+        } else {
+            self = .running(state.timerRange)
+        }
+    }
+
+    init(session: ActiveSession, at now: Date) {
+        switch session.state {
+        case .running(let end) where end > now:
+            self = .running(end.addingTimeInterval(-session.plannedDuration)...end)
+        case .running:
+            self = .done
+        case .paused(let remaining):
+            self = .paused(fraction: min(1, remaining / max(session.plannedDuration, 1)), remaining: remaining)
+        }
+    }
+}
+
+extension SessionPhase {
+    var symbol: String { self == .focus ? "timer" : "cup.and.saucer.fill" }
+}
+
+/// The app's dial face with Apple's self-updating circular timer laid on its
+/// track. The ring keeps moving on the Lock Screen and in StandBy without app
+/// updates; a custom knob can't, so this version leaves it out.
+struct LiveDial<Center: View>: View {
+    let reading: TimerReading
+    let phase: SessionPhase
+    var lineWidthRatio: CGFloat = 0.1
+    @ViewBuilder var center: () -> Center
+
+    var body: some View {
+        GeometryReader { proxy in
+            let side = min(proxy.size.width, proxy.size.height)
+            let ring = side * RetroDial.arcRadiusRatio(showsTicks: true)
+            ZStack {
+                RetroDial(value: 0, tint: tint, showsKnob: false, lineWidthRatio: lineWidthRatio)
+                timerRing
+                    .progressViewStyle(.circular)
+                    .tint(tint)
+                    .frame(width: ring, height: ring)
+                center()
+            }
+            .frame(width: side, height: side)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .accessibilityHidden(true)
+    }
+
+    private var tint: Color {
+        reading == .done ? Retro.mustard : Retro.tint(for: phase)
+    }
+
+    @ViewBuilder
+    private var timerRing: some View {
+        switch reading {
+        case .done:
+            ProgressView(value: 1)
+        case .paused(let fraction, _):
+            ProgressView(value: fraction)
+        case .running(let range):
+            ProgressView(timerInterval: range, countsDown: true) {
+                EmptyView()
+            } currentValueLabel: {
+                EmptyView()
+            }
+        }
+    }
+}
+
+extension LiveDial where Center == LiveDialSymbol {
+    /// Dial with the phase symbol in the middle.
+    init(reading: TimerReading, phase: SessionPhase, lineWidthRatio: CGFloat = 0.1) {
+        self.init(reading: reading, phase: phase, lineWidthRatio: lineWidthRatio) {
+            LiveDialSymbol(symbol: reading == .done ? "checkmark" : phase.symbol)
+        }
+    }
+}
+
+/// Phase glyph sized to the dial.
+struct LiveDialSymbol: View {
+    let symbol: String
+
+    var body: some View {
+        GeometryReader { proxy in
+            Image(systemName: symbol)
+                .font(.system(size: min(proxy.size.width, proxy.size.height) * 0.2, weight: .bold))
+                .foregroundStyle(Retro.ink)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+}
+
+/// Countdown text that keeps ticking without app updates while running.
+struct FocusCountdown: View {
+    let reading: TimerReading
+
+    var body: some View {
+        Group {
+            switch reading {
+            case .done: Text("00:00")
+            case .paused(_, let remaining): Text(TimeFormat.clock(remaining))
+            case .running(let range): Text(timerInterval: range, countsDown: true)
+            }
+        }
+        .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(0.5)
+    }
+}
+
+/// Round pause/resume button that runs in the app process via an App Intent.
+struct PauseResumeButton: View {
+    let isPaused: Bool
+    let tint: Color
+    var size: CGFloat = 40
+
+    var body: some View {
+        Button(intent: PauseResumeIntent()) {
+            Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                .font(.system(size: size * 0.42, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: size, height: size)
+                .background(tint, in: .circle)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isPaused ? "Resume" : "Pause")
+    }
+}
