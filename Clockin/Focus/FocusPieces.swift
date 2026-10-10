@@ -69,18 +69,22 @@ struct FocusHeader: View {
     }
 }
 
-/// "Today 50 min", live from SwiftData.
+/// "Today 50 min", live from SwiftData plus any sessions waiting to be saved.
 struct TodayChip: View {
+    private let day: Date
     @Query private var records: [FocusRecord]
+    @Environment(SessionEngine.self) private var engine
 
     init(day: Date = .now) {
+        self.day = day
         let start = Calendar.current.startOfDay(for: day)
         let end = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? day
         _records = Query(filter: #Predicate<FocusRecord> { $0.completedAt >= start && $0.completedAt < end })
     }
 
     var body: some View {
-        let seconds = records.reduce(0) { $0 + $1.focusSeconds }
+        let seconds = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: day))
+            .reduce(0) { $0 + $1.seconds }
         Text("Today \(TimeFormat.duration(seconds))")
             .font(.retro(.meta))
             .foregroundStyle(Retro.inkSoft)
@@ -89,13 +93,14 @@ struct TodayChip: View {
     }
 }
 
-/// Today's session pills, live from SwiftData.
+/// Today's session pills, live from SwiftData plus any sessions waiting to be saved.
 struct TodaySessionPills: View {
     let inProgress: Bool
     var tint: Color = Retro.orange
     /// Scales the pills with the dial.
     var scale: CGFloat = 1
     @Query private var records: [FocusRecord]
+    @Environment(SessionEngine.self) private var engine
 
     init(inProgress: Bool, tint: Color = Retro.orange, scale: CGFloat = 1) {
         self.inProgress = inProgress
@@ -107,9 +112,10 @@ struct TodaySessionPills: View {
     }
 
     var body: some View {
-        SessionPills(completed: records.count, inProgress: inProgress,
+        let count = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: .now)).count
+        SessionPills(completed: count, inProgress: inProgress,
                      pillWidth: 20 * scale, pillHeight: 5.5 * scale, spacing: 4 * scale, tint: tint)
-            .animation(.smooth, value: records.count)
+            .animation(.smooth, value: count)
     }
 }
 
@@ -321,12 +327,16 @@ struct AlertHint: View {
 
     var body: some View {
         if let message, dismissed != key {
-            HStack(spacing: 8) {
+            HStack(spacing: 4) {
                 if let settings {
                     Button(message) { openURL(settings) }
                         .accessibilityHint("Opens Settings")
                     Button { dismissed = key } label: {
-                        Image(systemName: "xmark").font(.caption.weight(.semibold))
+                        // A full 44 pt target, so aiming for the X can't land in Settings.
+                        Image(systemName: "xmark")
+                            .font(.caption.weight(.semibold))
+                            .frame(width: 44, height: 44)
+                            .contentShape(.rect)
                     }
                     .accessibilityLabel("Dismiss")
                 } else {
@@ -367,6 +377,7 @@ struct AlertHint: View {
 struct CompletionSummary: View {
     let name: String
     @Query private var today: [FocusRecord]
+    @Environment(SessionEngine.self) private var engine
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(name: String) {
@@ -378,8 +389,9 @@ struct CompletionSummary: View {
     }
 
     var body: some View {
-        let last = today.first?.focusSeconds ?? Durations.duration(for: .focus)
-        let total = today.reduce(0) { $0 + $1.focusSeconds }
+        let rows = TodayStats.rows(saved: today.map(\.row), pending: engine.pendingRecords(on: .now))
+        let last = rows.max { $0.completedAt < $1.completedAt }?.seconds ?? Durations.duration(for: .focus)
+        let total = rows.reduce(0) { $0 + $1.seconds }
         HStack(spacing: 0) {
             stat(TimeFormat.duration(last), "Focused", index: 0)
             divider

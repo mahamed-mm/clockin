@@ -77,7 +77,7 @@ struct DefaultsSessionStateStore: SessionStateStoring {
         do {
             return try JSONDecoder().decode(PersistedSessionState.self, from: data)
         } catch {
-            Log.store.error("Saved session state is unreadable; starting idle and keeping a copy: \(error)")
+            Log.store.error("Saved session state is unreadable; starting idle and keeping a copy: \(error, privacy: .public)")
             defaults.set(data, forKey: unreadableKey)
             return PersistedSessionState()
         }
@@ -87,7 +87,7 @@ struct DefaultsSessionStateStore: SessionStateStoring {
         do {
             defaults.set(try JSONEncoder().encode(state), forKey: key)
         } catch {
-            Log.store.error("Couldn't encode session state: \(error)")
+            Log.store.error("Couldn't encode session state: \(error, privacy: .public)")
         }
     }
 }

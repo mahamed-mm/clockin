@@ -85,6 +85,32 @@ struct AppServicesTests {
         #expect(announcer.spoken.last == "Break's over. Ready when you are.")
     }
 
+    @Test func lateBreakEndIsNotAnnounced() {
+        let services = makeServices()
+        finishFocus(services)
+        services.engine.startBreak()
+        clock.advance(Durations.duration(for: .rest) + 3_600)
+        services.reconcile()
+
+        #expect(services.engine.stage == .idle)
+        #expect(liveActivity.calls.last == "endAll")
+        #expect(announcer.spoken == ["Focus complete. Time for a break."])
+    }
+
+    @Test func savedWaitingSessionsReloadTheWidget() {
+        let services = makeServices()
+        services.sessionEngine(services.engine, didEmit: .historySaved)
+        #expect(widgets.reloads == 1)
+        #expect(liveActivity.calls.isEmpty && notifier.calls.isEmpty)
+    }
+
+    @Test func settleWaitsForAlertsAndLiveActivity() async {
+        let services = makeServices()
+        await services.settle()
+        #expect(notifier.flushes == 1)
+        #expect(liveActivity.flushes == 1)
+    }
+
     @Test func idleLaunchClearsLeftoverCards() {
         let services = makeServices()
         services.restore()
@@ -128,5 +154,7 @@ struct AppServicesTests {
 
         #expect(services.engine.stage == .focusComplete(name: "Essay"))
         #expect(state.state.pendingRecords?.map(\.name) == ["Essay"])
+        // The waiting session still counts on the Lock Screen.
+        #expect(liveActivity.lastCompletedToday == 1)
     }
 }

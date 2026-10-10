@@ -133,9 +133,12 @@ struct FocusView: View {
             primaryButton
             ZStack {
                 secondaryButton
-                if case .idle = engine.stage {
-                    AlertHint(status: services.alertStatus)
-                }
+                // Laid out in every stage, shown only when idle, so the slot
+                // keeps its height on Start and Cancel even when the hint wraps.
+                AlertHint(status: services.alertStatus)
+                    .opacity(engine.stage == .idle ? 1 : 0)
+                    .allowsHitTesting(engine.stage == .idle)
+                    .accessibilityHidden(engine.stage != .idle)
             }
         }
     }

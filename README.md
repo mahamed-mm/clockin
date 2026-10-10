@@ -86,7 +86,7 @@ xcodebuild test -project Clockin.xcodeproj -scheme Clockin -destination 'platfor
 
 CI (`.github/workflows/ci.yml`) generates the project, runs the tests on an iPhone simulator and builds Release for devices on every push to `main` and every pull request.
 
-Logs go to the unified log under the subsystem `com.moha.clockin` (categories `engine`, `store`, `live-activity`, `notifications`). Filter for it in Console.app. Session names are logged as private.
+Logs go to the unified log under the subsystem `com.moha.clockin` (categories `store`, `live-activity`, `notifications`). Filter for it in Console.app. Errors are logged in full, and session names are never logged.
 
 ### Data compatibility
 

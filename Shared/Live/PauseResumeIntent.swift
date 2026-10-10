@@ -4,7 +4,9 @@ import Foundation
 /// Lets the app plug its engine into intents that run in the app process.
 @MainActor
 enum IntentBridge {
-    static var togglePause: (() -> Void)?
+    /// Toggles the session and returns once its alert and Live Activity
+    /// updates are done, so the system can't suspend the app halfway.
+    static var togglePause: (@MainActor () async -> Void)?
 }
 
 /// Pause/resume button on the Lock Screen and in the Dynamic Island.
@@ -16,7 +18,7 @@ struct PauseResumeIntent: LiveActivityIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        IntentBridge.togglePause?()
+        await IntentBridge.togglePause?()
         return .result()
     }
 }

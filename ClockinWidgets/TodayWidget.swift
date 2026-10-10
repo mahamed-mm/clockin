@@ -32,14 +32,15 @@ struct TodayProvider: TimelineProvider {
     }
 
     private func entry(at date: Date) -> TodayEntry {
-        let active = loadState().active
-        var rows: [(id: UUID, completedAt: Date, seconds: TimeInterval)] = []
+        let state = loadState()
+        let active = state.active
+        var rows: [TodayStats.Row] = []
         if let container = try? SharedStore.makeModelContainer() {
             let context = ModelContext(container)
-            rows = TodayStats.fetchRecords(on: date, calendar: .current, context: context)
-                .map { ($0.id, $0.completedAt, $0.focusSeconds) }
+            rows = TodayStats.fetchRecords(on: date, calendar: .current, context: context).map(\.row)
         }
-        let stats = TodayStats.make(records: rows, unrecordedActive: active, now: date)
+        let stats = TodayStats.make(records: rows, pending: state.pendingRecords ?? [],
+                                    unrecordedActive: active, now: date)
         let stillRunning = active.flatMap { $0.isFinished(at: date) ? nil : $0 }
         return TodayEntry(date: date, stats: stats, active: stillRunning)
     }

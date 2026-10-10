@@ -33,15 +33,22 @@ final class SpyEffects: SessionEffects {
 final class SpyLiveActivity: LiveActivityControlling {
     var calls: [String] = []
     var lastBreakDuration: TimeInterval?
+    var lastCompletedToday: Int?
     var enabled = true
+    var flushes = 0
 
     func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval) {
         calls.append("sync")
         lastBreakDuration = breakDuration
+        lastCompletedToday = completedToday
     }
-    func showFocusDone(completedToday: Int) { calls.append("done") }
+    func showFocusDone(completedToday: Int) {
+        calls.append("done")
+        lastCompletedToday = completedToday
+    }
     func endAll() { calls.append("endAll") }
     func areActivitiesEnabled() async -> Bool { enabled }
+    func flush() async { flushes += 1 }
 }
 
 @MainActor
@@ -49,9 +56,12 @@ final class SpyNotifier: EndNotifying {
     var calls: [String] = []
     var status: UNAuthorizationStatus = .authorized
 
+    var flushes = 0
+
     func schedule(for session: ActiveSession) { calls.append("schedule") }
     func cancel() { calls.append("cancel") }
     func authorizationStatus() async -> UNAuthorizationStatus { status }
+    func flush() async { flushes += 1 }
 }
 
 @MainActor

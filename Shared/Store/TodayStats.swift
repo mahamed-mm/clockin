@@ -3,6 +3,9 @@ import SwiftData
 
 /// Today's completed focus, shared by the Focus screen, History, and the widget.
 struct TodayStats: Equatable, Sendable {
+    /// One finished focus session, saved or still waiting to be saved.
+    typealias Row = (id: UUID, completedAt: Date, seconds: TimeInterval)
+
     var focusSeconds: TimeInterval
     var sessionCount: Int
 
@@ -10,16 +13,25 @@ struct TodayStats: Equatable, Sendable {
 
     var focusMinutes: Int { Int((focusSeconds / 60).rounded(.down)) }
 
-    /// Builds stats from saved records, plus a focus phase that has finished
-    /// but not been recorded yet (e.g. the app was suspended when it ended).
-    static func make(records: [(id: UUID, completedAt: Date, seconds: TimeInterval)],
+    /// Saved rows plus sessions still waiting to be saved, each counted once,
+    /// so a session the app is keeping never drops out of the totals.
+    static func rows(saved: [Row], pending: [CompletedFocus]) -> [Row] {
+        let savedIDs = Set(saved.map(\.id))
+        return saved + pending.filter { !savedIDs.contains($0.id) }
+            .map { (id: $0.id, completedAt: $0.completedAt, seconds: $0.focusSeconds) }
+    }
+
+    /// Builds stats from saved records and waiting ones, plus a focus phase that
+    /// has finished but not been recorded yet (e.g. the app was suspended when it ended).
+    static func make(records: [Row],
+                     pending: [CompletedFocus] = [],
                      unrecordedActive: ActiveSession?,
                      now: Date,
                      calendar: Calendar = .current) -> TodayStats {
         var seconds: TimeInterval = 0
         var count = 0
         var seen = Set<UUID>()
-        for r in records where calendar.isDate(r.completedAt, inSameDayAs: now) {
+        for r in rows(saved: records, pending: pending) where calendar.isDate(r.completedAt, inSameDayAs: now) {
             seconds += r.seconds
             count += 1
             seen.insert(r.id)
@@ -42,6 +54,10 @@ struct TodayStats: Equatable, Sendable {
         )
         return (try? context.fetch(descriptor)) ?? []
     }
+}
+
+extension FocusRecord {
+    var row: TodayStats.Row { (id: id, completedAt: completedAt, seconds: focusSeconds) }
 }
 
 /// One day's focus in the History week strip.

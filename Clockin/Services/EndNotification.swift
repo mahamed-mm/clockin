@@ -6,6 +6,8 @@ protocol EndNotifying: AnyObject {
     func schedule(for session: ActiveSession)
     func cancel()
     func authorizationStatus() async -> UNAuthorizationStatus
+    /// Waits until a schedule still in flight has reached the system.
+    func flush() async
 }
 
 /// A local, on-device notification at the end of a running phase.
@@ -16,23 +18,40 @@ final class EndNotifier: EndNotifying {
     /// Bumped by every schedule and cancel, so a request still waiting on the
     /// permission prompt is dropped if the session changed in the meantime.
     private var generation = 0
+    /// Known to be allowed, so scheduling needn't wait on a settings round trip.
+    private var isAuthorized = false
+    private var inFlight: Task<Void, Never>?
 
     /// Asks for permission the first time it's needed (the first Start), not
-    /// at launch, then schedules the alert for the phase's end.
+    /// at launch, then schedules the alert for the phase's end. Once permission
+    /// is known, the request goes out in the caller's turn, which matters when
+    /// a Lock Screen intent resumes the session and the app may be suspended next.
     func schedule(for session: ActiveSession) {
         cancel()
         guard let end = session.endDate, end.timeIntervalSinceNow > 1 else { return }
         let content = Self.content(for: session)
+        if isAuthorized {
+            add(content, endingAt: end)
+            return
+        }
         let generation = generation
-        Task {
+        inFlight = Task {
             guard await authorize(), generation == self.generation else { return }
-            let interval = end.timeIntervalSinceNow
-            guard interval > 1 else { return }
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
-            do {
-                try await center.add(UNNotificationRequest(identifier: Self.id, content: content, trigger: trigger))
-            } catch {
-                Log.notifications.error("Couldn't schedule the end alert: \(error)")
+            add(content, endingAt: end)
+        }
+    }
+
+    func flush() async {
+        await inFlight?.value
+    }
+
+    private func add(_ content: UNNotificationContent, endingAt end: Date) {
+        let interval = end.timeIntervalSinceNow
+        guard interval > 1 else { return }
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
+        center.add(UNNotificationRequest(identifier: Self.id, content: content, trigger: trigger)) { error in
+            if let error {
+                Log.notifications.error("Couldn't schedule the end alert: \(error, privacy: .public)")
             }
         }
     }
@@ -44,7 +63,13 @@ final class EndNotifier: EndNotifying {
     }
 
     func authorizationStatus() async -> UNAuthorizationStatus {
-        await center.notificationSettings().authorizationStatus
+        let status = await center.notificationSettings().authorizationStatus
+        isAuthorized = Self.allows(status)
+        return status
+    }
+
+    private static func allows(_ status: UNAuthorizationStatus) -> Bool {
+        status == .authorized || status == .provisional || status == .ephemeral
     }
 
     private func authorize() async -> Bool {
@@ -53,9 +78,10 @@ final class EndNotifier: EndNotifying {
             return true
         case .notDetermined:
             do {
-                return try await center.requestAuthorization(options: [.alert, .sound])
+                isAuthorized = try await center.requestAuthorization(options: [.alert, .sound])
+                return isAuthorized
             } catch {
-                Log.notifications.error("Notification authorization failed: \(error)")
+                Log.notifications.error("Notification authorization failed: \(error, privacy: .public)")
                 return false
             }
         case .denied:

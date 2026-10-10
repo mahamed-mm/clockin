@@ -9,6 +9,8 @@ protocol LiveActivityControlling: AnyObject {
     func showFocusDone(completedToday: Int)
     func endAll()
     func areActivitiesEnabled() async -> Bool
+    /// Waits until every queued ActivityKit call has run.
+    func flush() async
 }
 
 /// Mirrors the active session into a Live Activity on the Lock Screen
@@ -37,6 +39,10 @@ final class LiveActivityController: LiveActivityControlling {
 
     func areActivitiesEnabled() async -> Bool {
         await LiveActivities.areEnabled()
+    }
+
+    func flush() async {
+        await queue?.value
     }
 
     /// Whether an activity in this state is still showing a session. A running
@@ -77,7 +83,7 @@ private enum LiveActivities {
         do {
             _ = try Activity.request(attributes: FocusActivityAttributes(sessionName: name), content: content)
         } catch {
-            Log.liveActivity.error("Couldn't start a Live Activity: \(error)")
+            Log.liveActivity.error("Couldn't start a Live Activity: \(error, privacy: .public)")
         }
     }
 

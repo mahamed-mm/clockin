@@ -11,11 +11,14 @@ enum SessionEvent: Equatable, Sendable {
     /// `live` is false when the completion was discovered on relaunch/foreground.
     case focusCompleted(live: Bool)
     case breakStarted
-    case breakFinished
+    /// `live` is false when the break's end was discovered on relaunch/foreground.
+    case breakFinished(live: Bool)
     case breakSkipped
     /// The user moved on from "focus complete" without starting a break.
     case completionDismissed
     case restored
+    /// Finished sessions that were waiting to be saved reached History.
+    case historySaved
 }
 
 @MainActor
@@ -37,7 +40,8 @@ final class SessionEngine {
     @ObservationIgnored private let schedulesCompletion: Bool
     @ObservationIgnored private var completionTask: Task<Void, Never>?
     /// Finished sessions the log refused; saved with the state and retried.
-    @ObservationIgnored private(set) var pendingRecords: [CompletedFocus]
+    /// Observed, so today's totals can include them while they wait.
+    private(set) var pendingRecords: [CompletedFocus]
 
     init(now: @escaping () -> Date = Date.init,
          store: SessionStateStoring,
@@ -64,6 +68,11 @@ final class SessionEngine {
     }
 
     var hasActiveSession: Bool { active != nil }
+
+    /// Sessions waiting to be saved that finished on `day`.
+    func pendingRecords(on day: Date, calendar: Calendar = .current) -> [CompletedFocus] {
+        pendingRecords.filter { calendar.isDate($0.completedAt, inSameDayAs: day) }
+    }
 
     // MARK: - Actions
 
@@ -146,15 +155,16 @@ final class SessionEngine {
             scheduleCompletionCheck()
             return
         }
+        let endedAt = session.endDate ?? now()
+        // Under a few seconds old means the timer fired while the app was open.
+        let live = now().timeIntervalSince(endedAt) < 3
         switch session.phase {
         case .focus:
-            let completedAt = session.endDate ?? now()
             record(CompletedFocus(id: session.id, name: session.name, startedAt: session.focusStartedAt,
-                                  completedAt: completedAt, focusSeconds: session.plannedDuration))
-            let live = now().timeIntervalSince(completedAt) < 3
+                                  completedAt: endedAt, focusSeconds: session.plannedDuration))
             apply(.focusComplete(name: session.name), event: .focusCompleted(live: live))
         case .rest:
-            apply(.idle, event: .breakFinished)
+            apply(.idle, event: .breakFinished(live: live))
         }
     }
 
@@ -182,7 +192,7 @@ final class SessionEngine {
         do {
             try log.record(focus)
         } catch {
-            Log.store.error("Couldn't save a finished session; keeping it to retry: \(error)")
+            Log.store.error("Couldn't save a finished session; keeping it to retry: \(error, privacy: .public)")
             pendingRecords.append(focus)
         }
     }
@@ -201,6 +211,7 @@ final class SessionEngine {
         if pendingRecords.count != before {
             Log.store.info("Saved \(before - self.pendingRecords.count) pending session(s)")
             persist()
+            effects?.sessionEngine(self, didEmit: .historySaved)
         }
     }
 

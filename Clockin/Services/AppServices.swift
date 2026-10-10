@@ -85,7 +85,7 @@ final class AppServices: SessionEffects {
         do {
             container = try SharedStore.makeModelContainer()
         } catch {
-            Log.store.fault("Couldn't open the history store; History is unavailable this launch: \(error)")
+            Log.store.fault("Couldn't open the history store; History is unavailable this launch: \(error, privacy: .public)")
             historyUnavailable = true
             container = makeEmptyContainer()
         }
@@ -94,7 +94,10 @@ final class AppServices: SessionEffects {
                                    liveActivity: LiveActivityController(), notifications: EndNotifier(),
                                    widgets: SystemWidgets(), haptics: CompletionHaptics(),
                                    announce: { AccessibilityNotification.Announcement($0).post() })
-        IntentBridge.togglePause = { [weak services] in services?.engine.togglePause() }
+        IntentBridge.togglePause = { [weak services] in
+            services?.engine.togglePause()
+            await services?.settle()
+        }
         return services
     }
 
@@ -131,9 +134,11 @@ final class AppServices: SessionEffects {
             haptics.play()
             celebrations += 1
             if live { announce("Focus complete. Time for a break.") }
-        case .breakFinished:
+        case .breakFinished(let live):
             liveActivity.endAll()
-            announce("Break's over. Ready when you are.")
+            if live { announce("Break's over. Ready when you are.") }
+        case .historySaved:
+            break // The widget reload below picks up the newly saved sessions.
         }
         lastEvent = EventStamp(event: event, serial: lastEvent.serial + 1)
         widgets.reloadAll()
@@ -158,6 +163,14 @@ final class AppServices: SessionEffects {
         if engine.stage == .idle { liveActivity.endAll() }
     }
 
+    /// Waits for side effects still in flight: the end alert and Live Activity
+    /// updates. Intents that run while the app is in the background await this
+    /// so the system doesn't suspend the app before they land.
+    func settle() async {
+        await notifications.flush()
+        await liveActivity.flush()
+    }
+
     /// Re-reads whether alerts and Live Activities are allowed. Called at launch
     /// and on every return to the foreground, which covers coming back from the
     /// permission prompt or from Settings.
@@ -171,9 +184,11 @@ final class AppServices: SessionEffects {
         }
     }
 
-    /// Focus sessions saved today, for the session pills on the Lock Screen.
+    /// Focus sessions finished today, saved or waiting, for the pills on the Lock Screen.
     private var completedToday: Int {
-        TodayStats.fetchRecords(on: .now, calendar: .current, context: container.mainContext).count
+        let today = engine.now()
+        let saved = TodayStats.fetchRecords(on: today, calendar: .current, context: container.mainContext)
+        return TodayStats.rows(saved: saved.map(\.row), pending: engine.pendingRecords(on: today)).count
     }
 
     #if DEBUG
@@ -202,6 +217,7 @@ private final class SilentEffects: LiveActivityControlling, EndNotifying, Widget
     func showFocusDone(completedToday: Int) {}
     func endAll() {}
     func areActivitiesEnabled() async -> Bool { true }
+    func flush() async {}
     func schedule(for session: ActiveSession) {}
     func cancel() {}
     func authorizationStatus() async -> UNAuthorizationStatus { .authorized }
@@ -224,7 +240,7 @@ struct EventStamp: Equatable {
         case .breakStarted: .impact(flexibility: .soft, intensity: 0.7)
         case .breakSkipped: .impact(weight: .light)
         case .breakFinished: .success
-        case .focusCompleted, .completionDismissed, .restored, nil: nil
+        case .focusCompleted, .completionDismissed, .restored, .historySaved, nil: nil
         }
     }
 }

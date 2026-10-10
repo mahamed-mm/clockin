@@ -4,6 +4,7 @@ import SwiftUI
 struct HistoryView: View {
     @Query(sort: \FocusRecord.completedAt, order: .reverse) private var records: [FocusRecord]
     @Environment(AppServices.self) private var services
+    @Environment(SessionEngine.self) private var engine
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
@@ -14,9 +15,12 @@ struct HistoryView: View {
                     header
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 8, leading: 4, bottom: 4, trailing: 4))
-                    WeekStrip(totals: weekTotals)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 12, trailing: 0))
+                    // Without the store these would be zeros that look real.
+                    if !services.historyUnavailable {
+                        WeekStrip(totals: weekTotals)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 12, trailing: 0))
+                    }
                 }
                 .listRowSeparator(.hidden)
 
@@ -76,8 +80,8 @@ struct HistoryView: View {
     // MARK: Header
 
     private var header: some View {
-        let seconds = todayRecords.reduce(0) { $0 + $1.focusSeconds }
-        let total = Text(TimeFormat.duration(seconds))
+        let today = todayRows
+        let total = Text(TimeFormat.duration(today.reduce(0) { $0 + $1.seconds }))
             .font(.retro(.headline))
             .foregroundStyle(Retro.orange)
         return VStack(alignment: .leading, spacing: 8) {
@@ -85,25 +89,31 @@ struct HistoryView: View {
                 .font(.retro(.title))
                 .foregroundStyle(Retro.ink)
                 .accessibilityAddTraits(.isHeader)
-            Text("You focused \(total) today.")
-                .font(.system(.title3, design: .serif))
-                .foregroundStyle(Retro.inkSoft)
-                .contentTransition(.numericText())
-            SessionPills(completed: todayRecords.count, pillWidth: 26, pillHeight: 7,
-                         showsCaption: true)
-                .padding(.top, 6)
+            if !services.historyUnavailable {
+                Text("You focused \(total) today.")
+                    .font(.system(.title3, design: .serif))
+                    .foregroundStyle(Retro.inkSoft)
+                    .contentTransition(.numericText())
+                SessionPills(completed: today.count, pillWidth: 26, pillHeight: 7,
+                             showsCaption: true)
+                    .padding(.top, 6)
+            }
         }
     }
 
     // MARK: Data
 
-    private var todayRecords: [FocusRecord] {
-        records.filter { Calendar.current.isDateInToday($0.completedAt) }
+    /// Saved sessions plus any still waiting to be saved, each once.
+    private var allRows: [TodayStats.Row] {
+        TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords)
+    }
+
+    private var todayRows: [TodayStats.Row] {
+        allRows.filter { Calendar.current.isDateInToday($0.completedAt) }
     }
 
     private var weekTotals: [DayTotal] {
-        TodayStats.weekTotals(records: records.map { ($0.completedAt, $0.focusSeconds) },
-                              containing: .now)
+        TodayStats.weekTotals(records: allRows.map { ($0.completedAt, $0.seconds) }, containing: .now)
     }
 
     /// Records grouped by calendar day, newest first. Kept to the last 14 days.
