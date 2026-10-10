@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test and build
+    # Default Xcode on this image is 26.x, so CI also proves the code builds
+    # with the iOS 26 SDK the app targets.
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Show Xcode
+        run: xcodebuild -version
+
+      - name: Generate the Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Pick an iPhone simulator
+        id: simulator
+        run: |
+          udid=$(xcrun simctl list devices available --json \
+            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[]
+                     | select(.name | startswith("iPhone"))][0].udid')
+          echo "Using $udid"
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+
+      # Simulator builds sign ad hoc, which applies the App Group entitlement
+      # the history store needs. No certificates required.
+      - name: Test
+        run: |
+          xcodebuild test -project Clockin.xcodeproj -scheme Clockin \
+            -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
+            -resultBundlePath TestResults.xcresult
+
+      - name: Build Release for devices
+        run: |
+          xcodebuild build -project Clockin.xcodeproj -scheme Clockin -configuration Release \
+            -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults
+          path: TestResults.xcresult

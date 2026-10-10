@@ -36,6 +36,8 @@ final class SessionEngine {
     @ObservationIgnored weak var effects: SessionEffects?
     @ObservationIgnored private let schedulesCompletion: Bool
     @ObservationIgnored private var completionTask: Task<Void, Never>?
+    /// Finished sessions the log refused; saved with the state and retried.
+    @ObservationIgnored private(set) var pendingRecords: [CompletedFocus]
 
     init(now: @escaping () -> Date = Date.init,
          store: SessionStateStoring,
@@ -46,6 +48,7 @@ final class SessionEngine {
         self.log = log
         self.schedulesCompletion = schedulesCompletion
         let saved = store.load()
+        pendingRecords = saved.pendingRecords ?? []
         if let active = saved.active {
             stage = .active(active)
         } else if let name = saved.completedFocusName {
@@ -138,6 +141,7 @@ final class SessionEngine {
     /// Checks whether the current phase has run out. Call on launch, when
     /// returning to the foreground, and when the scheduled end fires.
     func reconcile() {
+        retryPendingRecords()
         guard let session = active, session.isFinished(at: now()) else {
             scheduleCompletionCheck()
             return
@@ -145,8 +149,8 @@ final class SessionEngine {
         switch session.phase {
         case .focus:
             let completedAt = session.endDate ?? now()
-            log.record(id: session.id, name: session.name, startedAt: session.focusStartedAt,
-                       completedAt: completedAt, focusSeconds: session.plannedDuration)
+            record(CompletedFocus(id: session.id, name: session.name, startedAt: session.focusStartedAt,
+                                  completedAt: completedAt, focusSeconds: session.plannedDuration))
             let live = now().timeIntervalSince(completedAt) < 3
             apply(.focusComplete(name: session.name), event: .focusCompleted(live: live))
         case .rest:
@@ -171,6 +175,35 @@ final class SessionEngine {
         effects?.sessionEngine(self, didEmit: event)
     }
 
+    /// Saves a finished focus phase. If the log can't take it, it waits in
+    /// the persisted state (saved by the transition that follows) and is
+    /// retried on the next reconcile, so a completed session is never lost.
+    private func record(_ focus: CompletedFocus) {
+        do {
+            try log.record(focus)
+        } catch {
+            Log.store.error("Couldn't save a finished session; keeping it to retry: \(error)")
+            pendingRecords.append(focus)
+        }
+    }
+
+    private func retryPendingRecords() {
+        guard !pendingRecords.isEmpty else { return }
+        let before = pendingRecords.count
+        pendingRecords = pendingRecords.filter { focus in
+            do {
+                try log.record(focus)
+                return false
+            } catch {
+                return true
+            }
+        }
+        if pendingRecords.count != before {
+            Log.store.info("Saved \(before - self.pendingRecords.count) pending session(s)")
+            persist()
+        }
+    }
+
     private func persist() {
         var state = PersistedSessionState()
         switch stage {
@@ -178,6 +211,7 @@ final class SessionEngine {
         case .active(let session): state.active = session
         case .focusComplete(let name): state.completedFocusName = name
         }
+        state.pendingRecords = pendingRecords.isEmpty ? nil : pendingRecords
         store.save(state)
     }
 

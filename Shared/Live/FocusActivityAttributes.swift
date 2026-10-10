@@ -12,6 +12,9 @@ struct FocusActivityAttributes: ActivityAttributes {
         /// Focus sessions finished today, for the session pills. Optional so
         /// activities started by older builds still decode.
         var completedToday: Int?
+        /// Length of the break that follows a focus phase, for the "done" copy.
+        /// Comes from the app, which knows the real setting. Optional for older activities.
+        var breakDuration: TimeInterval?
 
         var isPaused: Bool { pausedRemaining != nil }
 
@@ -21,10 +24,11 @@ struct FocusActivityAttributes: ActivityAttributes {
             return end.addingTimeInterval(-plannedDuration)...end
         }
 
-        init(session: ActiveSession, completedToday: Int? = nil) {
+        init(session: ActiveSession, completedToday: Int? = nil, breakDuration: TimeInterval? = nil) {
             phase = session.phase
             plannedDuration = session.plannedDuration
             self.completedToday = completedToday
+            self.breakDuration = breakDuration
             switch session.state {
             case .running(let end):
                 endDate = end

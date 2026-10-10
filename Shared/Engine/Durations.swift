@@ -18,11 +18,18 @@ enum Durations {
         return phase == .focus ? focus : shortBreak
     }
 
-    /// "5-minute", as in "Take a 5-minute break"; "5-second" with debug test timers.
+    /// "5-minute", as in "Take a 5-minute break"; "5-second" for short test breaks.
+    static func breakPhrase(seconds: TimeInterval) -> String {
+        let seconds = Int(seconds)
+        return seconds >= 60 ? "\(seconds / 60)-minute" : "\(seconds)-second"
+    }
+
+    /// The phrase for the break this process would start. App process only:
+    /// the widget extension can't see debug test timers, so it reads the
+    /// length from the Live Activity's state instead.
     @MainActor
     static var breakLengthPhrase: String {
-        let seconds = Int(duration(for: .rest))
-        return seconds >= 60 ? "\(seconds / 60)-minute" : "\(seconds)-second"
+        breakPhrase(seconds: duration(for: .rest))
     }
 }
 

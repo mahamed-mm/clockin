@@ -309,6 +309,58 @@ struct SessionChip: View {
     }
 }
 
+// MARK: - Alert hint
+
+/// One quiet line under Start, only when the end alert can't reach the user,
+/// or before the first Start, which is when permission is asked for.
+struct AlertHint: View {
+    let status: AlertStatus
+    /// The status whose hint was dismissed. A different problem shows again.
+    @AppStorage("alertHint.dismissed") private var dismissed = ""
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        if let message, dismissed != key {
+            HStack(spacing: 8) {
+                if let settings {
+                    Button(message) { openURL(settings) }
+                        .accessibilityHint("Opens Settings")
+                    Button { dismissed = key } label: {
+                        Image(systemName: "xmark").font(.caption.weight(.semibold))
+                    }
+                    .accessibilityLabel("Dismiss")
+                } else {
+                    Text(message)
+                }
+            }
+            .font(.retro(.meta))
+            .foregroundStyle(Retro.inkSoft)
+            .buttonStyle(.borderless)
+            .multilineTextAlignment(.center)
+            .frame(minHeight: 32)
+        }
+    }
+
+    private var key: String { String(describing: status) }
+
+    private var message: String? {
+        switch status {
+        case .notAsked: "Clockin will ask once to alert you when time's up."
+        case .notificationsOff: "Alerts are off, so the timer can't ring. Turn on"
+        case .liveActivitiesOff: "Live Activities are off for Clockin. Turn on"
+        case .unknown, .ready: nil
+        }
+    }
+
+    private var settings: URL? {
+        switch status {
+        case .notificationsOff: URL(string: UIApplication.openNotificationSettingsURLString)
+        case .liveActivitiesOff: URL(string: UIApplication.openSettingsURLString)
+        case .unknown, .notAsked, .ready: nil
+        }
+    }
+}
+
 // MARK: - Completion
 
 /// TIDE-style stat trio shown after a focus session completes.

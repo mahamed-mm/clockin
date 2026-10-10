@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct ClockinApp: App {
@@ -9,6 +10,8 @@ struct ClockinApp: App {
         #if DEBUG
         DemoData.prepareFinishingSession()
         #endif
+        // Before launch finishes, so the end sound also plays while the app is open.
+        UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
         services = AppServices.shared
     }
 
@@ -22,12 +25,14 @@ struct ClockinApp: App {
                     #if DEBUG
                     DemoData.seedIfRequested(into: services.container.mainContext)
                     #endif
-                    EndNotification.requestAuthorization()
                     services.restore()
+                    await services.refreshAlertStatus()
                 }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { services.reconcile() }
+            guard phase == .active else { return }
+            services.reconcile()
+            Task { await services.refreshAlertStatus() }
         }
     }
 }

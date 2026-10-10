@@ -3,6 +3,7 @@ import SwiftUI
 
 struct HistoryView: View {
     @Query(sort: \FocusRecord.completedAt, order: .reverse) private var records: [FocusRecord]
+    @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
@@ -19,7 +20,18 @@ struct HistoryView: View {
                 }
                 .listRowSeparator(.hidden)
 
-                if records.isEmpty {
+                if services.historyUnavailable {
+                    Section {
+                        ContentUnavailableView {
+                            Label("History couldn't be loaded", systemImage: "exclamationmark.triangle")
+                        } description: {
+                            Text("Your saved sessions haven't been deleted. Timers still work, and new sessions are kept until History opens again.")
+                                .font(.retro(.body))
+                        }
+                        .foregroundStyle(Retro.inkSoft)
+                        .listRowBackground(Color.clear)
+                    }
+                } else if records.isEmpty {
                     Section {
                         ContentUnavailableView {
                             Label("No sessions yet", systemImage: "hourglass")

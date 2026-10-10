@@ -131,7 +131,12 @@ struct FocusView: View {
     private var controls: some View {
         VStack(spacing: 10) {
             primaryButton
-            secondaryButton
+            ZStack {
+                secondaryButton
+                if case .idle = engine.stage {
+                    AlertHint(status: services.alertStatus)
+                }
+            }
         }
     }
 
@@ -212,9 +217,11 @@ struct FocusView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     RootView()
-        .environment(AppServices.shared)
-        .environment(AppServices.shared.engine)
-        .modelContainer(AppServices.shared.container)
+        .environment(AppServices.preview)
+        .environment(AppServices.preview.engine)
+        .modelContainer(AppServices.preview.container)
 }
+#endif

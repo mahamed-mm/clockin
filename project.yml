@@ -14,6 +14,8 @@ settings:
     TARGETED_DEVICE_FAMILY: "1"
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: TWG8JGKXSA
+    # The one place the App Group id lives: both entitlements and SharedStore read it.
+    APP_GROUP_ID: group.com.moha.clockin
     ENABLE_USER_SCRIPT_SANDBOXING: YES
 targets:
   Clockin:
@@ -26,14 +28,18 @@ targets:
       path: Clockin/Clockin.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.moha.clockin
-        com.apple.developer.usernotifications.time-sensitive: true
+          - $(APP_GROUP_ID)
+        # Lets the end alert break through Focus. Needs a paid Apple Developer
+        # Program team (free Personal Teams can't sign it), so it's off for now.
+        # com.apple.developer.usernotifications.time-sensitive: true
     info:
       path: Clockin/Info.plist
       properties:
         CFBundleDisplayName: Clockin
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ClockinAppGroup: $(APP_GROUP_ID)
+        ITSAppUsesNonExemptEncryption: false
         UILaunchScreen:
           UIColorName: Paper
         UIApplicationSceneManifest:
@@ -66,13 +72,14 @@ targets:
       path: ClockinWidgets/ClockinWidgets.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.moha.clockin
+          - $(APP_GROUP_ID)
     info:
       path: ClockinWidgets/Info.plist
       properties:
         CFBundleDisplayName: Clockin
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ClockinAppGroup: $(APP_GROUP_ID)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:

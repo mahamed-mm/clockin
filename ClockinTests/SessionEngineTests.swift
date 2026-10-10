@@ -5,30 +5,6 @@ import Testing
 @testable import Clockin
 
 @MainActor
-final class FakeClock {
-    var now = Date(timeIntervalSince1970: 1_800_000_000)
-    func advance(_ seconds: TimeInterval) { now = now.addingTimeInterval(seconds) }
-}
-
-@MainActor
-final class SpyLog: FocusLogging {
-    var recorded: [(id: UUID, name: String, seconds: TimeInterval, completedAt: Date)] = []
-
-    func record(id: UUID, name: String, startedAt: Date, completedAt: Date, focusSeconds: TimeInterval) {
-        guard !recorded.contains(where: { $0.id == id }) else { return }
-        recorded.append((id, name, focusSeconds, completedAt))
-    }
-
-    func records(on day: Date, calendar: Calendar) -> [FocusRecord] { [] }
-}
-
-@MainActor
-final class SpyEffects: SessionEffects {
-    var events: [SessionEvent] = []
-    func sessionEngine(_ engine: SessionEngine, didEmit event: SessionEvent) { events.append(event) }
-}
-
-@MainActor
 struct SessionEngineTests {
     let clock = FakeClock()
     let store = InMemorySessionStateStore()
@@ -53,7 +29,7 @@ struct SessionEngineTests {
 
         #expect(engine.stage == .focusComplete(name: "Reading"))
         #expect(log.recorded.count == 1)
-        #expect(log.recorded.first?.seconds == Durations.duration(for: .focus))
+        #expect(log.recorded.first?.focusSeconds == Durations.duration(for: .focus))
         #expect(effects.events.last == .focusCompleted(live: true))
     }
 
@@ -153,6 +129,37 @@ struct SessionEngineTests {
         #expect(store.state == PersistedSessionState())
     }
 
+    @Test func pausingAtZeroCompletesInstead() {
+        let engine = makeEngine()
+        engine.start(name: "Edge")
+        clock.advance(Durations.duration(for: .focus))
+        engine.pause()
+
+        #expect(engine.stage == .focusComplete(name: "Edge"))
+        #expect(log.recorded.count == 1)
+        #expect(!effects.events.contains(.paused))
+    }
+
+    @Test func unsavedSessionWaitsAndIsSavedLater() {
+        log.failing = true
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        clock.advance(Durations.duration(for: .focus))
+        engine.reconcile()
+
+        #expect(engine.stage == .focusComplete(name: "Essay"))
+        #expect(log.recorded.isEmpty)
+        #expect(store.state.pendingRecords?.map(\.name) == ["Essay"])
+
+        // It survives a relaunch, then lands once the store works again.
+        log.failing = false
+        let relaunched = makeEngine()
+        relaunched.reconcile()
+        #expect(log.recorded.map(\.name) == ["Essay"])
+        #expect(store.state.pendingRecords == nil)
+        #expect(relaunched.stage == .focusComplete(name: "Essay"))
+    }
+
     @Test func restoresRunningTimerAfterRelaunch() throws {
         let first = makeEngine()
         first.start(name: "Thesis")
@@ -207,6 +214,29 @@ struct TodayStatsTests {
         #expect(TodayStats.make(records: records, unrecordedActive: nil, now: afterMidnight, calendar: calendar) == .empty)
     }
 
+    @Test func weekWithAClockChangeStillHasSevenDays() {
+        // Clocks go back in Oslo on Sunday 25 October 2026.
+        var monday = calendar
+        monday.firstWeekday = 2
+        let sunday = monday.date(from: DateComponents(year: 2026, month: 10, day: 25, hour: 12))!
+        let totals = TodayStats.weekTotals(records: [(sunday, 1_500)], containing: sunday, calendar: monday)
+
+        #expect(totals.map { monday.component(.day, from: $0.day) } == [19, 20, 21, 22, 23, 24, 25])
+        #expect(totals.allSatisfy { monday.component(.hour, from: $0.day) == 0 })
+        #expect(totals[6].sessions == 1)
+    }
+
+    @Test func weekCanStartOnSunday() {
+        var sundayFirst = calendar
+        sundayFirst.firstWeekday = 1
+        let friday = sundayFirst.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 15))!
+        let totals = TodayStats.weekTotals(records: [(friday, 1_500)], containing: friday, calendar: sundayFirst)
+
+        #expect(sundayFirst.component(.weekday, from: totals[0].day) == 1)
+        #expect(sundayFirst.component(.day, from: totals[0].day) == 4)
+        #expect(totals[5].sessions == 1)
+    }
+
     @Test func includesFinishedButUnrecordedFocus() {
         let now = calendar.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 12))!
         let finished = ActiveSession(id: UUID(), name: "A", phase: .focus, plannedDuration: 1_500,
@@ -227,10 +257,10 @@ struct PersistenceTests {
     @Test func swiftDataLogIsIdempotent() throws {
         let container = try SharedStore.makeModelContainer(inMemory: true)
         let log = SwiftDataFocusLog(container: container)
-        let id = UUID()
-        log.record(id: id, name: "Read", startedAt: .now, completedAt: .now, focusSeconds: 1_500)
-        log.record(id: id, name: "Read", startedAt: .now, completedAt: .now, focusSeconds: 1_500)
-        #expect(log.records(on: .now, calendar: .current).count == 1)
+        let focus = CompletedFocus(id: UUID(), name: "Read", startedAt: .now, completedAt: .now, focusSeconds: 1_500)
+        try log.record(focus)
+        try log.record(focus)
+        #expect(TodayStats.fetchRecords(on: .now, calendar: .current, context: log.context).count == 1)
     }
 
     @Test func sessionStateRoundTripsThroughDefaults() throws {
@@ -312,6 +342,12 @@ struct EndCopyTests {
         settings.shortTimers = true
         #expect(Durations.breakLengthPhrase == "5-second")
     }
+
+    @Test func breakPhraseReadsAnyLength() {
+        #expect(Durations.breakPhrase(seconds: 300) == "5-minute")
+        #expect(Durations.breakPhrase(seconds: 900) == "15-minute")
+        #expect(Durations.breakPhrase(seconds: 5) == "5-second")
+    }
 }
 
 struct LiveActivityTests {
@@ -349,6 +385,7 @@ struct SessionPillsTests {
         let json = #"{"phase":"focus","endDate":800000000,"plannedDuration":1500}"#
         let state = try JSONDecoder().decode(FocusActivityAttributes.ContentState.self, from: Data(json.utf8))
         #expect(state.completedToday == nil)
+        #expect(state.breakDuration == nil)
         #expect(state.phase == .focus)
     }
 }

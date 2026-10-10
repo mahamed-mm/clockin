@@ -63,7 +63,9 @@ To run on your own iPhone, change these in `project.yml`, then run `xcodegen gen
 
 - `DEVELOPMENT_TEAM`: your team ID
 - `bundleIdPrefix` and the `PRODUCT_BUNDLE_IDENTIFIER` values
-- the App Group `group.com.moha.clockin`, in both targets' entitlements
+- `APP_GROUP_ID`: an App Group your team owns. Both targets' entitlements and the app's storage read it from there.
+
+A free Personal Team is enough. The end-of-timer alert is marked time-sensitive, but the entitlement that lets it break through Focus needs a paid Apple Developer Program team. If you have one, uncomment `com.apple.developer.usernotifications.time-sensitive` in `project.yml`.
 
 ## Development
 
@@ -82,13 +84,23 @@ Run the tests:
 xcodebuild test -project Clockin.xcodeproj -scheme Clockin -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
+CI (`.github/workflows/ci.yml`) generates the project, runs the tests on an iPhone simulator and builds Release for devices on every push to `main` and every pull request.
+
+Logs go to the unified log under the subsystem `com.moha.clockin` (categories `engine`, `store`, `live-activity`, `notifications`). Filter for it in Console.app. Session names are logged as private.
+
+### Data compatibility
+
+- History is a SwiftData store with a versioned schema (`Shared/Model/ClockinSchema.swift`). Never edit a shipped version. Add a new one and a migration stage instead.
+- The running session is saved as JSON in the App Group's defaults. Fields added after 1.0 must be optional.
+- `ClockinTests/StoreCompatibilityTests.swift` checks both against real data written by 1.0, including `ClockinTests/Fixtures/ClockinV1.store`.
+
 ## Project structure
 
 ```
 Clockin/          App: Focus and History screens, services (Live Activity, haptics, notifications), debug tools
 ClockinWidgets/   Widget extension: Home Screen widget, Live Activity, Dynamic Island
 Shared/           Code used by both: session engine, SwiftData model, stores, design system, StandBy view
-ClockinTests/     Swift Testing suite for the engine, stats, persistence and formatting
+ClockinTests/     Swift Testing suite: engine, side effects, stats, data compatibility (with 1.0 fixtures), formatting
 docs/screenshots/ Images used in this README
 ```
 
