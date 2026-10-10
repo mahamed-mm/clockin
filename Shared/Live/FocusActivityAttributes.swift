@@ -41,4 +41,8 @@ struct FocusActivityAttributes: ActivityAttributes {
     }
 
     var sessionName: String
+    /// The session this card belongs to, so updates and the pause button can
+    /// tell it from a card left by an earlier session. Optional so activities
+    /// started by older builds still decode.
+    var sessionID: UUID?
 }

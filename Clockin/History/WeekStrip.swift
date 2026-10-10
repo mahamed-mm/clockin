@@ -5,14 +5,16 @@ import SwiftUI
 /// session pills everywhere else. Today is marked with a dot.
 struct WeekStrip: View {
     let totals: [DayTotal]
+    /// From `AppServices.today`, so the marker moves at midnight.
+    let today: Date
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
             ForEach(Array(totals.enumerated()), id: \.offset) { index, entry in
-                let isToday = Calendar.current.isDateInToday(entry.day)
-                let isFuture = entry.day > .now && !isToday
+                let isToday = Calendar.autoupdatingCurrent.isDate(entry.day, inSameDayAs: today)
+                let isFuture = entry.day > today && !isToday
                 VStack(spacing: 8) {
                     Text(entry.day.formatted(.dateTime.weekday(.narrow)))
                         .font(.retro(.label))

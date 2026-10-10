@@ -6,16 +6,16 @@ import SwiftUI
 /// StandBy Live Activity, but works without charging and keeps the screen awake.
 struct BedsideView: View {
     let session: ActiveSession
+    private let day: Date
     @Environment(SessionEngine.self) private var engine
     @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var today: [FocusRecord]
 
-    init(session: ActiveSession) {
+    init(session: ActiveSession, day: Date) {
         self.session = session
-        let start = Calendar.current.startOfDay(for: .now)
-        let end = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? .now
-        _today = Query(filter: #Predicate<FocusRecord> { $0.completedAt >= start && $0.completedAt < end })
+        self.day = day
+        _today = Query(filter: FocusRecord.completed(on: day))
     }
 
     var body: some View {
@@ -68,7 +68,7 @@ struct BedsideView: View {
                     }
 
                     SessionPills(completed: TodayStats.rows(saved: today.map(\.row),
-                                                            pending: engine.pendingRecords(on: .now)).count,
+                                                            pending: engine.pendingRecords(on: day)).count,
                                  inProgress: session.phase == .focus,
                                  pillWidth: height * 0.08, pillHeight: height * 0.022,
                                  spacing: height * 0.012,

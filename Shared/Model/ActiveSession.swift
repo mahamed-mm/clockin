@@ -21,6 +21,21 @@ struct ActiveSession: Codable, Equatable, Sendable {
     var focusStartedAt: Date
     var state: RunState
 
+    /// Longest name kept. The name rides along in the Live Activity, whose
+    /// whole payload must stay under 4 KB or the request fails.
+    static let maxNameLength = 60
+    /// Also capped in bytes: a character stacked with combining marks can be
+    /// hundreds of bytes on its own.
+    static let maxNameBytes = 240
+
+    /// Trimmed and capped; "Focus" when nothing is left.
+    static func cleanName(_ raw: String) -> String {
+        var capped = String(raw.trimmingCharacters(in: .whitespacesAndNewlines).prefix(maxNameLength))
+        while capped.utf8.count > maxNameBytes { capped.removeLast() }
+        capped = capped.trimmingCharacters(in: .whitespacesAndNewlines)
+        return capped.isEmpty ? "Focus" : capped
+    }
+
     var isPaused: Bool {
         if case .paused = state { return true }
         return false
@@ -31,11 +46,14 @@ struct ActiveSession: Codable, Equatable, Sendable {
         return nil
     }
 
+    /// Never more than the planned length, so setting the clock back can't
+    /// add time to a session.
     func remaining(at now: Date) -> TimeInterval {
-        switch state {
-        case .running(let end): max(0, end.timeIntervalSince(now))
-        case .paused(let remaining): max(0, remaining)
+        let left = switch state {
+        case .running(let end): end.timeIntervalSince(now)
+        case .paused(let remaining): remaining
         }
+        return min(plannedDuration, max(0, left))
     }
 
     func progress(at now: Date) -> Double {
@@ -87,7 +105,12 @@ enum SessionStage: Equatable, Sendable {
     case idle
     case active(ActiveSession)
     /// Focus finished and was recorded; waiting for the user to start a break.
-    case focusComplete(name: String)
+    case focusComplete(CompletedFocus)
+
+    var completedFocus: CompletedFocus? {
+        if case .focusComplete(let focus) = self { return focus }
+        return nil
+    }
 }
 
 extension SessionPhase {

@@ -8,17 +8,35 @@ enum SessionEvent: Equatable, Sendable {
     case paused
     case resumed
     case cancelled
-    /// `live` is false when the completion was discovered on relaunch/foreground.
-    case focusCompleted(live: Bool)
+    case focusCompleted(Freshness)
     case breakStarted
-    /// `live` is false when the break's end was discovered on relaunch/foreground.
-    case breakFinished(live: Bool)
+    case breakFinished(Freshness)
     case breakSkipped
     /// The user moved on from "focus complete" without starting a break.
     case completionDismissed
+    /// The session is back: after a relaunch, or when a cancel is undone.
     case restored
     /// Finished sessions that were waiting to be saved reached History.
     case historySaved
+}
+
+/// How soon after a phase ended the engine noticed, which sets how loudly
+/// the app reacts.
+enum Freshness: Equatable, Sendable {
+    /// The timer ran out while the app was open.
+    case live
+    /// Noticed a little later on the same day, e.g. after tapping the alert.
+    case recent
+    /// Long enough ago, or on an earlier day, that celebrating would be odd.
+    case stale
+
+    /// An ending stays `recent` for `recentWindow` (the app uses the break length).
+    static func of(endedAt: Date, now: Date, recentWindow: TimeInterval, calendar: Calendar) -> Freshness {
+        let age = now.timeIntervalSince(endedAt)
+        if age < 3 { return .live }
+        if age < recentWindow, calendar.isDate(endedAt, inSameDayAs: now) { return .recent }
+        return .stale
+    }
 }
 
 @MainActor
@@ -31,23 +49,38 @@ protocol SessionEffects: AnyObject {
 @MainActor
 @Observable
 final class SessionEngine {
+    /// How long Cancel can be undone, normally.
+    static let standardUndoWindow: TimeInterval = 6
+
     private(set) var stage: SessionStage = .idle
+    /// The focus phase cancelled moments ago, so it can be brought back.
+    /// Cleared by any other transition and when the undo window closes.
+    private(set) var undoableCancel: ActiveSession?
+    /// How long Cancel can be undone, asked at each cancel. The app gives
+    /// assistive technologies longer, since reaching Undo takes them longer.
+    @ObservationIgnored var undoWindow: @MainActor () -> TimeInterval = { SessionEngine.standardUndoWindow }
 
     @ObservationIgnored let now: () -> Date
+    @ObservationIgnored let calendar: Calendar
     @ObservationIgnored private let store: SessionStateStoring
     @ObservationIgnored private let log: FocusLogging
     @ObservationIgnored weak var effects: SessionEffects?
+    /// Off in tests, which move time by hand: no completion or undo timers.
     @ObservationIgnored private let schedulesCompletion: Bool
     @ObservationIgnored private var completionTask: Task<Void, Never>?
+    @ObservationIgnored private var undoDeadline: Date?
+    @ObservationIgnored private var undoExpiry: Task<Void, Never>?
     /// Finished sessions the log refused; saved with the state and retried.
     /// Observed, so today's totals can include them while they wait.
     private(set) var pendingRecords: [CompletedFocus]
 
     init(now: @escaping () -> Date = Date.init,
+         calendar: Calendar = .autoupdatingCurrent,
          store: SessionStateStoring,
          log: FocusLogging,
          schedulesCompletion: Bool = true) {
         self.now = now
+        self.calendar = calendar
         self.store = store
         self.log = log
         self.schedulesCompletion = schedulesCompletion
@@ -55,8 +88,12 @@ final class SessionEngine {
         pendingRecords = saved.pendingRecords ?? []
         if let active = saved.active {
             stage = .active(active)
-        } else if let name = saved.completedFocusName {
-            stage = .focusComplete(name: name)
+        } else if let focus = saved.completedFocus {
+            stage = .focusComplete(focus)
+        } else if saved.completedFocusName != nil {
+            // 1.0 kept only the name, so the completion can't be dated. The
+            // session is already in History; offering a break now would be a guess.
+            Log.store.info("Dropping an undated completion from an older build")
         }
     }
 
@@ -70,8 +107,13 @@ final class SessionEngine {
     var hasActiveSession: Bool { active != nil }
 
     /// Sessions waiting to be saved that finished on `day`.
-    func pendingRecords(on day: Date, calendar: Calendar = .current) -> [CompletedFocus] {
+    func pendingRecords(on day: Date) -> [CompletedFocus] {
         pendingRecords.filter { calendar.isDate($0.completedAt, inSameDayAs: day) }
+    }
+
+    /// How current a phase that ended at `endedAt` is at `date`.
+    func freshness(endedAt: Date, at date: Date) -> Freshness {
+        Freshness.of(endedAt: endedAt, now: date, recentWindow: Durations.duration(for: .rest), calendar: calendar)
     }
 
     // MARK: - Actions
@@ -80,12 +122,11 @@ final class SessionEngine {
     @discardableResult
     func start(name: String) -> Bool {
         guard !hasActiveSession else { return false }
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let duration = Durations.duration(for: .focus)
         let startedAt = now()
         let session = ActiveSession(
             id: UUID(),
-            name: trimmed.isEmpty ? "Focus" : trimmed,
+            name: ActiveSession.cleanName(name),
             phase: .focus,
             plannedDuration: duration,
             focusStartedAt: startedAt,
@@ -114,19 +155,48 @@ final class SessionEngine {
         session.isPaused ? resume() : pause()
     }
 
-    /// Cancels the focus phase without recording anything.
+    /// For the Lock Screen button: moves toward what the button showed, and
+    /// only for the session it was drawn for (`nil` matches any), so a second
+    /// tap or a card left from an older session can't flip the timer back.
+    func setPaused(_ paused: Bool, sessionID: UUID?) {
+        guard let session = active, sessionID == nil || sessionID == session.id else { return }
+        paused ? pause() : resume()
+    }
+
+    /// Cancels the focus phase without recording anything. It can be undone
+    /// until the undo window closes.
     func cancel() {
         guard let session = active, session.phase == .focus else { return }
         apply(.idle, event: .cancelled)
+        let window = undoWindow()
+        undoableCancel = session
+        undoDeadline = now().addingTimeInterval(window)
+        scheduleUndoExpiry(after: window)
+    }
+
+    /// Brings back the focus phase just cancelled, exactly as it was: a
+    /// running timer kept running in the meantime, a paused one stayed paused.
+    func undoCancel() {
+        guard case .idle = stage, let session = undoableCancel, let undoDeadline,
+              now() <= undoDeadline else { return }
+        guard !session.isFinished(at: now()) else {
+            // It ran out while cancelled: complete it, without first putting
+            // a card for a finished session back on the Lock Screen.
+            clearUndo()
+            stage = .active(session)
+            reconcile()
+            return
+        }
+        apply(.active(session), event: .restored)
     }
 
     func startBreak() {
-        guard case .focusComplete(let name) = stage else { return }
+        guard case .focusComplete(let focus) = stage else { return }
         let duration = Durations.duration(for: .rest)
         let start = now()
         let session = ActiveSession(
             id: UUID(),
-            name: name,
+            name: focus.name,
             phase: .rest,
             plannedDuration: duration,
             focusStartedAt: start,
@@ -151,20 +221,21 @@ final class SessionEngine {
     /// returning to the foreground, and when the scheduled end fires.
     func reconcile() {
         retryPendingRecords()
+        retimeAfterClockSetBack()
         guard let session = active, session.isFinished(at: now()) else {
             scheduleCompletionCheck()
             return
         }
         let endedAt = session.endDate ?? now()
-        // Under a few seconds old means the timer fired while the app was open.
-        let live = now().timeIntervalSince(endedAt) < 3
+        let freshness = freshness(endedAt: endedAt, at: now())
         switch session.phase {
         case .focus:
-            record(CompletedFocus(id: session.id, name: session.name, startedAt: session.focusStartedAt,
-                                  completedAt: endedAt, focusSeconds: session.plannedDuration))
-            apply(.focusComplete(name: session.name), event: .focusCompleted(live: live))
+            let focus = CompletedFocus(id: session.id, name: session.name, startedAt: session.focusStartedAt,
+                                       completedAt: endedAt, focusSeconds: session.plannedDuration)
+            record(focus)
+            apply(.focusComplete(focus), event: .focusCompleted(freshness))
         case .rest:
-            apply(.idle, event: .breakFinished(live: live))
+            apply(.idle, event: .breakFinished(freshness))
         }
     }
 
@@ -178,7 +249,18 @@ final class SessionEngine {
 
     // MARK: - Internals
 
+    /// A running phase can't end further away than its full length unless the
+    /// clock was set back. Rather than sit frozen at the full length until the
+    /// clock catches up, it starts counting down again from there.
+    private func retimeAfterClockSetBack() {
+        guard var session = active, let end = session.endDate,
+              end.timeIntervalSince(now()) > session.plannedDuration + 1 else { return }
+        session.state = .running(endDate: now().addingTimeInterval(session.plannedDuration))
+        apply(.active(session), event: .restored)
+    }
+
     private func apply(_ newStage: SessionStage, event: SessionEvent) {
+        clearUndo()
         stage = newStage
         persist()
         scheduleCompletionCheck()
@@ -220,7 +302,7 @@ final class SessionEngine {
         switch stage {
         case .idle: break
         case .active(let session): state.active = session
-        case .focusComplete(let name): state.completedFocusName = name
+        case .focusComplete(let focus): state.completedFocus = focus
         }
         state.pendingRecords = pendingRecords.isEmpty ? nil : pendingRecords
         store.save(state)
@@ -236,5 +318,22 @@ final class SessionEngine {
             guard !Task.isCancelled else { return }
             self?.reconcile()
         }
+    }
+
+    private func scheduleUndoExpiry(after window: TimeInterval) {
+        undoExpiry?.cancel()
+        guard schedulesCompletion else { return }
+        undoExpiry = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(window))
+            guard !Task.isCancelled else { return }
+            self?.clearUndo()
+        }
+    }
+
+    private func clearUndo() {
+        undoExpiry?.cancel()
+        undoExpiry = nil
+        undoableCancel = nil
+        undoDeadline = nil
     }
 }

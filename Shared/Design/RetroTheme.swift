@@ -126,6 +126,16 @@ enum TimeFormat {
         "\(time(start)) → \(time(end))"
     }
 
+    /// "Finished at 14:30", "Finished yesterday at 14:30", "Finished 8 Oct at 14:30"
+    static func finished(_ date: Date, now: Date, calendar: Calendar = .autoupdatingCurrent) -> String {
+        if calendar.isDate(date, inSameDayAs: now) { return "Finished at \(time(date))" }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
+           calendar.isDate(date, inSameDayAs: yesterday) {
+            return "Finished yesterday at \(time(date))"
+        }
+        return "Finished \(date.formatted(.dateTime.month(.abbreviated).day())) at \(time(date))"
+    }
+
     /// "25 min", "1 h 15 min", "2 h" ("10 s" under a minute, for test timers)
     static func duration(_ seconds: TimeInterval) -> String {
         if seconds > 0 && seconds < 60 { return "\(Int(seconds)) s" }

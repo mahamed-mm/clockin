@@ -129,11 +129,13 @@ struct FocusCountdown: View {
 /// Round pause/resume button that runs in the app process via an App Intent.
 struct PauseResumeButton: View {
     let isPaused: Bool
+    /// The session the card shows; the intent ignores taps meant for another.
+    let sessionID: UUID?
     let tint: Color
-    var size: CGFloat = 40
+    var size: CGFloat = 44
 
     var body: some View {
-        Button(intent: PauseResumeIntent()) {
+        Button(intent: PauseResumeIntent(pause: !isPaused, sessionID: sessionID)) {
             Image(systemName: isPaused ? "play.fill" : "pause.fill")
                 .font(.system(size: size * 0.42, weight: .bold))
                 .foregroundStyle(.white)

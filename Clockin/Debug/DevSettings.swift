@@ -12,8 +12,8 @@ struct DevMenu: View {
         ("Cancel (warning)", .cancelled),
         ("Break start (soft impact)", .breakStarted),
         ("Break skip (light impact)", .breakSkipped),
-        ("Break finished (success)", .breakFinished(live: true)),
-        ("Focus complete (ding + sunburst)", .focusCompleted(live: true)),
+        ("Break finished (success)", .breakFinished(.live)),
+        ("Focus complete (ding + sunburst)", .focusCompleted(.live)),
     ]
 
     var body: some View {
@@ -25,7 +25,7 @@ struct DevMenu: View {
                 Label("Slow animations ×4", systemImage: "tortoise")
             }
             Button {
-                services.debugReplay(.focusCompleted(live: true))
+                services.debugReplay(.focusCompleted(.live))
             } label: {
                 Label("Replay celebration", systemImage: "sparkles")
             }

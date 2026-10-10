@@ -10,6 +10,7 @@ import SwiftUI
 /// app is suspended.
 struct StandByFocusView: View {
     let sessionName: String
+    let sessionID: UUID?
     let state: FocusActivityAttributes.ContentState
     let done: Bool
 
@@ -43,7 +44,7 @@ struct StandByFocusView: View {
                             .font(.retroDisplay(size: 50))
                             .foregroundStyle(Retro.ink)
                         Spacer(minLength: 0)
-                        PauseResumeButton(isPaused: state.isPaused, tint: tint, size: 38)
+                        PauseResumeButton(isPaused: state.isPaused, sessionID: sessionID, tint: tint, size: 38)
                     }
                     .padding(.top, 2)
 

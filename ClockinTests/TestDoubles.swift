@@ -8,6 +8,13 @@ final class FakeClock {
     func advance(_ seconds: TimeInterval) { now = now.addingTimeInterval(seconds) }
 }
 
+/// Fixed so day boundaries in tests don't depend on the machine's time zone.
+let osloCalendar: Calendar = {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "Europe/Oslo")!
+    return calendar
+}()
+
 @MainActor
 final class SpyLog: FocusLogging {
     struct Failure: Error {}
@@ -42,8 +49,8 @@ final class SpyLiveActivity: LiveActivityControlling {
         lastBreakDuration = breakDuration
         lastCompletedToday = completedToday
     }
-    func showFocusDone(completedToday: Int) {
-        calls.append("done")
+    func showFocusDone(completedToday: Int, lingers: Bool) {
+        calls.append(lingers ? "done" : "done-quietly")
         lastCompletedToday = completedToday
     }
     func endAll() { calls.append("endAll") }
@@ -67,7 +74,11 @@ final class SpyNotifier: EndNotifying {
 @MainActor
 final class SpyWidgets: WidgetReloading {
     var reloads = 0
-    func reloadAll() { reloads += 1 }
+    var lastSnapshot: WidgetSnapshot?
+    func reload(with snapshot: WidgetSnapshot) {
+        reloads += 1
+        lastSnapshot = snapshot
+    }
 }
 
 @MainActor

@@ -22,7 +22,9 @@ struct FocusLiveActivity: Widget {
                         .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if !done { PauseResumeButton(isPaused: state.isPaused, tint: tint) }
+                    if !done {
+                        PauseResumeButton(isPaused: state.isPaused, sessionID: context.attributes.sessionID, tint: tint)
+                    }
                 }
                 DynamicIslandExpandedRegion(.center) {
                     Text(context.attributes.sessionName)
@@ -91,7 +93,7 @@ private struct LockScreenFocusView: View {
 
     var body: some View {
         if isFullscreen {
-            StandByFocusView(sessionName: context.attributes.sessionName,
+            StandByFocusView(sessionName: context.attributes.sessionName, sessionID: context.attributes.sessionID,
                              state: context.state, done: isDone(context))
         } else {
             card
@@ -137,7 +139,9 @@ private struct LockScreenFocusView: View {
                     }
                 }
                 Spacer(minLength: 4)
-                if !done { PauseResumeButton(isPaused: state.isPaused, tint: tint) }
+                if !done {
+                    PauseResumeButton(isPaused: state.isPaused, sessionID: context.attributes.sessionID, tint: tint)
+                }
             }
             SessionPills(completed: state.completedToday ?? 0,
                          inProgress: state.phase == .focus && !done,

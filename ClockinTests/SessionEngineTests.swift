@@ -12,7 +12,7 @@ struct SessionEngineTests {
     let effects = SpyEffects()
 
     func makeEngine() -> SessionEngine {
-        let engine = SessionEngine(now: { [clock] in clock.now }, store: store, log: log,
+        let engine = SessionEngine(now: { [clock] in clock.now }, calendar: osloCalendar, store: store, log: log,
                                    schedulesCompletion: false)
         engine.effects = effects
         return engine
@@ -27,10 +27,10 @@ struct SessionEngineTests {
         engine.reconcile()
         engine.reconcile()
 
-        #expect(engine.stage == .focusComplete(name: "Reading"))
+        #expect(engine.stage.completedFocus?.name == "Reading")
         #expect(log.recorded.count == 1)
         #expect(log.recorded.first?.focusSeconds == Durations.duration(for: .focus))
-        #expect(effects.events.last == .focusCompleted(live: true))
+        #expect(effects.events.last == .focusCompleted(.live))
     }
 
     @Test func emptyNameFallsBackToFocus() {
@@ -78,7 +78,7 @@ struct SessionEngineTests {
         #expect(engine.active != nil)
         clock.advance(2)
         engine.reconcile()
-        #expect(engine.stage == .focusComplete(name: "Math"))
+        #expect(engine.stage.completedFocus?.name == "Math")
     }
 
     @Test func breakTimeIsNeverRecorded() {
@@ -94,7 +94,7 @@ struct SessionEngineTests {
         engine.reconcile()
         #expect(engine.stage == .idle)
         #expect(log.recorded.count == 1)
-        #expect(effects.events.last == .breakFinished(live: true))
+        #expect(effects.events.last == .breakFinished(.live))
     }
 
     @Test func breakMustBeStartedManually() {
@@ -102,7 +102,7 @@ struct SessionEngineTests {
         engine.start(name: "Piano")
         clock.advance(Durations.duration(for: .focus) + 3_600)
         engine.reconcile()
-        #expect(engine.stage == .focusComplete(name: "Piano"))
+        #expect(engine.stage.completedFocus?.name == "Piano")
     }
 
     @Test func cancelDoesNotApplyToBreaks() {
@@ -135,7 +135,7 @@ struct SessionEngineTests {
         clock.advance(Durations.duration(for: .focus))
         engine.pause()
 
-        #expect(engine.stage == .focusComplete(name: "Edge"))
+        #expect(engine.stage.completedFocus?.name == "Edge")
         #expect(log.recorded.count == 1)
         #expect(!effects.events.contains(.paused))
     }
@@ -149,7 +149,7 @@ struct SessionEngineTests {
         clock.advance(Durations.duration(for: .rest) + 3_600)
         engine.reconcile()
 
-        #expect(effects.events.last == .breakFinished(live: false))
+        #expect(effects.events.last == .breakFinished(.stale))
     }
 
     @Test func savingWaitingSessionsIsAnnounced() {
@@ -174,7 +174,7 @@ struct SessionEngineTests {
         clock.advance(Durations.duration(for: .focus))
         engine.reconcile()
 
-        #expect(engine.stage == .focusComplete(name: "Essay"))
+        #expect(engine.stage.completedFocus?.name == "Essay")
         #expect(log.recorded.isEmpty)
         #expect(store.state.pendingRecords?.map(\.name) == ["Essay"])
 
@@ -184,7 +184,7 @@ struct SessionEngineTests {
         relaunched.reconcile()
         #expect(log.recorded.map(\.name) == ["Essay"])
         #expect(store.state.pendingRecords == nil)
-        #expect(relaunched.stage == .focusComplete(name: "Essay"))
+        #expect(relaunched.stage.completedFocus?.name == "Essay")
     }
 
     @Test func restoresRunningTimerAfterRelaunch() throws {
@@ -198,6 +198,173 @@ struct SessionEngineTests {
         #expect(session.remaining(at: clock.now) == Durations.duration(for: .focus) - 120)
     }
 
+    // MARK: Old completions
+
+    @Test func completionNoticedSoonStillCountsAsRecent() {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        clock.advance(Durations.duration(for: .focus) + 60)
+        engine.reconcile()
+        #expect(effects.events.last == .focusCompleted(.recent))
+    }
+
+    @Test func completionNoticedAfterABreakLengthIsStale() {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        clock.advance(Durations.duration(for: .focus) + Durations.duration(for: .rest))
+        engine.reconcile()
+        #expect(effects.events.last == .focusCompleted(.stale))
+    }
+
+    @Test func completionNoticedAfterMidnightIsStale() {
+        // Starts 23:33 in Oslo, ends 23:58, and the app looks at 00:01.
+        clock.now = osloCalendar.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 23, minute: 33))!
+        let engine = makeEngine()
+        engine.start(name: "Late one")
+        clock.advance(Durations.duration(for: .focus) + 180)
+        engine.reconcile()
+        #expect(effects.events.last == .focusCompleted(.stale))
+    }
+
+    @Test func completionKeepsItsDetailsAcrossRelaunch() throws {
+        let engine = makeEngine()
+        engine.start(name: "Thesis")
+        clock.advance(Durations.duration(for: .focus))
+        engine.reconcile()
+
+        let focus = try #require(engine.stage.completedFocus)
+        #expect(focus.focusSeconds == Durations.duration(for: .focus))
+        #expect(focus.completedAt == clock.now)
+        #expect(store.state.completedFocus == focus)
+        #expect(makeEngine().stage == .focusComplete(focus))
+    }
+
+    @Test func undatedCompletionFromAnOlderBuildOpensIdle() {
+        store.state = PersistedSessionState(completedFocusName: "Thesis outline", format: nil)
+        #expect(makeEngine().stage == .idle)
+    }
+
+    // MARK: Clock changes and names
+
+    @Test func settingTheClockBackCannotAddTime() throws {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        clock.advance(-3_600)
+        let session = try #require(engine.active)
+        #expect(session.remaining(at: clock.now) == Durations.duration(for: .focus))
+        #expect(session.progress(at: clock.now) == 0)
+    }
+
+    @Test func settingTheClockBackRestartsTheCountdownInsteadOfFreezing() throws {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        clock.advance(-3_600)
+        engine.reconcile()
+
+        let session = try #require(engine.active)
+        #expect(session.endDate == clock.now.addingTimeInterval(Durations.duration(for: .focus)))
+        #expect(effects.events.last == .restored)
+        #expect(store.state.active == session)
+
+        clock.advance(60)
+        #expect(session.remaining(at: clock.now) == Durations.duration(for: .focus) - 60)
+    }
+
+    @Test func longNamesAreCappedForTheLockScreen() {
+        let engine = makeEngine()
+        engine.start(name: "  " + String(repeating: "a", count: 59) + " " + String(repeating: "b", count: 20))
+        // Cut at 60 characters, then the space left at the end is trimmed.
+        #expect(engine.active?.name == String(repeating: "a", count: 59))
+    }
+
+    @Test func namesAreCappedInBytesToo() throws {
+        // Each character carries 20 combining accents: 41 bytes apiece.
+        let stacked = "a" + String(repeating: "\u{0301}", count: 20)
+        let name = ActiveSession.cleanName(String(repeating: stacked, count: 60))
+        #expect(name.utf8.count <= ActiveSession.maxNameBytes)
+        #expect(name.count == 5)
+    }
+
+    // MARK: Lock Screen button
+
+    @Test func lockScreenButtonOnlyMovesItsOwnSession() throws {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        let id = try #require(engine.active?.id)
+
+        engine.setPaused(true, sessionID: UUID())
+        #expect(engine.active?.isPaused == false)
+
+        engine.setPaused(true, sessionID: id)
+        engine.setPaused(true, sessionID: id) // A second tap doesn't resume it.
+        #expect(engine.active?.isPaused == true)
+        #expect(effects.events.filter { $0 == .paused }.count == 1)
+
+        engine.setPaused(false, sessionID: id)
+        #expect(engine.active?.isPaused == false)
+    }
+
+    // MARK: Undo cancel
+
+    @Test func cancelCanBeUndone() throws {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        clock.advance(600)
+        engine.pause()
+        let before = try #require(engine.active)
+        engine.cancel()
+        #expect(engine.undoableCancel == before)
+
+        clock.advance(4)
+        engine.undoCancel()
+        #expect(engine.active == before)
+        #expect(effects.events.last == .restored)
+        #expect(engine.undoableCancel == nil)
+        #expect(store.state.active == before)
+    }
+
+    @Test func undoRunsOut() {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        engine.cancel()
+        clock.advance(SessionEngine.standardUndoWindow + 1)
+        engine.undoCancel()
+        #expect(engine.stage == .idle)
+    }
+
+    @Test func startingAgainDropsTheUndo() {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        engine.cancel()
+        engine.start(name: "Other")
+        #expect(engine.undoableCancel == nil)
+        engine.undoCancel()
+        #expect(engine.active?.name == "Other")
+    }
+
+    @Test func undoingASessionThatRanOutMeanwhileCompletesIt() {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        clock.advance(Durations.duration(for: .focus) - 2)
+        engine.cancel()
+        clock.advance(4)
+        engine.undoCancel()
+        #expect(engine.stage.completedFocus?.name == "Essay")
+        #expect(log.recorded.count == 1)
+        // Straight to complete, without a card for a finished session first.
+        #expect(effects.events == [.started, .cancelled, .focusCompleted(.live)])
+    }
+
+    @Test func undoWindowCanBeLonger() {
+        let engine = makeEngine()
+        engine.undoWindow = { 30 }
+        engine.start(name: "Essay")
+        engine.cancel()
+        clock.advance(20)
+        engine.undoCancel()
+        #expect(engine.active?.name == "Essay")
+    }
+
     @Test func completionWhileClosedIsRecordedOnRelaunch() throws {
         let first = makeEngine()
         first.start(name: "Thesis")
@@ -206,10 +373,10 @@ struct SessionEngineTests {
 
         let relaunched = makeEngine()
         relaunched.restore()
-        #expect(relaunched.stage == .focusComplete(name: "Thesis"))
+        #expect(relaunched.stage.completedFocus?.name == "Thesis")
         #expect(log.recorded.count == 1)
         #expect(log.recorded.first?.completedAt == end)
-        #expect(effects.events.last == .focusCompleted(live: false))
+        #expect(effects.events.last == .focusCompleted(.stale))
     }
 }
 
@@ -392,6 +559,7 @@ struct EndCopyTests {
     }
 }
 
+@MainActor
 struct LiveActivityTests {
     /// A countdown turns stale at its end date, which is when completion has to find it.
     @Test func staleCountdownStillShowsTheSession() {
@@ -402,6 +570,7 @@ struct LiveActivityTests {
     }
 }
 
+@MainActor
 struct SessionPillsTests {
     @Test func firstFocusSessionIsOutlined() {
         #expect(SessionPills.state(index: 0, completed: 0, inProgress: true) == .current)

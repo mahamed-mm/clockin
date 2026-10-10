@@ -17,7 +17,7 @@ struct HistoryView: View {
                         .listRowInsets(EdgeInsets(top: 8, leading: 4, bottom: 4, trailing: 4))
                     // Without the store these would be zeros that look real.
                     if !services.historyUnavailable {
-                        WeekStrip(totals: weekTotals)
+                        WeekStrip(totals: weekTotals, today: services.today)
                             .listRowBackground(Color.clear)
                             .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 12, trailing: 0))
                     }
@@ -109,24 +109,26 @@ struct HistoryView: View {
     }
 
     private var todayRows: [TodayStats.Row] {
-        allRows.filter { Calendar.current.isDateInToday($0.completedAt) }
+        allRows.filter { services.calendar.isDate($0.completedAt, inSameDayAs: services.today) }
     }
 
     private var weekTotals: [DayTotal] {
-        TodayStats.weekTotals(records: allRows.map { ($0.completedAt, $0.seconds) }, containing: .now)
+        TodayStats.weekTotals(records: allRows.map { ($0.completedAt, $0.seconds) }, containing: services.today,
+                              calendar: services.calendar)
     }
 
     /// Records grouped by calendar day, newest first. Kept to the last 14 days.
     private var days: [(day: Date, records: [FocusRecord])] {
-        let calendar = Calendar.current
+        let calendar = services.calendar
         let grouped = Dictionary(grouping: records) { calendar.startOfDay(for: $0.completedAt) }
         return grouped.keys.sorted(by: >).prefix(14).map { ($0, grouped[$0] ?? []) }
     }
 
     private func dayTitle(_ day: Date) -> String {
-        let calendar = Calendar.current
-        if calendar.isDateInToday(day) { return "Today" }
-        if calendar.isDateInYesterday(day) { return "Yesterday" }
+        let calendar = services.calendar
+        if calendar.isDate(day, inSameDayAs: services.today) { return "Today" }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: services.today),
+           calendar.isDate(day, inSameDayAs: yesterday) { return "Yesterday" }
         return day.formatted(.dateTime.weekday(.wide).month().day())
     }
 }

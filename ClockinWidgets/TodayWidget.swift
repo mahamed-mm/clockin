@@ -14,35 +14,41 @@ struct TodayProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (TodayEntry) -> Void) {
-        completion(context.isPreview ? placeholder(in: context) : entry(at: .now))
+        completion(context.isPreview ? placeholder(in: context) : entries(at: [.now])[0])
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TodayEntry>) -> Void) {
         let now = Date.now
+        let state = DefaultsSessionStateStore().load()
+        let midnight = Calendar.autoupdatingCurrent.dayRange(containing: now).upperBound
         var dates = [now]
-        // Refresh when the running phase ends so the count updates without the app.
-        if let end = loadState().active?.endDate, end > now { dates.append(end) }
-        let midnight = Calendar.current.startOfDay(for: now).addingTimeInterval(86_400)
+        // Refresh when the running phase ends so the count updates without the
+        // app. An end after midnight waits for the timeline that starts then.
+        if let end = state.active?.endDate, end > now, end < midnight { dates.append(end) }
         dates.append(midnight)
-        completion(Timeline(entries: dates.map(entry(at:)), policy: .after(midnight)))
+        completion(Timeline(entries: entries(at: dates, state: state), policy: .after(midnight)))
     }
 
-    private func loadState() -> PersistedSessionState {
-        DefaultsSessionStateStore().load()
-    }
-
-    private func entry(at date: Date) -> TodayEntry {
-        let state = loadState()
+    private func entries(at dates: [Date], state: PersistedSessionState = DefaultsSessionStateStore().load())
+        -> [TodayEntry] {
+        let snapshot = WidgetSnapshotStore().load() ?? fallbackSnapshot(state: state)
         let active = state.active
-        var rows: [TodayStats.Row] = []
-        if let container = try? SharedStore.makeModelContainer() {
-            let context = ModelContext(container)
-            rows = TodayStats.fetchRecords(on: date, calendar: .current, context: context).map(\.row)
+        return dates.map { date in
+            let stillRunning = active.flatMap { $0.isFinished(at: date) ? nil : $0 }
+            return TodayEntry(date: date, stats: snapshot.stats(at: date, active: active), active: stillRunning)
         }
-        let stats = TodayStats.make(records: rows, pending: state.pendingRecords ?? [],
-                                    unrecordedActive: active, now: date)
-        let stillRunning = active.flatMap { $0.isFinished(at: date) ? nil : $0 }
-        return TodayEntry(date: date, stats: stats, active: stillRunning)
+    }
+
+    /// Until the app writes a snapshot (the first run after an update), read
+    /// the store directly. Read-only, so the widget can never migrate it.
+    private func fallbackSnapshot(state: PersistedSessionState) -> WidgetSnapshot {
+        let now = Date.now
+        var saved: [TodayStats.Row] = []
+        if let container = try? SharedStore.makeModelContainer(readOnly: true) {
+            saved = TodayStats.fetchRecords(on: now, calendar: .autoupdatingCurrent,
+                                            context: ModelContext(container)).map(\.row)
+        }
+        return WidgetSnapshot(rows: TodayStats.rows(saved: saved, pending: state.pendingRecords ?? []), writtenAt: now)
     }
 }
 

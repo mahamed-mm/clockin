@@ -18,7 +18,7 @@ struct FocusView: View {
     var body: some View {
         Group {
             if let session = bedsideSession {
-                BedsideView(session: session)
+                BedsideView(session: session, day: services.today)
                     .transition(.opacity)
             } else {
                 standardLayout
@@ -107,8 +107,8 @@ struct FocusView: View {
                 SessionChip(session: session)
                     .glassEffectID("session", in: glass)
                     .glassEffectTransition(.matchedGeometry)
-            case .focusComplete(let name):
-                CompletionSummary(name: name)
+            case .focusComplete(let focus):
+                CompletionSummary(focus: focus, day: services.today)
             }
         }
     }
@@ -120,6 +120,12 @@ struct FocusView: View {
             .submitLabel(.go)
             .focused($nameFocused)
             .onSubmit(start)
+            .onChange(of: sessionName) { _, name in
+                // The engine caps names too; this keeps the field honest about it.
+                if name.count > ActiveSession.maxNameLength {
+                    sessionName = String(name.prefix(ActiveSession.maxNameLength))
+                }
+            }
             .padding(.horizontal, 22)
             .padding(.vertical, 16)
             .glassEffect(.regular.interactive(), in: .capsule)
@@ -129,17 +135,25 @@ struct FocusView: View {
     // MARK: Controls
 
     private var controls: some View {
-        VStack(spacing: 10) {
+        let idle = engine.stage == .idle
+        let undoable = idle && engine.undoableCancel != nil
+        return VStack(spacing: 10) {
             primaryButton
             ZStack {
                 secondaryButton
                 // Laid out in every stage, shown only when idle, so the slot
                 // keeps its height on Start and Cancel even when the hint wraps.
                 AlertHint(status: services.alertStatus)
-                    .opacity(engine.stage == .idle ? 1 : 0)
-                    .allowsHitTesting(engine.stage == .idle)
-                    .accessibilityHidden(engine.stage != .idle)
+                    .opacity(idle && !undoable ? 1 : 0)
+                    .allowsHitTesting(idle && !undoable)
+                    .accessibilityHidden(!idle || undoable)
+                // Takes Cancel's place for a few seconds, right under the finger.
+                UndoCancelBar(undo: engine.undoCancel)
+                    .opacity(undoable ? 1 : 0)
+                    .allowsHitTesting(undoable)
+                    .accessibilityHidden(!undoable)
             }
+            .animation(Motion.calm(reduceMotion), value: undoable)
         }
     }
 
@@ -187,11 +201,15 @@ struct FocusView: View {
     /// height so the layout doesn't jump between states.
     private var secondaryButton: some View {
         let action = secondaryAction
-        return Button(action.title ?? " ", role: action.role) { action.run?() }
+        return Button(role: action.role) { action.run?() } label: {
+            // The frame sits inside the label so the whole 44 pt row takes the tap.
+            Text(action.title ?? " ")
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(.rect)
+        }
             .font(.retro(.body))
             .foregroundStyle(Retro.inkSoft)
             .buttonStyle(.borderless)
-            .frame(minHeight: 32)
             .opacity(action.title == nil ? 0 : 1)
             .disabled(action.title == nil)
             .accessibilityHidden(action.title == nil)

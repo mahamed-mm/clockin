@@ -46,10 +46,8 @@ struct TodayStats: Equatable, Sendable {
     }
 
     static func fetchRecords(on day: Date, calendar: Calendar, context: ModelContext) -> [FocusRecord] {
-        let start = calendar.startOfDay(for: day)
-        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? day
         let descriptor = FetchDescriptor<FocusRecord>(
-            predicate: #Predicate { $0.completedAt >= start && $0.completedAt < end },
+            predicate: FocusRecord.completed(on: day, calendar: calendar),
             sortBy: [SortDescriptor(\.completedAt, order: .reverse)]
         )
         return (try? context.fetch(descriptor)) ?? []
@@ -58,6 +56,25 @@ struct TodayStats: Equatable, Sendable {
 
 extension FocusRecord {
     var row: TodayStats.Row { (id: id, completedAt: completedAt, seconds: focusSeconds) }
+
+    /// Records completed on the day containing `day`, for fetches and `@Query`.
+    static func completed(on day: Date, calendar: Calendar = .autoupdatingCurrent) -> Predicate<FocusRecord> {
+        let range = calendar.dayRange(containing: day)
+        let start = range.lowerBound
+        let end = range.upperBound
+        return #Predicate { $0.completedAt >= start && $0.completedAt < end }
+    }
+}
+
+extension Calendar {
+    /// The day containing `date`, from its first moment up to the next day's.
+    /// Unlike adding 86 400 s, this is right on the 23- and 25-hour days when
+    /// the clocks change.
+    func dayRange(containing date: Date) -> Range<Date> {
+        if let day = dateInterval(of: .day, for: date) { return day.start..<day.end }
+        let start = startOfDay(for: date)
+        return start..<(self.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86_400))
+    }
 }
 
 /// One day's focus in the History week strip.

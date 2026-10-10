@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 /// Kitchen-timer dial: tick ring, a gradient arc with a knob at its tip, and
 /// ticks that light up inside the arc. Used by the app, the widget, and the
@@ -6,6 +7,11 @@ import SwiftUI
 ///
 /// `value` is the arc's length (0...1) drawn clockwise from 12 o'clock.
 /// The view is `Animatable`, so springing `value` winds and unwinds the arc.
+///
+/// Drawn in two layers so a tinted or clear Home Screen can render it: the
+/// face, ticks and track, then the progress (lit ticks, arc, knob) marked
+/// accentable. Outside full colour the opaque face is left out, since the
+/// system would flatten it into a solid disc.
 struct RetroDial: View, Animatable {
     var value: Double
     var tint: Color
@@ -13,6 +19,7 @@ struct RetroDial: View, Animatable {
     var showsTicks = true
     var showsKnob = true
     var lineWidthRatio: CGFloat = 0.075
+    @Environment(\.widgetRenderingMode) private var renderingMode
 
     var animatableData: Double {
         get { value }
@@ -20,73 +27,102 @@ struct RetroDial: View, Animatable {
     }
 
     var body: some View {
-        Canvas { context, size in
-            let side = min(size.width, size.height)
-            let center = CGPoint(x: size.width / 2, y: size.height / 2)
-            let radius = side / 2
-            let line = side * lineWidthRatio
-            let arcValue = min(max(value, 0), 1)
-
-            // Face
-            context.fill(circle(center, radius), with: .color(Retro.paperDeep))
-
-            // Ticks, lit inside the arc
-            if showsTicks {
-                for i in 0..<60 {
-                    let fraction = Double(i) / 60
-                    let angle = fraction * 2 * .pi
-                    let major = i % 5 == 0
-                    let lit = fraction < arcValue - 0.0001
-                    let outer = radius * 0.94
-                    let inner = outer - radius * (major ? 0.11 : 0.05)
-                    var tick = Path()
-                    tick.move(to: point(center, outer, angle))
-                    tick.addLine(to: point(center, inner, angle))
-                    let color = lit ? tint : Retro.ink.opacity(major ? 0.85 : 0.35)
-                    context.stroke(tick, with: .color(color),
-                                   style: StrokeStyle(lineWidth: side * (major ? 0.012 : 0.006),
-                                                      lineCap: .round))
-                }
+        let showsFace = renderingMode == .fullColor
+        ZStack {
+            Canvas { context, size in
+                drawBase(in: &context, Geometry(size: size, dial: self), showsFace: showsFace)
             }
-
-            // Track
-            let arcRadius = radius * Self.arcRadiusRatio(showsTicks: showsTicks)
-            context.stroke(circle(center, arcRadius), with: .color(Retro.ink.opacity(0.08)),
-                           style: StrokeStyle(lineWidth: line))
-
-            // Arc
-            if arcValue > 0.001 {
-                var arc = Path()
-                arc.addArc(center: center, radius: arcRadius, startAngle: .degrees(-90),
-                           endAngle: .degrees(-90 + 360 * arcValue), clockwise: false)
-                // Warm toward the knob: tint at the tail, glow at the tip. The
-                // wrap back to 12 o'clock stays tint so the tail's cap is clean.
-                let tip = max(arcValue, 0.02)
-                let gradient = Gradient(stops: [
-                    .init(color: tint, location: 0),
-                    .init(color: tint, location: tip * 0.7),
-                    .init(color: glowTint, location: tip),
-                    .init(color: tint, location: min(1, tip + 0.0001)),
-                ])
-                context.stroke(arc, with: .conicGradient(gradient, center: center, angle: .degrees(-90)),
-                               style: StrokeStyle(lineWidth: line, lineCap: .round))
+            Canvas { context, size in
+                drawProgress(in: &context, Geometry(size: size, dial: self))
             }
-
-            // Knob at the arc's tip
-            if showsKnob {
-                let tip = point(center, arcRadius, arcValue * 2 * .pi)
-                let knobRadius = line * 0.62
-                context.fill(circle(tip, knobRadius), with: .color(Retro.paper))
-                context.stroke(circle(tip, knobRadius), with: .color(Retro.ink.opacity(0.85)),
-                               lineWidth: max(1, line * 0.14))
-            }
+            .widgetAccentable()
         }
         .aspectRatio(1, contentMode: .fit)
         .accessibilityHidden(true)
     }
 
     /// Arc radius as a fraction of the dial's half-width; used to place overlays on the arc.
-    static func arcRadiusRatio(showsTicks: Bool) -> CGFloat { showsTicks ? 0.66 : 0.76 }
+    nonisolated static func arcRadiusRatio(showsTicks: Bool) -> CGFloat { showsTicks ? 0.66 : 0.76 }
+
+    private struct Geometry {
+        let center: CGPoint
+        let radius: CGFloat
+        let side: CGFloat
+        let line: CGFloat
+        let arcRadius: CGFloat
+        let arcValue: Double
+
+        init(size: CGSize, dial: RetroDial) {
+            side = min(size.width, size.height)
+            center = CGPoint(x: size.width / 2, y: size.height / 2)
+            radius = side / 2
+            line = side * dial.lineWidthRatio
+            arcRadius = radius * RetroDial.arcRadiusRatio(showsTicks: dial.showsTicks)
+            arcValue = min(max(dial.value, 0), 1)
+        }
+    }
+
+    /// Face, unlit ticks and the empty track.
+    private func drawBase(in context: inout GraphicsContext, _ g: Geometry, showsFace: Bool) {
+        if showsFace {
+            context.fill(circle(g.center, g.radius), with: .color(Retro.paperDeep))
+        }
+        if showsTicks {
+            drawTicks(in: &context, g, lit: false)
+        }
+        context.stroke(circle(g.center, g.arcRadius), with: .color(Retro.ink.opacity(0.08)),
+                       style: StrokeStyle(lineWidth: g.line))
+    }
+
+    /// Ticks inside the arc, the arc, and the knob at its tip.
+    private func drawProgress(in context: inout GraphicsContext, _ g: Geometry) {
+        if showsTicks {
+            drawTicks(in: &context, g, lit: true)
+        }
+
+        if g.arcValue > 0.001 {
+            var arc = Path()
+            arc.addArc(center: g.center, radius: g.arcRadius, startAngle: .degrees(-90),
+                       endAngle: .degrees(-90 + 360 * g.arcValue), clockwise: false)
+            // Warm toward the knob: tint at the tail, glow at the tip. The
+            // wrap back to 12 o'clock stays tint so the tail's cap is clean.
+            let tip = max(g.arcValue, 0.02)
+            let gradient = Gradient(stops: [
+                .init(color: tint, location: 0),
+                .init(color: tint, location: tip * 0.7),
+                .init(color: glowTint, location: tip),
+                .init(color: tint, location: min(1, tip + 0.0001)),
+            ])
+            context.stroke(arc, with: .conicGradient(gradient, center: g.center, angle: .degrees(-90)),
+                           style: StrokeStyle(lineWidth: g.line, lineCap: .round))
+        }
+
+        if showsKnob {
+            let tip = point(g.center, g.arcRadius, g.arcValue * 2 * .pi)
+            let knobRadius = g.line * 0.62
+            context.fill(circle(tip, knobRadius), with: .color(Retro.paper))
+            context.stroke(circle(tip, knobRadius), with: .color(Retro.ink.opacity(0.85)),
+                           lineWidth: max(1, g.line * 0.14))
+        }
+    }
+
+    /// The ticks inside the arc (`lit`) or outside it.
+    private func drawTicks(in context: inout GraphicsContext, _ g: Geometry, lit: Bool) {
+        for i in 0..<60 {
+            let fraction = Double(i) / 60
+            guard (fraction < g.arcValue - 0.0001) == lit else { continue }
+            let angle = fraction * 2 * .pi
+            let major = i % 5 == 0
+            let outer = g.radius * 0.94
+            let inner = outer - g.radius * (major ? 0.11 : 0.05)
+            var tick = Path()
+            tick.move(to: point(g.center, outer, angle))
+            tick.addLine(to: point(g.center, inner, angle))
+            let color = lit ? tint : Retro.ink.opacity(major ? 0.85 : 0.35)
+            context.stroke(tick, with: .color(color),
+                           style: StrokeStyle(lineWidth: g.side * (major ? 0.012 : 0.006), lineCap: .round))
+        }
+    }
 
     private func circle(_ center: CGPoint, _ r: CGFloat) -> Path {
         Path(ellipseIn: CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2))

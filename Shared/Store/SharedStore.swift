@@ -25,8 +25,11 @@ enum SharedStore {
     }
 
     /// Opens the history store through the migration plan. `url` overrides the
-    /// App Group location (tests); `inMemory` keeps nothing on disk.
-    static func makeModelContainer(inMemory: Bool = false, url: URL? = nil) throws -> ModelContainer {
+    /// App Group location (tests); `inMemory` keeps nothing on disk. `readOnly`
+    /// is for the widget: it can't save, so it can never migrate the store
+    /// out from under the app.
+    static func makeModelContainer(inMemory: Bool = false, url: URL? = nil,
+                                   readOnly: Bool = false) throws -> ModelContainer {
         let schema = Schema(versionedSchema: ClockinSchemaV1.self)
         let config: ModelConfiguration
         if inMemory {
@@ -38,7 +41,7 @@ enum SharedStore {
             }
             // Sync stays off explicitly: the default would turn it on if an
             // iCloud entitlement were ever added.
-            config = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
+            config = ModelConfiguration(schema: schema, url: url, allowsSave: !readOnly, cloudKitDatabase: .none)
         }
         return try ModelContainer(for: schema, migrationPlan: ClockinMigrationPlan.self, configurations: [config])
     }
@@ -49,10 +52,12 @@ enum SharedStore {
 /// Decoding rule: every field added after 1.0 must be Optional (or decoded
 /// with a default), so state written by an older build always loads.
 struct PersistedSessionState: Codable, Equatable, Sendable {
-    static let currentFormat = 2
+    static let currentFormat = 3
 
     var active: ActiveSession?
-    /// Set after a focus phase completes, until a break starts or the user moves on.
+    /// Set after a focus phase completes, until a break starts or the user moves on. (Format 3.)
+    var completedFocus: CompletedFocus?
+    /// What formats 1 and 2 kept instead of `completedFocus`. Read, never written.
     var completedFocusName: String?
     /// Finished sessions the store couldn't take yet; retried on reconcile. (Format 2.)
     var pendingRecords: [CompletedFocus]?

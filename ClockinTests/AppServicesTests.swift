@@ -15,7 +15,8 @@ struct AppServicesTests {
 
     func makeServices(historyUnavailable: Bool = false) -> AppServices {
         AppServices(container: AppServices.makeEmptyContainer(), historyUnavailable: historyUnavailable,
-                    stateStore: state, now: { [clock] in clock.now }, schedulesCompletion: false,
+                    stateStore: state, now: { [clock] in clock.now }, calendar: osloCalendar,
+                    schedulesCompletion: false,
                     liveActivity: liveActivity, notifications: notifier, widgets: widgets, haptics: haptics,
                     announce: { [announcer] in announcer.spoken.append($0) })
     }
@@ -59,6 +60,7 @@ struct AppServicesTests {
         finishFocus(services)
 
         #expect(liveActivity.calls == ["sync", "done"])
+        #expect(notifier.calls == ["schedule"]) // Its alert is playing right now.
         #expect(haptics.plays == 1)
         #expect(services.celebrations == 1)
         #expect(announcer.spoken == ["Focus complete. Time for a break."])
@@ -126,6 +128,114 @@ struct AppServicesTests {
         #expect(liveActivity.calls == ["sync"])
     }
 
+    @Test func staleCompletionOpensQuietly() {
+        let services = makeServices()
+        services.engine.start(name: "Essay")
+        clock.advance(Durations.duration(for: .focus) + 3_600)
+        services.reconcile()
+
+        #expect(liveActivity.calls == ["sync", "done-quietly"])
+        // Its alert went off long ago; it shouldn't linger in Notification Center.
+        #expect(notifier.calls == ["schedule", "cancel"])
+        #expect(haptics.plays == 0)
+        #expect(services.celebrations == 0)
+        #expect(announcer.spoken.isEmpty)
+    }
+
+    @Test func recentCompletionCelebratesWithoutSpeaking() {
+        let services = makeServices()
+        services.engine.start(name: "Essay")
+        clock.advance(Durations.duration(for: .focus) + 60)
+        services.reconcile()
+
+        #expect(liveActivity.calls == ["sync", "done"])
+        #expect(haptics.plays == 1)
+        #expect(services.celebrations == 1)
+        #expect(announcer.spoken.isEmpty)
+    }
+
+    @Test func eventsHandTheWidgetTodaysSessions() throws {
+        let services = makeServices()
+        finishFocus(services)
+
+        let snapshot = try #require(widgets.lastSnapshot)
+        #expect(snapshot.writtenAt == clock.now)
+        #expect(snapshot.sessions.map(\.seconds) == [Durations.duration(for: .focus)])
+    }
+
+    @Test func launchWritesTheWidgetSnapshot() {
+        let services = makeServices()
+        services.restore()
+        #expect(widgets.lastSnapshot?.sessions == [])
+    }
+
+    @Test func midnightMovesTodayAndRedrawsTheWidget() {
+        clock.now = osloCalendar.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 23, minute: 59))!
+        let services = makeServices()
+        #expect(osloCalendar.component(.day, from: services.today) == 9)
+
+        clock.advance(120)
+        services.timeChanged()
+        #expect(osloCalendar.component(.day, from: services.today) == 10)
+        #expect(widgets.reloads == 1)
+    }
+
+    @Test func dayThatTurnedOverWhileSuspendedIsCaughtOnReturn() {
+        clock.now = osloCalendar.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 23, minute: 59))!
+        let services = makeServices()
+        services.reconcile()
+        #expect(widgets.reloads == 0)
+
+        clock.advance(120)
+        services.reconcile()
+        #expect(osloCalendar.component(.day, from: services.today) == 10)
+        #expect(widgets.reloads == 1)
+    }
+
+    @Test func clockChangeReaimsTheAlertAndTheCard() {
+        let services = makeServices()
+        services.engine.start(name: "Essay")
+        liveActivity.calls = []
+        notifier.calls = []
+
+        clock.advance(600) // The clock is set forward.
+        services.timeChanged()
+        #expect(liveActivity.calls == ["sync"])
+        #expect(notifier.calls == ["schedule"])
+    }
+
+    @Test func repeatedLockScreenTapRedrawsTheCard() async throws {
+        let services = makeServices()
+        services.engine.start(name: "Essay")
+        let id = try #require(services.engine.active?.id)
+        await services.lockScreenSetPaused(true, sessionID: id)
+        #expect(services.engine.active?.isPaused == true)
+        liveActivity.calls = []
+
+        await services.lockScreenSetPaused(true, sessionID: id)
+        #expect(services.engine.active?.isPaused == true)
+        #expect(liveActivity.calls == ["sync"])
+        #expect(notifier.flushes == 2 && liveActivity.flushes == 2)
+    }
+
+    @Test func buttonOnALeftoverCardClearsItWhenIdle() async {
+        let services = makeServices()
+        await services.lockScreenSetPaused(true, sessionID: UUID())
+        #expect(services.engine.stage == .idle)
+        #expect(liveActivity.calls == ["endAll"])
+    }
+
+    @Test func undoBringsTheCardAndTheAlertBack() {
+        let services = makeServices()
+        services.engine.start(name: "Essay")
+        services.engine.cancel()
+        #expect(announcer.spoken.last?.contains("Undo") == true)
+
+        services.engine.undoCancel()
+        #expect(liveActivity.calls == ["sync", "endAll", "sync"])
+        #expect(notifier.calls == ["schedule", "cancel", "schedule"])
+    }
+
     @Test func alertStatusFollowsPermissions() async {
         let services = makeServices()
         #expect(services.alertStatus == .unknown)
@@ -152,7 +262,7 @@ struct AppServicesTests {
         let services = makeServices(historyUnavailable: true)
         finishFocus(services)
 
-        #expect(services.engine.stage == .focusComplete(name: "Essay"))
+        #expect(services.engine.stage.completedFocus?.name == "Essay")
         #expect(state.state.pendingRecords?.map(\.name) == ["Essay"])
         // The waiting session still counts on the Lock Screen.
         #expect(liveActivity.lastCompletedToday == 1)

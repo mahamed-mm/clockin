@@ -8,12 +8,13 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 
 ## Features
 
-- **One session at a time:** 25-minute focus, pause and resume, or cancel without recording. A 5-minute break starts manually and never counts as focus time.
-- **Survives relaunch:** the timer is date-based, so a running session is restored exactly after the app is closed or the phone restarts.
+- **One session at a time:** 25-minute focus, pause and resume, or cancel without recording (and undo the cancel for a few seconds). A 5-minute break starts manually and never counts as focus time.
+- **Survives relaunch:** the timer is date-based, so a running session is restored exactly after the app is closed or the phone restarts. A session that finished while the app was closed opens quietly, saying when it finished.
+- **Keeps up with the clock:** "today" moves on at midnight, and on time zone and clock changes, everywhere at once. Setting the clock back can't add time to a session.
 - **History:** today's focused minutes, this week as session columns, and every completed session grouped by day.
 - **Live Activity:** a Lock Screen card and Dynamic Island with a live countdown and a pause/resume button that works without opening the app.
 - **StandBy and bedside mode:** a full-screen bedside clock when the phone is charging on its side, and a landscape bedside layout inside the app.
-- **Home Screen widget:** today's progress in small and medium sizes; tapping it opens the Focus screen.
+- **Home Screen widget:** today's progress in small and medium sizes, including tinted and clear Home Screens; tapping it opens the Focus screen.
 - **Feel:** subtle haptics on every transition, a custom Core Haptics pattern and a sunburst when a session completes, and calm fallbacks when Reduce Motion is on.
 
 ## Screenshots
@@ -92,6 +93,7 @@ Logs go to the unified log under the subsystem `com.moha.clockin` (categories `s
 
 - History is a SwiftData store with a versioned schema (`Shared/Model/ClockinSchema.swift`). Never edit a shipped version. Add a new one and a migration stage instead.
 - The running session is saved as JSON in the App Group's defaults. Fields added after 1.0 must be optional.
+- The widget doesn't open the store. The app writes today's totals to the App Group (`Shared/Store/WidgetSnapshot.swift`) after every change; until it has, the widget reads the store read-only, so it can never run a migration.
 - `ClockinTests/StoreCompatibilityTests.swift` checks both against real data written by 1.0, including `ClockinTests/Fixtures/ClockinV1.store`.
 
 ## Project structure

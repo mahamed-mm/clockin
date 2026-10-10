@@ -6,6 +6,8 @@ import SwiftUI
 /// Serif phase title with a time-range line underneath (Tiimo-style).
 struct FocusHeader: View {
     let stage: SessionStage
+    @Environment(AppServices.self) private var services
+    @Environment(SessionEngine.self) private var engine
 
     var body: some View {
         HStack(alignment: .top) {
@@ -23,7 +25,7 @@ struct FocusHeader: View {
                             .contentTransition(.numericText())
                     }
                     Text("·").foregroundStyle(Retro.inkSoft.opacity(0.6))
-                    TodayChip()
+                    TodayChip(day: services.today)
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -63,23 +65,25 @@ struct FocusHeader: View {
             return session.phase == .focus
                 ? TimeFormat.range(end.addingTimeInterval(-session.plannedDuration), end)
                 : "Until \(TimeFormat.time(end))"
-        case .focusComplete:
-            return "Take a breather"
+        case .focusComplete(let focus):
+            // An old completion opens quietly, saying when it was.
+            return engine.freshness(endedAt: focus.completedAt, at: now) == .stale
+                ? TimeFormat.finished(focus.completedAt, now: now)
+                : "Take a breather"
         }
     }
 }
 
 /// "Today 50 min", live from SwiftData plus any sessions waiting to be saved.
+/// `day` comes from `AppServices.today`, so the query moves on at midnight.
 struct TodayChip: View {
     private let day: Date
     @Query private var records: [FocusRecord]
     @Environment(SessionEngine.self) private var engine
 
-    init(day: Date = .now) {
+    init(day: Date) {
         self.day = day
-        let start = Calendar.current.startOfDay(for: day)
-        let end = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? day
-        _records = Query(filter: #Predicate<FocusRecord> { $0.completedAt >= start && $0.completedAt < end })
+        _records = Query(filter: FocusRecord.completed(on: day))
     }
 
     var body: some View {
@@ -96,23 +100,23 @@ struct TodayChip: View {
 /// Today's session pills, live from SwiftData plus any sessions waiting to be saved.
 struct TodaySessionPills: View {
     let inProgress: Bool
+    private let day: Date
     var tint: Color = Retro.orange
     /// Scales the pills with the dial.
     var scale: CGFloat = 1
     @Query private var records: [FocusRecord]
     @Environment(SessionEngine.self) private var engine
 
-    init(inProgress: Bool, tint: Color = Retro.orange, scale: CGFloat = 1) {
+    init(inProgress: Bool, day: Date, tint: Color = Retro.orange, scale: CGFloat = 1) {
         self.inProgress = inProgress
+        self.day = day
         self.tint = tint
         self.scale = scale
-        let start = Calendar.current.startOfDay(for: .now)
-        let end = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? .now
-        _records = Query(filter: #Predicate<FocusRecord> { $0.completedAt >= start && $0.completedAt < end })
+        _records = Query(filter: FocusRecord.completed(on: day))
     }
 
     var body: some View {
-        let count = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: .now)).count
+        let count = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: day)).count
         SessionPills(completed: count, inProgress: inProgress,
                      pillWidth: 20 * scale, pillHeight: 5.5 * scale, spacing: 4 * scale, tint: tint)
             .animation(.smooth, value: count)
@@ -134,6 +138,7 @@ struct DialFace: View {
     var showsCountdown = true
     /// Today's session pills under the countdown (bedside shows its own).
     var showsPills = true
+    @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -205,7 +210,7 @@ struct DialFace: View {
                     .transition(.opacity)
             }
             if showsPills {
-                TodaySessionPills(inProgress: session?.phase == .focus,
+                TodaySessionPills(inProgress: session?.phase == .focus, day: services.today,
                                   tint: tint, scale: size / 320)
                     .padding(.top, size * 0.02)
             }
@@ -347,7 +352,7 @@ struct AlertHint: View {
             .foregroundStyle(Retro.inkSoft)
             .buttonStyle(.borderless)
             .multilineTextAlignment(.center)
-            .frame(minHeight: 32)
+            .frame(minHeight: 44)
         }
     }
 
@@ -371,31 +376,57 @@ struct AlertHint: View {
     }
 }
 
+// MARK: - Undo cancel
+
+/// "Session cancelled · Undo", shown for a few seconds after Cancel.
+struct UndoCancelBar: View {
+    let undo: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("Session cancelled")
+                .foregroundStyle(Retro.inkSoft)
+            Text("·")
+                .foregroundStyle(Retro.inkSoft.opacity(0.6))
+                .accessibilityHidden(true)
+            Button(action: undo) {
+                Text("Undo")
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(.rect)
+            }
+            .fontWeight(.semibold)
+            .foregroundStyle(Retro.orange)
+            .accessibilityHint("Brings the session back")
+        }
+        .font(.retro(.body))
+        .buttonStyle(.borderless)
+    }
+}
+
 // MARK: - Completion
 
-/// TIDE-style stat trio shown after a focus session completes.
+/// TIDE-style stat trio shown after a focus session completes: this
+/// session's length and name, and the total for `day`.
 struct CompletionSummary: View {
-    let name: String
+    let focus: CompletedFocus
+    private let day: Date
     @Query private var today: [FocusRecord]
     @Environment(SessionEngine.self) private var engine
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(name: String) {
-        self.name = name
-        let start = Calendar.current.startOfDay(for: .now)
-        let end = Calendar.current.date(byAdding: .day, value: 1, to: start) ?? .now
-        _today = Query(filter: #Predicate<FocusRecord> { $0.completedAt >= start && $0.completedAt < end },
-                       sort: \.completedAt, order: .reverse)
+    init(focus: CompletedFocus, day: Date) {
+        self.focus = focus
+        self.day = day
+        _today = Query(filter: FocusRecord.completed(on: day))
     }
 
     var body: some View {
-        let rows = TodayStats.rows(saved: today.map(\.row), pending: engine.pendingRecords(on: .now))
-        let last = rows.max { $0.completedAt < $1.completedAt }?.seconds ?? Durations.duration(for: .focus)
+        let rows = TodayStats.rows(saved: today.map(\.row), pending: engine.pendingRecords(on: day))
         let total = rows.reduce(0) { $0 + $1.seconds }
         HStack(spacing: 0) {
-            stat(TimeFormat.duration(last), "Focused", index: 0)
+            stat(TimeFormat.duration(focus.focusSeconds), "Focused", index: 0)
             divider
-            stat(name, "Session", index: 1)
+            stat(focus.name, "Session", index: 1)
             divider
             stat(TimeFormat.duration(total), "Today", index: 2)
         }

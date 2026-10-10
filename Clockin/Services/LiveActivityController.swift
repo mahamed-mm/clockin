@@ -5,8 +5,10 @@ import Foundation
 @MainActor
 protocol LiveActivityControlling: AnyObject {
     func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval)
-    /// Leaves a "focus done" card on the Lock Screen until the user moves on.
-    func showFocusDone(completedToday: Int)
+    /// Ends the session's card on a "focus done" note. With `lingers` it stays
+    /// on the Lock Screen until the user moves on; without, it goes at once,
+    /// for a completion only noticed long after the fact.
+    func showFocusDone(completedToday: Int, lingers: Bool)
     func endAll()
     func areActivitiesEnabled() async -> Bool
     /// Waits until every queued ActivityKit call has run.
@@ -25,12 +27,14 @@ final class LiveActivityController: LiveActivityControlling {
         let state = FocusActivityAttributes.ContentState(session: session, completedToday: completedToday,
                                                          breakDuration: breakDuration)
         let content = ActivityContent(state: state, staleDate: session.endDate)
-        let name = session.name
-        enqueue { await LiveActivities.sync(name: name, content: content) }
+        // Capped here too, for a long name saved by a build that didn't cap.
+        let attributes = FocusActivityAttributes(sessionName: ActiveSession.cleanName(session.name),
+                                                 sessionID: session.id)
+        enqueue { await LiveActivities.sync(attributes: attributes, content: content) }
     }
 
-    func showFocusDone(completedToday: Int) {
-        enqueue { await LiveActivities.endRunningAsDone(completedToday: completedToday) }
+    func showFocusDone(completedToday: Int, lingers: Bool) {
+        enqueue { await LiveActivities.endRunningAsDone(completedToday: completedToday, lingers: lingers) }
     }
 
     func endAll() {
@@ -72,29 +76,38 @@ private enum LiveActivities {
         }
     }
 
+    /// Updates the session's card, or replaces whatever is showing with one.
+    /// A card from a build before ids is matched by name and updated in place:
+    /// replacing it can fail when this runs from the Lock Screen button with
+    /// the app in the background, where new cards can't be requested.
     @concurrent
-    static func sync(name: String, content: Content) async {
-        if let activity = running, activity.attributes.sessionName == name {
+    static func sync(attributes: FocusActivityAttributes, content: Content) async {
+        if let activity = running, isSameSession(activity.attributes, attributes) {
             await activity.update(content)
             return
         }
         await endAll()
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         do {
-            _ = try Activity.request(attributes: FocusActivityAttributes(sessionName: name), content: content)
+            _ = try Activity.request(attributes: attributes, content: content)
         } catch {
             Log.liveActivity.error("Couldn't start a Live Activity: \(error, privacy: .public)")
         }
     }
 
+    private static func isSameSession(_ shown: FocusActivityAttributes, _ wanted: FocusActivityAttributes) -> Bool {
+        if let id = shown.sessionID { return id == wanted.sessionID }
+        return shown.sessionName == wanted.sessionName
+    }
+
     @concurrent
-    static func endRunningAsDone(completedToday: Int) async {
+    static func endRunningAsDone(completedToday: Int, lingers: Bool) async {
         guard let activity = running else { return }
         var state = activity.content.state
         state.completedToday = completedToday
         state.pausedRemaining = nil
         state.endDate = min(state.endDate ?? .now, .now)
-        await activity.end(Content(state: state, staleDate: nil), dismissalPolicy: .default)
+        await activity.end(Content(state: state, staleDate: nil), dismissalPolicy: lingers ? .default : .immediate)
     }
 
     @concurrent
