@@ -13,6 +13,8 @@ enum SessionEvent: Equatable, Sendable {
     case breakStarted
     case breakFinished
     case breakSkipped
+    /// The user moved on from "focus complete" without starting a break.
+    case completionDismissed
     case restored
 }
 
@@ -127,7 +129,7 @@ final class SessionEngine {
         case .active(let session) where session.phase == .rest:
             apply(.idle, event: .breakSkipped)
         case .focusComplete:
-            apply(.idle, event: nil)
+            apply(.idle, event: .completionDismissed)
         default:
             break
         }
@@ -162,13 +164,11 @@ final class SessionEngine {
 
     // MARK: - Internals
 
-    private func apply(_ newStage: SessionStage, event: SessionEvent?) {
+    private func apply(_ newStage: SessionStage, event: SessionEvent) {
         stage = newStage
         persist()
         scheduleCompletionCheck()
-        if let event {
-            effects?.sessionEngine(self, didEmit: event)
-        }
+        effects?.sessionEngine(self, didEmit: event)
     }
 
     private func persist() {

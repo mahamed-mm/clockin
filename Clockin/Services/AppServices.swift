@@ -41,7 +41,7 @@ final class AppServices: SessionEffects {
         case .paused:
             if let session = engine.active { liveActivity.sync(with: session, completedToday: completedToday) }
             EndNotification.cancel()
-        case .cancelled, .breakSkipped:
+        case .cancelled, .breakSkipped, .completionDismissed:
             liveActivity.endAll()
             EndNotification.cancel()
         case .focusCompleted:
@@ -53,6 +53,24 @@ final class AppServices: SessionEffects {
         }
         lastEvent = EventStamp(event: event, serial: lastEvent.serial + 1)
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// Restores the engine at launch, then clears anything it no longer explains.
+    func restore() {
+        engine.restore()
+        endOrphanedActivities()
+    }
+
+    /// Catches up after returning to the foreground.
+    func reconcile() {
+        engine.reconcile()
+        endOrphanedActivities()
+    }
+
+    /// When idle nothing should be on the Lock Screen or in the Dynamic Island,
+    /// e.g. a card left by a session that ended while the app wasn't running.
+    private func endOrphanedActivities() {
+        if engine.stage == .idle, liveActivity.hasActivities { liveActivity.endAll() }
     }
 
     /// Focus sessions saved today, for the session pills on the Lock Screen.
@@ -87,7 +105,7 @@ struct EventStamp: Equatable {
         case .breakStarted: .impact(flexibility: .soft, intensity: 0.7)
         case .breakSkipped: .impact(weight: .light)
         case .breakFinished: .success
-        case .focusCompleted, .restored, nil: nil
+        case .focusCompleted, .completionDismissed, .restored, nil: nil
         }
     }
 }

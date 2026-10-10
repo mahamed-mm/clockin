@@ -11,6 +11,7 @@ enum EndNotification {
         }
     }
 
+    @MainActor
     static func schedule(for session: ActiveSession) {
         cancel()
         guard let end = session.endDate else { return }
@@ -21,7 +22,7 @@ enum EndNotification {
         switch session.phase {
         case .focus:
             content.title = "Focus complete"
-            content.body = "\(session.name) is done. Time for a 5-minute break."
+            content.body = "\(session.name) is done. Time for a \(Durations.breakLengthPhrase) break."
         case .rest:
             content.title = "Break's over"
             content.body = "Ready for the next session?"

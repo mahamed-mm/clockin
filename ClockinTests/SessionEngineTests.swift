@@ -1,3 +1,4 @@
+import ActivityKit
 import Foundation
 import SwiftData
 import Testing
@@ -138,6 +139,18 @@ struct SessionEngineTests {
         #expect(engine.active?.phase == .rest)
         engine.skipBreak()
         #expect(engine.stage == .idle)
+    }
+
+    @Test func dismissingACompletionIsAnEvent() {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        clock.advance(Durations.duration(for: .focus))
+        engine.reconcile()
+        engine.skipBreak()
+
+        #expect(engine.stage == .idle)
+        #expect(effects.events.last == .completionDismissed)
+        #expect(store.state == PersistedSessionState())
     }
 
     @Test func restoresRunningTimerAfterRelaunch() throws {
@@ -284,6 +297,30 @@ struct MotionTests {
         #expect(Motion.speed == 1)
         settings.slowAnimations = true
         #expect(Motion.speed == 4)
+    }
+}
+
+@MainActor
+struct EndCopyTests {
+    @Test func breakPhraseFollowsTheBreakLength() {
+        let settings = DevSettings.shared
+        let original = settings.shortTimers
+        defer { settings.shortTimers = original }
+
+        settings.shortTimers = false
+        #expect(Durations.breakLengthPhrase == "5-minute")
+        settings.shortTimers = true
+        #expect(Durations.breakLengthPhrase == "5-second")
+    }
+}
+
+struct LiveActivityTests {
+    /// A countdown turns stale at its end date, which is when completion has to find it.
+    @Test func staleCountdownStillShowsTheSession() {
+        #expect(LiveActivityController.isShowingSession(.active))
+        #expect(LiveActivityController.isShowingSession(.stale))
+        #expect(!LiveActivityController.isShowingSession(.ended))
+        #expect(!LiveActivityController.isShowingSession(.dismissed))
     }
 }
 

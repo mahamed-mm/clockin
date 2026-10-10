@@ -20,6 +20,17 @@ final class LiveActivityController {
     func endAll() {
         Task { await LiveActivities.endAll() }
     }
+
+    var hasActivities: Bool {
+        !Activity<FocusActivityAttributes>.activities.isEmpty
+    }
+
+    /// Whether an activity in this state is still showing a session. A running
+    /// activity turns `.stale` once its end date passes, which is exactly when
+    /// a finished session needs to find it.
+    nonisolated static func isShowingSession(_ state: ActivityState) -> Bool {
+        state == .active || state == .stale
+    }
 }
 
 /// ActivityKit calls, kept off the main actor because `Activity` isn't Sendable.
@@ -27,7 +38,9 @@ private enum LiveActivities {
     typealias Content = ActivityContent<FocusActivityAttributes.ContentState>
 
     private static var running: Activity<FocusActivityAttributes>? {
-        Activity<FocusActivityAttributes>.activities.first { $0.activityState == .active }
+        Activity<FocusActivityAttributes>.activities.first {
+            LiveActivityController.isShowingSession($0.activityState)
+        }
     }
 
     @concurrent

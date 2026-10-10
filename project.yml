@@ -27,10 +27,13 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.moha.clockin
+        com.apple.developer.usernotifications.time-sensitive: true
     info:
       path: Clockin/Info.plist
       properties:
         CFBundleDisplayName: Clockin
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen:
           UIColorName: Paper
         UIApplicationSceneManifest:
@@ -46,6 +49,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.moha.clockin
+        TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: BurntOrange
     dependencies:
@@ -67,11 +71,14 @@ targets:
       path: ClockinWidgets/Info.plist
       properties:
         CFBundleDisplayName: Clockin
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.moha.clockin.widgets
+        TARGETED_DEVICE_FAMILY: "1"
         SKIP_INSTALL: YES
   ClockinTests:
     type: bundle.unit-test
@@ -83,6 +90,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.moha.clockin.tests
+        TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
 schemes:
   Clockin:

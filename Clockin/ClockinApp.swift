@@ -23,11 +23,11 @@ struct ClockinApp: App {
                     DemoData.seedIfRequested(into: services.container.mainContext)
                     #endif
                     EndNotification.requestAuthorization()
-                    services.engine.restore()
+                    services.restore()
                 }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { services.engine.reconcile() }
+            if phase == .active { services.reconcile() }
         }
     }
 }

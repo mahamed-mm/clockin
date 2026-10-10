@@ -17,6 +17,13 @@ enum Durations {
         #endif
         return phase == .focus ? focus : shortBreak
     }
+
+    /// "5-minute", as in "Take a 5-minute break"; "5-second" with debug test timers.
+    @MainActor
+    static var breakLengthPhrase: String {
+        let seconds = Int(duration(for: .rest))
+        return seconds >= 60 ? "\(seconds / 60)-minute" : "\(seconds)-second"
+    }
 }
 
 #if DEBUG
