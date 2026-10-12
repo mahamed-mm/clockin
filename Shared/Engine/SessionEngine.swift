@@ -30,7 +30,8 @@ enum Freshness: Equatable, Sendable {
     /// Long enough ago, or on an earlier day, that celebrating would be odd.
     case stale
 
-    /// An ending stays `recent` for `recentWindow` (the app uses the break length).
+    /// An ending stays `recent` for `recentWindow`: the length of the break
+    /// that follows a focus phase, or of the break itself.
     static func of(endedAt: Date, now: Date, recentWindow: TimeInterval, calendar: Calendar) -> Freshness {
         let age = now.timeIntervalSince(endedAt)
         if age < 3 { return .live }
@@ -59,6 +60,9 @@ final class SessionEngine {
     /// How long Cancel can be undone, asked at each cancel. The app gives
     /// assistive technologies longer, since reaching Undo takes them longer.
     @ObservationIgnored var undoWindow: @MainActor () -> TimeInterval = { SessionEngine.standardUndoWindow }
+    /// The lengths for the next session, read when it starts. The app
+    /// supplies them from Settings.
+    @ObservationIgnored var plan: @MainActor () -> TimerPlan = { .classic }
 
     @ObservationIgnored let now: () -> Date
     @ObservationIgnored let calendar: Calendar
@@ -111,9 +115,16 @@ final class SessionEngine {
         pendingRecords.filter { calendar.isDate($0.completedAt, inSameDayAs: day) }
     }
 
-    /// How current a phase that ended at `endedAt` is at `date`.
-    func freshness(endedAt: Date, at date: Date) -> Freshness {
-        Freshness.of(endedAt: endedAt, now: date, recentWindow: Durations.duration(for: .rest), calendar: calendar)
+    /// How current a completed focus phase is at `date`. It stays recent
+    /// for as long as the break it earned.
+    func freshness(of focus: CompletedFocus, at date: Date) -> Freshness {
+        Freshness.of(endedAt: focus.completedAt, now: date, recentWindow: breakLength(after: focus),
+                     calendar: calendar)
+    }
+
+    /// The break a completed focus phase earned.
+    func breakLength(after focus: CompletedFocus) -> TimeInterval {
+        focus.breakSeconds ?? plan().shortBreak
     }
 
     // MARK: - Actions
@@ -122,15 +133,16 @@ final class SessionEngine {
     @discardableResult
     func start(name: String) -> Bool {
         guard !hasActiveSession else { return false }
-        let duration = Durations.duration(for: .focus)
+        let plan = plan()
         let startedAt = now()
         let session = ActiveSession(
             id: UUID(),
             name: ActiveSession.cleanName(name),
             phase: .focus,
-            plannedDuration: duration,
+            plannedDuration: plan.focus,
             focusStartedAt: startedAt,
-            state: .running(endDate: startedAt.addingTimeInterval(duration))
+            state: .running(endDate: startedAt.addingTimeInterval(plan.focus)),
+            nextBreakSeconds: plan.shortBreak
         )
         apply(.active(session), event: .started)
         return true
@@ -192,7 +204,7 @@ final class SessionEngine {
 
     func startBreak() {
         guard case .focusComplete(let focus) = stage else { return }
-        let duration = Durations.duration(for: .rest)
+        let duration = breakLength(after: focus)
         let start = now()
         let session = ActiveSession(
             id: UUID(),
@@ -227,14 +239,16 @@ final class SessionEngine {
             return
         }
         let endedAt = session.endDate ?? now()
-        let freshness = freshness(endedAt: endedAt, at: now())
         switch session.phase {
         case .focus:
             let focus = CompletedFocus(id: session.id, name: session.name, startedAt: session.focusStartedAt,
-                                       completedAt: endedAt, focusSeconds: session.plannedDuration)
+                                       completedAt: endedAt, focusSeconds: session.plannedDuration,
+                                       breakSeconds: session.nextBreakSeconds ?? plan().shortBreak)
             record(focus)
-            apply(.focusComplete(focus), event: .focusCompleted(freshness))
+            apply(.focusComplete(focus), event: .focusCompleted(freshness(of: focus, at: now())))
         case .rest:
+            let freshness = Freshness.of(endedAt: endedAt, now: now(), recentWindow: session.plannedDuration,
+                                         calendar: calendar)
             apply(.idle, event: .breakFinished(freshness))
         }
     }

@@ -26,7 +26,7 @@ enum DemoData {
         while day < today {
             let count = pastCounts[index % pastCounts.count]
             for slot in 0..<count {
-                let end = day.addingTimeInterval(TimeInterval(9 * 3600 + slot * 35 * 60) + Durations.focus)
+                let end = day.addingTimeInterval(TimeInterval(9 * 3600 + slot * 35 * 60) + Preset.classic.focus)
                 insert(name: names[(index + slot) % names.count], endingAt: end, into: context)
             }
             day = calendar.date(byAdding: .day, value: 1, to: day) ?? today
@@ -36,7 +36,7 @@ enum DemoData {
         // Three sessions earlier today, ending well before now.
         for slot in 0..<3 {
             let end = now.addingTimeInterval(-TimeInterval((3 - slot) * 35 * 60) + 300)
-            insert(name: names[slot], endingAt: max(end, today.addingTimeInterval(Durations.focus)), into: context)
+            insert(name: names[slot], endingAt: max(end, today.addingTimeInterval(Preset.classic.focus)), into: context)
         }
         try? context.save()
     }
@@ -48,15 +48,15 @@ enum DemoData {
     static func prepareFinishingSession(now: Date = .now) {
         guard ProcessInfo.processInfo.arguments.contains("-DemoFinishing") else { return }
         let session = ActiveSession(id: UUID(), name: "Thesis outline", phase: .focus,
-                                    plannedDuration: Durations.focus,
-                                    focusStartedAt: now.addingTimeInterval(3 - Durations.focus),
+                                    plannedDuration: Preset.classic.focus,
+                                    focusStartedAt: now.addingTimeInterval(3 - Preset.classic.focus),
                                     state: .running(endDate: now.addingTimeInterval(3)))
         DefaultsSessionStateStore().save(PersistedSessionState(active: session))
     }
 
     private static func insert(name: String, endingAt end: Date, into context: ModelContext) {
-        context.insert(FocusRecord(id: UUID(), name: name, startedAt: end.addingTimeInterval(-Durations.focus),
-                                   completedAt: end, focusSeconds: Durations.focus))
+        context.insert(FocusRecord(id: UUID(), name: name, startedAt: end.addingTimeInterval(-Preset.classic.focus),
+                                   completedAt: end, focusSeconds: Preset.classic.focus))
     }
 }
 #endif

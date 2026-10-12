@@ -192,8 +192,8 @@ struct FocusView: View {
             session.isPaused
                 ? (String(localized: "Resume"), "play.fill", engine.resume)
                 : (String(localized: "Pause"), "pause.fill", engine.pause)
-        case .focusComplete:
-            (Copy.startBreak(seconds: Durations.duration(for: .rest)), "cup.and.saucer.fill", engine.startBreak)
+        case .focusComplete(let focus):
+            (Copy.startBreak(seconds: engine.breakLength(after: focus)), "cup.and.saucer.fill", engine.startBreak)
         }
     }
 

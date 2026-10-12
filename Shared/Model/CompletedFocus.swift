@@ -8,4 +8,7 @@ struct CompletedFocus: Codable, Equatable, Sendable {
     var startedAt: Date
     var completedAt: Date
     var focusSeconds: TimeInterval
+    /// Length of the break it earned, fixed when the focus phase started.
+    /// Nil for completions saved by older builds.
+    var breakSeconds: TimeInterval? = nil
 }

@@ -23,7 +23,7 @@ struct AppServicesTests {
 
     func finishFocus(_ services: AppServices) {
         services.engine.start(name: "Essay")
-        clock.advance(Durations.duration(for: .focus))
+        clock.advance(Preset.classic.focus)
         services.reconcile()
     }
 
@@ -32,7 +32,7 @@ struct AppServicesTests {
         services.engine.start(name: "Essay")
 
         #expect(liveActivity.calls == ["sync"])
-        #expect(liveActivity.lastBreakDuration == Durations.duration(for: .rest))
+        #expect(liveActivity.lastBreakDuration == Preset.classic.shortBreak)
         #expect(notifier.calls == ["schedule"])
         #expect(widgets.reloads == 1)
     }
@@ -79,7 +79,7 @@ struct AppServicesTests {
         let services = makeServices()
         finishFocus(services)
         services.engine.startBreak()
-        clock.advance(Durations.duration(for: .rest))
+        clock.advance(Preset.classic.shortBreak)
         services.reconcile()
 
         #expect(services.engine.stage == .idle)
@@ -91,7 +91,7 @@ struct AppServicesTests {
         let services = makeServices()
         finishFocus(services)
         services.engine.startBreak()
-        clock.advance(Durations.duration(for: .rest) + 3_600)
+        clock.advance(Preset.classic.shortBreak + 3_600)
         services.reconcile()
 
         #expect(services.engine.stage == .idle)
@@ -131,7 +131,7 @@ struct AppServicesTests {
     @Test func staleCompletionOpensQuietly() {
         let services = makeServices()
         services.engine.start(name: "Essay")
-        clock.advance(Durations.duration(for: .focus) + 3_600)
+        clock.advance(Preset.classic.focus + 3_600)
         services.reconcile()
 
         #expect(liveActivity.calls == ["sync", "done-quietly"])
@@ -145,7 +145,7 @@ struct AppServicesTests {
     @Test func recentCompletionCelebratesWithoutSpeaking() {
         let services = makeServices()
         services.engine.start(name: "Essay")
-        clock.advance(Durations.duration(for: .focus) + 60)
+        clock.advance(Preset.classic.focus + 60)
         services.reconcile()
 
         #expect(liveActivity.calls == ["sync", "done"])
@@ -160,7 +160,7 @@ struct AppServicesTests {
 
         let snapshot = try #require(widgets.lastSnapshot)
         #expect(snapshot.writtenAt == clock.now)
-        #expect(snapshot.sessions.map(\.seconds) == [Durations.duration(for: .focus)])
+        #expect(snapshot.sessions.map(\.seconds) == [Preset.classic.focus])
     }
 
     @Test func launchWritesTheWidgetSnapshot() {

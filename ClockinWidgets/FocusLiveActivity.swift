@@ -125,7 +125,7 @@ private struct LockScreenFocusView: View {
                         .lineLimit(1)
                     if done {
                         Text(state.phase == .focus
-                             ? Copy.breakLine(seconds: state.breakDuration ?? Durations.shortBreak)
+                             ? Copy.breakLine(seconds: state.breakDuration ?? Preset.classic.shortBreak)
                              : Copy.readyWhenYouAre)
                             .font(.retro(.meta))
                             .foregroundStyle(tint)

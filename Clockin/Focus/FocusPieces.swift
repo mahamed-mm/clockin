@@ -8,6 +8,7 @@ struct FocusHeader: View {
     let stage: SessionStage
     @Environment(AppServices.self) private var services
     @Environment(SessionEngine.self) private var engine
+    @State private var showingSettings = false
 
     var body: some View {
         HStack(alignment: .top) {
@@ -31,18 +32,30 @@ struct FocusHeader: View {
                 .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 8)
-            #if DEBUG
-            // Demo data is for screenshots, so keep developer chrome out of them.
-            if !DemoData.isRequested {
-                HStack(spacing: 10) {
+            HStack(spacing: 2) {
+                #if DEBUG
+                // Demo data is for screenshots, so keep developer chrome out of them.
+                if !DemoData.isRequested {
                     TestTimersBadge()
-                    DevMenu().foregroundStyle(Retro.inkSoft)
+                    DevMenu()
+                        .frame(width: 44, height: 44)
                 }
-                .padding(.top, 10)
+                #endif
+                Button { showingSettings = true } label: {
+                    Image(systemName: "gearshape")
+                        .font(.title3)
+                        .frame(width: 44, height: 44)
+                        .contentShape(.rect)
+                }
+                .accessibilityLabel("Settings")
             }
-            #endif
+            .foregroundStyle(Retro.inkSoft)
+            .buttonStyle(.borderless)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .sheet(isPresented: $showingSettings) {
+            SettingsSheet()
+        }
     }
 
     private var title: String {
@@ -56,7 +69,7 @@ struct FocusHeader: View {
     private func meta(at now: Date) -> String {
         switch stage {
         case .idle:
-            return String(localized: "\(TimeFormat.duration(Durations.duration(for: .focus))) session")
+            return String(localized: "\(TimeFormat.duration(services.plan.focus)) session")
         case .active(let session):
             if session.isPaused {
                 return String(localized: "Paused · \(TimeFormat.clock(session.remaining(at: now))) left")
@@ -67,9 +80,9 @@ struct FocusHeader: View {
                 : String(localized: "Until \(TimeFormat.time(end))")
         case .focusComplete(let focus):
             // An old completion opens quietly, saying when it was.
-            return engine.freshness(endedAt: focus.completedAt, at: now) == .stale
+            return engine.freshness(of: focus, at: now) == .stale
                 ? TimeFormat.finished(focus.completedAt, now: now)
-                : Copy.breakLine(seconds: Durations.duration(for: .rest))
+                : Copy.breakLine(seconds: engine.breakLength(after: focus))
         }
     }
 }
@@ -145,7 +158,7 @@ struct DialFace: View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let now = context.date
             let session = activeSession
-            let remaining = session?.remaining(at: now) ?? Durations.duration(for: .focus)
+            let remaining = session?.remaining(at: now) ?? services.plan.focus
             let value = arcValue(session: session, now: now)
 
             ZStack {

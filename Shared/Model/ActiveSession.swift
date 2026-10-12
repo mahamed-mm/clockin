@@ -20,6 +20,9 @@ struct ActiveSession: Codable, Equatable, Sendable {
     /// When the focus phase began; used for the record's start time.
     var focusStartedAt: Date
     var state: RunState
+    /// Focus only: the break that follows, taken from Settings at start so
+    /// the end alert and the Lock Screen can name it. Nil from older builds.
+    var nextBreakSeconds: TimeInterval? = nil
 
     /// Longest name kept. The name rides along in the Live Activity, whose
     /// whole payload must stay under 4 KB or the request fails.

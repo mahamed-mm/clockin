@@ -58,17 +58,31 @@ final class AppServices: SessionEffects {
     /// zone and clock changes, and on return to the foreground, so views that
     /// read it never keep showing yesterday while the app stays open.
     private(set) var today: Date
+    /// What the user picked in Settings. Applies from the next session on.
+    var settings: TimerSettings {
+        didSet { settingsStore.save(settings) }
+    }
+
+    /// The lengths a new session gets: Settings, or seconds-long test timers.
+    var plan: TimerPlan {
+        #if DEBUG
+        if DevSettings.shared.shortTimers { return .test }
+        #endif
+        return settings.plan
+    }
 
     @ObservationIgnored private let liveActivity: LiveActivityControlling
     @ObservationIgnored private let notifications: EndNotifying
     @ObservationIgnored private let widgets: WidgetReloading
     @ObservationIgnored private let haptics: CompletionFeedback
     @ObservationIgnored private let announce: @MainActor (String) -> Void
+    @ObservationIgnored private let settingsStore: SettingsStoring
     @ObservationIgnored private var timeObservers: [NSObjectProtocol] = []
 
     init(container: ModelContainer,
          historyUnavailable: Bool = false,
          stateStore: SessionStateStoring,
+         settingsStore: SettingsStoring = InMemorySettingsStore(),
          now: @escaping () -> Date = Date.init,
          calendar: Calendar = .autoupdatingCurrent,
          schedulesCompletion: Bool = true,
@@ -85,11 +99,14 @@ final class AppServices: SessionEffects {
         self.haptics = haptics
         self.announce = announce
         self.calendar = calendar
+        self.settingsStore = settingsStore
+        settings = settingsStore.load()
         today = calendar.startOfDay(for: now())
         let log: FocusLogging = historyUnavailable ? UnavailableFocusLog() : SwiftDataFocusLog(container: container)
         engine = SessionEngine(now: now, calendar: calendar, store: stateStore, log: log,
                                schedulesCompletion: schedulesCompletion)
         engine.effects = self
+        engine.plan = { [weak self] in self?.plan ?? .classic }
     }
 
     /// The real thing: the App Group store, ActivityKit, notifications, haptics.
@@ -104,7 +121,7 @@ final class AppServices: SessionEffects {
             container = makeEmptyContainer()
         }
         let services = AppServices(container: container, historyUnavailable: historyUnavailable,
-                                   stateStore: DefaultsSessionStateStore(),
+                                   stateStore: DefaultsSessionStateStore(), settingsStore: DefaultsSettingsStore(),
                                    liveActivity: LiveActivityController(), notifications: EndNotifier(),
                                    widgets: SystemWidgets(), haptics: CompletionHaptics(),
                                    announce: { AccessibilityNotification.Announcement($0).post() })
@@ -170,8 +187,8 @@ final class AppServices: SessionEffects {
                 celebrations += 1
             }
             clearLateAlert(freshness)
-            if freshness == .live {
-                announce("\(Copy.focusComplete). \(Copy.breakLine(seconds: Durations.duration(for: .rest)))")
+            if freshness == .live, let focus = engine.stage.completedFocus {
+                announce("\(Copy.focusComplete). \(Copy.breakLine(seconds: engine.breakLength(after: focus)))")
             }
         case .breakFinished(let freshness):
             liveActivity.endAll()
@@ -278,7 +295,8 @@ final class AppServices: SessionEffects {
     }
 
     private func syncLiveActivity(_ session: ActiveSession) {
-        liveActivity.sync(with: session, completedToday: completedToday, breakDuration: Durations.duration(for: .rest))
+        liveActivity.sync(with: session, completedToday: completedToday,
+                          breakDuration: session.nextBreakSeconds ?? plan.shortBreak)
     }
 
     private func refreshWidgets() {

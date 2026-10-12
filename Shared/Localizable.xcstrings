@@ -1,6 +1,16 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ focus · %@ break" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ focus · %2$@ break"
+          }
+        }
+      }
+    },
     "%@ remaining" : {
 
     },
@@ -100,7 +110,22 @@
         }
       }
     },
+    "About" : {
+
+    },
+    "Alerts & Live Activities" : {
+
+    },
     "Alerts are off, so the timer can't ring. Turn on" : {
+
+    },
+    "Alerts off" : {
+
+    },
+    "Applies from the next session." : {
+
+    },
+    "Asked on your first start" : {
 
     },
     "Break" : {
@@ -121,10 +146,16 @@
     "Cancel session" : {
 
     },
+    "Classic" : {
+
+    },
     "Clockin will ask once to alert you when time's up." : {
 
     },
     "Complete" : {
+
+    },
+    "Deep" : {
 
     },
     "Developer options" : {
@@ -133,10 +164,16 @@
     "Dismiss" : {
 
     },
+    "Done" : {
+
+    },
     "Done for now" : {
 
     },
     "Ends %@" : {
+
+    },
+    "Everything stays on this iPhone." : {
 
     },
     "Finish a focus session and it will show up here." : {
@@ -176,10 +213,19 @@
     "Live Activities are off for Clockin. Turn on" : {
 
     },
+    "Live Activities off" : {
+
+    },
     "Minutes of focus you've finished today." : {
 
     },
     "No sessions yet" : {
+
+    },
+    "On" : {
+
+    },
+    "Open Settings" : {
 
     },
     "Opens Settings" : {
@@ -230,6 +276,12 @@
     "Session name" : {
 
     },
+    "Settings" : {
+
+    },
+    "Short" : {
+
+    },
     "Short timers (10s / 5s)" : {
 
     },
@@ -260,6 +312,9 @@
     "Time for a %lld-second break." : {
 
     },
+    "Timer" : {
+
+    },
     "Today" : {
 
     },
@@ -278,7 +333,13 @@
     "Until %@" : {
 
     },
+    "Version" : {
+
+    },
     "What are you focusing on?" : {
+
+    },
+    "When time's up" : {
 
     },
     "Yesterday" : {

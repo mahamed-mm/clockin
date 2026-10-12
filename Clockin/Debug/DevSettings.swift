@@ -58,4 +58,23 @@ struct TestTimersBadge: View {
         }
     }
 }
+
+/// Developer switches. In memory only, so a test setting can never stick
+/// across launches.
+@MainActor
+@Observable
+final class DevSettings {
+    static let shared = DevSettings()
+
+    /// Seconds instead of minutes (`TimerPlan.test`), via this menu or the
+    /// `-ShortTimers` launch argument.
+    var shortTimers = ProcessInfo.processInfo.arguments.contains("-ShortTimers")
+    /// Stretches every app animation ×4 so motion can be inspected frame by frame.
+    var slowAnimations = ProcessInfo.processInfo.arguments.contains("-SlowAnimations")
+
+    private init() {
+        // Clear the flag older builds persisted.
+        SharedStore.defaults.removeObject(forKey: "dev.shortTimers")
+    }
+}
 #endif

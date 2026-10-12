@@ -34,7 +34,7 @@ struct StandByFocusView: View {
 
                 if done {
                     Text(state.phase == .focus
-                         ? Copy.breakLine(seconds: state.breakDuration ?? Durations.shortBreak)
+                         ? Copy.breakLine(seconds: state.breakDuration ?? Preset.classic.shortBreak)
                          : Copy.readyWhenYouAre)
                         .font(.system(size: 24, weight: .bold, design: .serif))
                         .foregroundStyle(tint)
