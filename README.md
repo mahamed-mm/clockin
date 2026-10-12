@@ -4,14 +4,16 @@
 
 # Clockin
 
-A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on, start a 25-minute focus session, then take a 5-minute break. Built with SwiftUI and Liquid Glass on iOS 26; everything stays on the device.
+A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on, start a focus session, then take a break. Built with SwiftUI and Liquid Glass on iOS 26; everything stays on the device.
 
 ## Features
 
-- **One session at a time:** 25-minute focus, pause and resume, or cancel without recording (and undo the cancel for a few seconds). A 5-minute break starts manually and never counts as focus time.
+- **One session at a time:** focus, pause and resume, or cancel without recording (and undo the cancel for a few seconds). The break starts manually and never counts as focus time.
+- **Your rhythm:** Classic 25/5, Deep 50/10 or Short 15/3, and a 15-minute long break after every fourth full session of the day. "+5 min" in the last five minutes, and "Finish now" to stop early and keep the minutes. Changes in Settings apply from the next session.
 - **Survives relaunch:** the timer is date-based, so a running session is restored exactly after the app is closed or the phone restarts. A session that finished while the app was closed opens quietly, saying when it finished.
 - **Keeps up with the clock:** "today" moves on at midnight, and on time zone and clock changes, everywhere at once. Setting the clock back can't add time to a session.
-- **History:** today's focused minutes, this week as session columns, and every completed session grouped by day.
+- **History:** today's focused minutes, then a week at a time as session columns and sessions by day, paging back to the first one. Swipe to delete (with undo), tap to rename.
+- **Your data:** export History as CSV, back it up as JSON and restore it, or erase it, all from Settings. Nothing leaves the phone unless you export it.
 - **Live Activity:** a Lock Screen card and Dynamic Island with a live countdown and a pause/resume button that works without opening the app.
 - **StandBy and bedside mode:** a full-screen bedside clock when the phone is charging on its side, and a landscape bedside layout inside the app.
 - **Home Screen widget:** today's progress in small and medium sizes, including tinted and clear Home Screens; tapping it opens the Focus screen.
@@ -74,7 +76,7 @@ Debug builds accept these launch arguments (Product → Scheme → Edit Scheme �
 
 | Argument | Effect |
 |---|---|
-| `-ShortTimers` | 10-second focus and 5-second break, for this run only |
+| `-ShortTimers` | 10-second focus and 5-second break (15-second long break), for this run only |
 | `-SlowAnimations` | Plays every animation 4× slower |
 | `-DemoData` | Fills an empty store with a week of sample sessions and hides the debug menu |
 | `-DemoFinishing` | Starts a 25-minute session that ends 3 seconds after launch |
@@ -87,22 +89,26 @@ xcodebuild test -project Clockin.xcodeproj -scheme Clockin -destination 'platfor
 
 CI (`.github/workflows/ci.yml`) generates the project, runs the tests on an iPhone simulator and builds Release for devices on every push to `main` and every pull request.
 
+Copy lives in `Shared/Design/Copy.swift` (one phrase per moment) and `Shared/Localizable.xcstrings`, which holds the plural forms. Xcode adds new strings to the catalog when it builds; after a command-line build, run `scripts/sync-strings.sh`.
+
 Logs go to the unified log under the subsystem `com.moha.clockin` (categories `store`, `live-activity`, `notifications`). Filter for it in Console.app. Errors are logged in full, and session names are never logged.
 
 ### Data compatibility
 
-- History is a SwiftData store with a versioned schema (`Shared/Model/ClockinSchema.swift`). Never edit a shipped version. Add a new one and a migration stage instead.
+- History is a SwiftData store with a versioned schema (`Shared/Model/ClockinSchema.swift`). Never edit a shipped version. Add a new one and a migration stage instead. V2 added planned length, time zone and outcome, all optional, with a lightweight migration from 1.0.
+- Settings are saved as JSON in the App Group's defaults and always load: a missing or unknown value falls back to its default.
 - The running session is saved as JSON in the App Group's defaults. Fields added after 1.0 must be optional.
 - The widget doesn't open the store. The app writes today's totals to the App Group (`Shared/Store/WidgetSnapshot.swift`) after every change; until it has, the widget reads the store read-only, so it can never run a migration.
-- `ClockinTests/StoreCompatibilityTests.swift` checks both against real data written by 1.0, including `ClockinTests/Fixtures/ClockinV1.store`.
+- `ClockinTests/StoreCompatibilityTests.swift` checks both against real data written by 1.0, including `ClockinTests/Fixtures/ClockinV1.store`, which it migrates to V2.
+- Backups (`Clockin/Settings/HistoryExport.swift`) carry a format number. A restore matches sessions by id, so restoring the same backup twice changes nothing.
 
 ## Project structure
 
 ```
-Clockin/          App: Focus and History screens, services (Live Activity, haptics, notifications), debug tools
+Clockin/          App: Focus, History and Settings screens, services (Live Activity, haptics, notifications, history changes), export, debug tools
 ClockinWidgets/   Widget extension: Home Screen widget, Live Activity, Dynamic Island
 Shared/           Code used by both: session engine, SwiftData model, stores, design system, StandBy view
-ClockinTests/     Swift Testing suite: engine, side effects, stats, data compatibility (with 1.0 fixtures), formatting
+ClockinTests/     Swift Testing suite: engine, presets and long breaks, side effects, stats, history changes, export, data compatibility (with 1.0 fixtures), copy
 docs/screenshots/ Images used in this README
 ```
 
