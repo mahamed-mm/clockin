@@ -100,9 +100,12 @@ struct FocusView: View {
         GlassEffectContainer {
             switch engine.stage {
             case .idle:
-                nameField
-                    .glassEffectID("session", in: glass)
-                    .glassEffectTransition(.matchedGeometry)
+                VStack(spacing: 10) {
+                    nameField
+                        .glassEffectID("session", in: glass)
+                        .glassEffectTransition(.matchedGeometry)
+                    RecentNames(typed: sessionName) { sessionName = $0 }
+                }
             case .active(let session):
                 SessionChip(session: session)
                     .glassEffectID("session", in: glass)
@@ -148,7 +151,8 @@ struct FocusView: View {
                     .allowsHitTesting(idle && !undoable)
                     .accessibilityHidden(!idle || undoable)
                 // Takes Cancel's place for a few seconds, right under the finger.
-                UndoCancelBar(undo: engine.undoCancel)
+                UndoBar(message: String(localized: "Session cancelled"),
+                        hint: String(localized: "Brings the session back"), undo: engine.undoCancel)
                     .opacity(undoable ? 1 : 0)
                     .allowsHitTesting(undoable)
                     .accessibilityHidden(!undoable)

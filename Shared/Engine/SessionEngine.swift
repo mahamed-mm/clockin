@@ -314,6 +314,14 @@ final class SessionEngine {
         }
     }
 
+    /// Drops sessions still waiting to be saved, for "Erase all history".
+    /// Otherwise the next reconcile would save them again.
+    func discardAllPending() {
+        guard !pendingRecords.isEmpty else { return }
+        pendingRecords = []
+        persist()
+    }
+
     /// Re-announces current state after launch so side effects (Live Activity, widget) resync.
     func restore() {
         reconcile()

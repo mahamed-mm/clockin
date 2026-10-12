@@ -28,7 +28,7 @@ final class SwiftDataFocusLog: FocusLogging {
         context.insert(FocusRecord(id: focus.id, name: focus.name, startedAt: focus.startedAt,
                                    completedAt: focus.completedAt, focusSeconds: focus.focusSeconds,
                                    plannedSeconds: focus.plannedSeconds,
-                                   timeZoneIdentifier: TimeZone.current.identifier,
+                                   timeZoneIdentifier: focus.timeZoneIdentifier ?? TimeZone.current.identifier,
                                    outcome: focus.outcome ?? .completed))
         do {
             try context.save()

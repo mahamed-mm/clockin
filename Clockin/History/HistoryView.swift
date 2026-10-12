@@ -5,6 +5,7 @@ import SwiftUI
 /// week's sessions by day. Paging back reaches every session ever saved.
 struct HistoryView: View {
     @Environment(AppServices.self) private var services
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(HistoryView.newestFirst) private var newest: [FocusRecord]
     @Query(HistoryView.oldestFirst) private var oldest: [FocusRecord]
     /// A day in the week shown, or nil to follow the current week.
@@ -61,6 +62,17 @@ struct HistoryView: View {
             .scrollContentBackground(.hidden)
             .background(PaperBackground())
             .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .bottom) {
+                if !services.undoableDeletion.isEmpty {
+                    UndoBar(message: String(localized: "Session deleted"),
+                            hint: String(localized: "Puts the session back"), undo: services.undoDelete)
+                        .padding(.horizontal, 20)
+                        .glassEffect(.regular, in: .capsule)
+                        .padding(.bottom, 8)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(Motion.calm(reduceMotion), value: services.undoableDeletion.isEmpty)
         }
     }
 
@@ -136,8 +148,11 @@ private struct HistoryWeek: View {
     let page: (Int) -> Void
     @Query private var records: [FocusRecord]
     @Environment(SessionEngine.self) private var engine
+    @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
+    @State private var renaming: FocusRecord?
+    @State private var newName = ""
 
     init(week: DateInterval, today: Date, calendar: Calendar, canGoBack: Bool, canGoForward: Bool,
          page: @escaping (Int) -> Void) {
@@ -178,6 +193,17 @@ private struct HistoryWeek: View {
             Section {
                 ForEach(Array(group.records.enumerated()), id: \.element.id) { rowIndex, record in
                     SessionRow(record: record)
+                        .contentShape(.rect)
+                        .onTapGesture { startRenaming(record) }
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityHint(String(localized: "Renames the session"))
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                services.deleteSessions([record.id])
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                         .opacity(appeared ? 1 : 0)
                         .offset(y: appeared || reduceMotion ? 0 : 10)
                         .animation(Motion.calm(reduceMotion)
@@ -195,6 +221,22 @@ private struct HistoryWeek: View {
             }
             .listRowBackground(Retro.paperDeep.opacity(0.6))
         }
+        .alert("Rename session", isPresented: isRenaming) {
+            TextField("Name", text: $newName)
+            Button("Save") {
+                if let renaming { services.renameSession(renaming.id, to: newName) }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+
+    private var isRenaming: Binding<Bool> {
+        Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })
+    }
+
+    private func startRenaming(_ record: FocusRecord) {
+        newName = record.name
+        renaming = record
     }
 
     private var pager: some View {

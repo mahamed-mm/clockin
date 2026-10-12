@@ -63,6 +63,10 @@ final class AppServices: SessionEffects {
         didSet { settingsStore.save(settings) }
     }
 
+    /// Sessions deleted from History moments ago, so they can be put back.
+    /// Cleared when the undo window closes.
+    private(set) var undoableDeletion: [CompletedFocus] = []
+
     /// The lengths a new session gets: Settings, or seconds-long test timers.
     var plan: TimerPlan {
         #if DEBUG
@@ -77,6 +81,10 @@ final class AppServices: SessionEffects {
     @ObservationIgnored private let haptics: CompletionFeedback
     @ObservationIgnored private let announce: @MainActor (String) -> Void
     @ObservationIgnored private let settingsStore: SettingsStoring
+    /// Nil when the store couldn't be opened: History can't be changed then.
+    @ObservationIgnored let history: HistoryService?
+    @ObservationIgnored private let schedulesTimers: Bool
+    @ObservationIgnored private var deletionExpiry: Task<Void, Never>?
     @ObservationIgnored private var timeObservers: [NSObjectProtocol] = []
 
     init(container: ModelContainer,
@@ -100,6 +108,8 @@ final class AppServices: SessionEffects {
         self.announce = announce
         self.calendar = calendar
         self.settingsStore = settingsStore
+        self.schedulesTimers = schedulesCompletion
+        history = historyUnavailable ? nil : HistoryService(container: container)
         settings = settingsStore.load()
         today = calendar.startOfDay(for: now())
         let log: FocusLogging = historyUnavailable ? UnavailableFocusLog() : SwiftDataFocusLog(container: container)
@@ -208,6 +218,78 @@ final class AppServices: SessionEffects {
         lastEvent = EventStamp(event: event, serial: lastEvent.serial + 1)
         refreshWidgets()
     }
+
+    // MARK: History changes
+
+    /// Deletes sessions from History. They can be put back with `undoDelete`
+    /// for a few seconds (longer with assistive technologies).
+    func deleteSessions(_ ids: Set<UUID>) {
+        guard let history, !ids.isEmpty else { return }
+        do {
+            undoableDeletion = try history.delete(ids: ids)
+        } catch {
+            Log.store.error("Couldn't delete sessions: \(error, privacy: .public)")
+            return
+        }
+        historyChanged()
+        announce(String(localized: "Session deleted. Undo is available for a few seconds."))
+        let window = engine.undoWindow()
+        deletionExpiry?.cancel()
+        guard schedulesTimers else { return }
+        deletionExpiry = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(window))
+            guard !Task.isCancelled else { return }
+            self?.undoableDeletion = []
+        }
+    }
+
+    func undoDelete() {
+        guard let history, !undoableDeletion.isEmpty else { return }
+        do {
+            try history.restore(undoableDeletion)
+        } catch {
+            Log.store.error("Couldn't put deleted sessions back: \(error, privacy: .public)")
+            return
+        }
+        clearUndoableDeletion()
+        historyChanged()
+    }
+
+    func renameSession(_ id: UUID, to name: String) {
+        do {
+            try history?.rename(id: id, to: name)
+        } catch {
+            Log.store.error("Couldn't rename a session: \(error, privacy: .public)")
+        }
+    }
+
+    /// Deletes every saved session, and any still waiting to be saved.
+    func eraseHistory() {
+        guard let history else { return }
+        do {
+            try history.deleteAll()
+        } catch {
+            Log.store.error("Couldn't erase History: \(error, privacy: .public)")
+            return
+        }
+        engine.discardAllPending()
+        clearUndoableDeletion()
+        historyChanged()
+    }
+
+    /// Redraws today's totals wherever they show outside the app.
+    func historyChanged() {
+        if let session = engine.active { syncLiveActivity(session) }
+        refreshWidgets()
+    }
+
+    private func clearUndoableDeletion() {
+        deletionExpiry?.cancel()
+        deletionExpiry = nil
+        undoableDeletion = []
+    }
+
+    // MARK: Lifecycle
 
     /// Restores the engine at launch, then clears anything it no longer explains.
     func restore() {

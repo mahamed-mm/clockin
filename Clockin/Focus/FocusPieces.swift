@@ -421,15 +421,18 @@ struct AlertHint: View {
     }
 }
 
-// MARK: - Undo cancel
+// MARK: - Undo
 
-/// "Session cancelled · Undo", shown for a few seconds after Cancel.
-struct UndoCancelBar: View {
+/// "Session cancelled · Undo", shown for a few seconds after something
+/// that can be taken back.
+struct UndoBar: View {
+    let message: String
+    let hint: String
     let undo: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
-            Text("Session cancelled")
+            Text(message)
                 .foregroundStyle(Retro.inkSoft)
             Text(verbatim: "·")
                 .foregroundStyle(Retro.inkSoft.opacity(0.6))
@@ -441,10 +444,53 @@ struct UndoCancelBar: View {
             }
             .fontWeight(.semibold)
             .foregroundStyle(Retro.orange)
-            .accessibilityHint("Brings the session back")
+            .accessibilityHint(hint)
         }
         .font(.retro(.body))
         .buttonStyle(.borderless)
+    }
+}
+
+// MARK: - Recent names
+
+/// Up to four recent session names under the name field; a tap fills it in.
+struct RecentNames: View {
+    let typed: String
+    let pick: (String) -> Void
+    @Query(RecentNames.newestFirst) private var records: [FocusRecord]
+
+    private static var newestFirst: FetchDescriptor<FocusRecord> {
+        var descriptor = FetchDescriptor<FocusRecord>(sortBy: [SortDescriptor(\.completedAt, order: .reverse)])
+        descriptor.fetchLimit = 30
+        return descriptor
+    }
+
+    var body: some View {
+        let names = HistoryService.recentNames(records.map(\.name), excluding: typed, limit: 4)
+        if !names.isEmpty {
+            ScrollView(.horizontal) {
+                HStack(spacing: 8) {
+                    ForEach(names, id: \.self) { name in
+                        Button { pick(name) } label: {
+                            Text(name)
+                                .font(.retro(.meta))
+                                .foregroundStyle(Retro.ink)
+                                .lineLimit(1)
+                                .padding(.horizontal, 14)
+                                .frame(minHeight: 36)
+                        }
+                        .buttonStyle(.plain)
+                        .glassEffect(.regular.interactive(), in: .capsule)
+                        .accessibilityHint(String(localized: "Uses this name"))
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.vertical, 4)
+            }
+            .scrollIndicators(.hidden)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(String(localized: "Recent names"))
+        }
     }
 }
 

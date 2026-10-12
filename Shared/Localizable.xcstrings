@@ -149,6 +149,9 @@
     "Brings the session back" : {
 
     },
+    "Cancel" : {
+
+    },
     "Cancel session" : {
 
     },
@@ -162,6 +165,9 @@
 
     },
     "Deep" : {
+
+    },
+    "Delete" : {
 
     },
     "Developer options" : {
@@ -188,7 +194,19 @@
     "Ends the session and keeps the minutes" : {
 
     },
+    "Erase All" : {
+
+    },
+    "Erase all history?" : {
+
+    },
+    "Erase all history…" : {
+
+    },
     "Every fourth full session of the day earns a %@ break." : {
+
+    },
+    "Every saved session is deleted from this iPhone. This can't be undone." : {
 
     },
     "Everything stays on this iPhone." : {
@@ -249,6 +267,9 @@
     "Minutes of focus you've finished today." : {
 
     },
+    "Name" : {
+
+    },
     "Next week" : {
 
     },
@@ -285,6 +306,9 @@
     "Previous week" : {
 
     },
+    "Puts the session back" : {
+
+    },
     "Ready" : {
 
     },
@@ -292,6 +316,15 @@
 
     },
     "Ready, %@ session" : {
+
+    },
+    "Recent names" : {
+
+    },
+    "Rename session" : {
+
+    },
+    "Renames the session" : {
 
     },
     "Replay celebration" : {
@@ -303,6 +336,9 @@
     "Running" : {
 
     },
+    "Save" : {
+
+    },
     "Session" : {
 
     },
@@ -310,6 +346,12 @@
 
     },
     "Session cancelled. Undo is available for a few seconds." : {
+
+    },
+    "Session deleted" : {
+
+    },
+    "Session deleted. Undo is available for a few seconds." : {
 
     },
     "Session name" : {
@@ -375,6 +417,9 @@
     "Until %@" : {
 
     },
+    "Uses this name" : {
+
+    },
     "Version" : {
 
     },
@@ -388,6 +433,9 @@
 
     },
     "You focused %@ today." : {
+
+    },
+    "Your data" : {
 
     },
     "Your saved sessions haven't been deleted. Timers still work, and new sessions are kept until History opens again." : {

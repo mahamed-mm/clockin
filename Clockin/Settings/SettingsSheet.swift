@@ -5,6 +5,7 @@ struct SettingsSheet: View {
     @Environment(AppServices.self) private var services
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @State private var confirmingErase = false
 
     var body: some View {
         NavigationStack {
@@ -12,6 +13,7 @@ struct SettingsSheet: View {
                 timer
                 longBreak
                 alerts
+                data
                 about
             }
             .scrollContentBackground(.hidden)
@@ -110,6 +112,23 @@ struct SettingsSheet: View {
         case .notificationsOff: URL(string: UIApplication.openNotificationSettingsURLString)
         case .liveActivitiesOff: URL(string: UIApplication.openSettingsURLString)
         case .unknown, .notAsked, .ready: nil
+        }
+    }
+
+    // MARK: Your data
+
+    private var data: some View {
+        Section {
+            Button("Erase all history…", role: .destructive) { confirmingErase = true }
+                .disabled(services.history == nil)
+                .listRowBackground(rowBackground)
+        } header: {
+            Text("Your data").retroLabel()
+        }
+        .confirmationDialog("Erase all history?", isPresented: $confirmingErase, titleVisibility: .visible) {
+            Button("Erase All", role: .destructive) { services.eraseHistory() }
+        } message: {
+            Text("Every saved session is deleted from this iPhone. This can't be undone.")
         }
     }
 
