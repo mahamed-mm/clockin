@@ -95,11 +95,12 @@ final class EndNotifier: EndNotifying {
         let content = UNMutableNotificationContent()
         switch session.phase {
         case .focus:
-            content.title = "Focus complete"
-            content.body = "\(session.name) is done. Time for a \(Durations.breakLengthPhrase) break."
+            content.title = Copy.focusComplete
+            content.subtitle = session.name
+            content.body = Copy.breakLine(seconds: Durations.duration(for: .rest))
         case .rest:
-            content.title = "Break's over"
-            content.body = "Ready for the next session?"
+            content.title = Copy.breakOver
+            content.body = Copy.readyWhenYouAre
         }
         content.sound = .default
         // Breaks through Focus only with the time-sensitive entitlement (see

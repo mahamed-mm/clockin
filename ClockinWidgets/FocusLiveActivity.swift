@@ -81,7 +81,13 @@ private func isDone(_ context: ActivityViewContext<FocusActivityAttributes>) -> 
 /// "Ends 14:30" while running; nothing when paused or done.
 private func endsLine(_ state: FocusActivityAttributes.ContentState, done: Bool) -> String? {
     guard !done, let end = state.endDate else { return nil }
-    return "Ends \(TimeFormat.time(end))"
+    return Copy.ends(end)
+}
+
+/// The small label over the name: the phase, "Paused", or how it ended.
+private func cardStatus(_ state: FocusActivityAttributes.ContentState, done: Bool) -> String {
+    if done { return state.phase == .focus ? Copy.focusComplete : Copy.breakOver }
+    return state.isPaused ? Copy.paused : state.phase.label
 }
 
 // MARK: - Lock Screen
@@ -111,7 +117,7 @@ private struct LockScreenFocusView: View {
                 LiveDial(reading: TimerReading(state: state, done: done), phase: state.phase)
                     .frame(width: 76, height: 76)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(done ? "Complete" : (state.isPaused ? "Paused" : state.phase.label))
+                    Text(cardStatus(state, done: done))
                         .retroLabel()
                     Text(context.attributes.sessionName)
                         .font(.retro(.headline))
@@ -119,8 +125,8 @@ private struct LockScreenFocusView: View {
                         .lineLimit(1)
                     if done {
                         Text(state.phase == .focus
-                             ? "Nice work. Take a \(Durations.breakPhrase(seconds: state.breakDuration ?? Durations.shortBreak)) break."
-                             : "Break's over. Ready when you are.")
+                             ? Copy.breakLine(seconds: state.breakDuration ?? Durations.shortBreak)
+                             : Copy.readyWhenYouAre)
                             .font(.retro(.meta))
                             .foregroundStyle(tint)
                             .lineLimit(2)

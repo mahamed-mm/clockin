@@ -39,7 +39,6 @@ struct WeekStrip: View {
 
     private func accessibilityText(_ entry: DayTotal) -> String {
         let day = entry.day.formatted(.dateTime.weekday(.wide))
-        let sessions = entry.sessions == 1 ? "1 session" : "\(entry.sessions) sessions"
-        return "\(day): \(sessions), \(TimeFormat.duration(entry.seconds))"
+        return "\(day): \(Copy.sessions(entry.sessions)), \(TimeFormat.duration(entry.seconds))"
     }
 }

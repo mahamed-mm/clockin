@@ -38,8 +38,7 @@ struct SessionPills: View {
     static func extra(completed: Int) -> Int { max(0, completed - setSize) }
 
     static func caption(completed: Int) -> String {
-        let extra = extra(completed: completed)
-        return extra > 0 ? "\(setSize) of \(setSize) · +\(extra)" : "\(completed) of \(setSize) today"
+        Copy.pillsCaption(completed: completed, setSize: setSize)
     }
 
     private static let colors: [Color] = Retro.stripes.reversed()
@@ -52,7 +51,7 @@ struct SessionPills: View {
                         pillView(index)
                     }
                     if Self.extra(completed: completed) > 0 {
-                        Text("+\(Self.extra(completed: completed))")
+                        Text(verbatim: "+\(Self.extra(completed: completed))")
                             .font(.retro(.label))
                             .foregroundStyle(Retro.inkSoft)
                     }
@@ -62,7 +61,7 @@ struct SessionPills: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(completed) of \(Self.setSize) sessions today")
+        .accessibilityLabel(Copy.sessionsToday(completed))
     }
 
     private func pillView(_ index: Int) -> some View {
@@ -85,7 +84,7 @@ struct SessionPills: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             } else if Self.extra(completed: completed) > 0 {
-                Text("+\(Self.extra(completed: completed))")
+                Text(verbatim: "+\(Self.extra(completed: completed))")
                     .font(.retro(.meta))
                     .foregroundStyle(Retro.inkSoft)
             }

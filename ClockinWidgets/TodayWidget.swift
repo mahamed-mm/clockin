@@ -98,7 +98,7 @@ struct TodayWidgetView: View {
                         .foregroundStyle(Retro.ink)
                         .padding(.horizontal, 30)
                 }
-                Text(active.phase == .focus ? active.name : "Break")
+                Text(active.phase == .focus ? active.name : Copy.rest)
                     .retroLabel()
                     .lineLimit(1)
             }
@@ -108,7 +108,7 @@ struct TodayWidgetView: View {
                     RetroDial(value: min(1, Double(entry.stats.sessionCount) / 4),
                               tint: Retro.orange, lineWidthRatio: 0.09)
                     VStack(spacing: 0) {
-                        Text("\(entry.stats.focusMinutes)")
+                        Text(entry.stats.focusMinutes, format: .number)
                             .font(.retroDisplay(size: 30))
                             .foregroundStyle(Retro.ink)
                             .minimumScaleFactor(0.6)
@@ -150,7 +150,7 @@ struct TodayWidgetView: View {
             }
             .frame(width: 104, height: 104)
             VStack(alignment: .leading, spacing: 6) {
-                Text("Today's focus").retroLabel()
+                Text("Today's Focus").retroLabel()
                 minutes
                 if let active = entry.active {
                     activeLine(active)
@@ -165,7 +165,7 @@ struct TodayWidgetView: View {
 
     private var minutes: some View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
-            Text("\(entry.stats.focusMinutes)")
+            Text(entry.stats.focusMinutes, format: .number)
                 .font(.retroDisplay(size: 40))
                 .tracking(-1)
                 .foregroundStyle(Retro.ink)
@@ -191,7 +191,7 @@ struct TodayWidgetView: View {
     private func activeLine(_ active: ActiveSession) -> some View {
         HStack(spacing: 4) {
             Circle().fill(Retro.tint(for: active.phase)).frame(width: 6, height: 6)
-            Text(active.phase == .focus ? active.name : "Break")
+            Text(active.phase == .focus ? active.name : Copy.rest)
                 .lineLimit(1)
             Spacer(minLength: 2)
             if let end = active.endDate {
@@ -200,7 +200,7 @@ struct TodayWidgetView: View {
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: 56, alignment: .trailing)
             } else {
-                Text("Paused")
+                Text(Copy.paused)
             }
         }
         .font(.retro(.meta))

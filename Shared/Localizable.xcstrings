@@ -1,0 +1,298 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ remaining" : {
+
+    },
+    "%@ session" : {
+
+    },
+    "%@, paused, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, paused, %2$@"
+          }
+        }
+      }
+    },
+    "%lld focus sessions today" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld focus session today"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld focus sessions today"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld h" : {
+
+    },
+    "%lld h %lld min" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld h %2$lld min"
+          }
+        }
+      }
+    },
+    "%lld min" : {
+
+    },
+    "%lld of %lld today" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld today"
+          }
+        }
+      }
+    },
+    "%lld of %lld · +%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld · +%3$lld"
+          }
+        }
+      }
+    },
+    "%lld s" : {
+
+    },
+    "%lld sessions" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld session"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sessions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Alerts are off, so the timer can't ring. Turn on" : {
+
+    },
+    "Break" : {
+
+    },
+    "Break after %@" : {
+
+    },
+    "Break until %@" : {
+
+    },
+    "Break's over" : {
+
+    },
+    "Brings the session back" : {
+
+    },
+    "Cancel session" : {
+
+    },
+    "Clockin will ask once to alert you when time's up." : {
+
+    },
+    "Complete" : {
+
+    },
+    "Developer options" : {
+
+    },
+    "Dismiss" : {
+
+    },
+    "Done for now" : {
+
+    },
+    "Ends %@" : {
+
+    },
+    "Finish a focus session and it will show up here." : {
+
+    },
+    "Finished %@ at %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Finished %1$@ at %2$@"
+          }
+        }
+      }
+    },
+    "Finished at %@" : {
+
+    },
+    "Finished yesterday at %@" : {
+
+    },
+    "Focus" : {
+
+    },
+    "Focus complete" : {
+
+    },
+    "Haptics lab" : {
+
+    },
+    "History" : {
+
+    },
+    "History couldn't be loaded" : {
+
+    },
+    "Live Activities are off for Clockin. Turn on" : {
+
+    },
+    "Minutes of focus you've finished today." : {
+
+    },
+    "No sessions yet" : {
+
+    },
+    "Opens Settings" : {
+
+    },
+    "Pause" : {
+
+    },
+    "Pause or Resume Focus" : {
+
+    },
+    "Paused" : {
+
+    },
+    "Paused · %@ left" : {
+
+    },
+    "Paused · tap play to resume" : {
+
+    },
+    "Ready" : {
+
+    },
+    "Ready when you are." : {
+
+    },
+    "Ready, %@ session" : {
+
+    },
+    "Replay celebration" : {
+
+    },
+    "Resume" : {
+
+    },
+    "Running" : {
+
+    },
+    "Session" : {
+
+    },
+    "Session cancelled" : {
+
+    },
+    "Session cancelled. Undo is available for a few seconds." : {
+
+    },
+    "Session name" : {
+
+    },
+    "Short timers (10s / 5s)" : {
+
+    },
+    "Skip break" : {
+
+    },
+    "Slow animations ×4" : {
+
+    },
+    "Start %lld-min break" : {
+
+    },
+    "Start %lld-sec break" : {
+
+    },
+    "Start focus" : {
+
+    },
+    "Tap play to resume" : {
+
+    },
+    "Test timers" : {
+
+    },
+    "Time for a %lld-minute break." : {
+
+    },
+    "Time for a %lld-second break." : {
+
+    },
+    "Today" : {
+
+    },
+    "Today %@" : {
+
+    },
+    "Today's Focus" : {
+
+    },
+    "Today: %@ of focus" : {
+
+    },
+    "Undo" : {
+
+    },
+    "Until %@" : {
+
+    },
+    "What are you focusing on?" : {
+
+    },
+    "Yesterday" : {
+
+    },
+    "You focused %@ today." : {
+
+    },
+    "Your saved sessions haven't been deleted. Timers still work, and new sessions are kept until History opens again." : {
+
+    },
+    "min" : {
+
+    }
+  },
+  "version" : "1.0"
+}

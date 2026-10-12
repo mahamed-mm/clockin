@@ -97,7 +97,4 @@ extension TodayStats {
             return DayTotal(day: start, seconds: sameDay.reduce(0) { $0 + $1.seconds }, sessions: sameDay.count)
         }
     }
-
-    var minutesLabel: String { "\(focusMinutes) min" }
-    var sessionsLabel: String { sessionCount == 1 ? "1 session" : "\(sessionCount) sessions" }
 }

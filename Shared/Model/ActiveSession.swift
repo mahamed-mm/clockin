@@ -116,8 +116,8 @@ enum SessionStage: Equatable, Sendable {
 extension SessionPhase {
     var label: String {
         switch self {
-        case .focus: "Focus"
-        case .rest: "Break"
+        case .focus: Copy.focus
+        case .rest: Copy.rest
         }
     }
 }

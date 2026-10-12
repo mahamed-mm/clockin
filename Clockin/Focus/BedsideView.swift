@@ -27,9 +27,9 @@ struct BedsideView: View {
                     .frame(width: height * 0.84, height: height * 0.84)
 
                 VStack(alignment: .leading, spacing: height * 0.03) {
-                    Text(session.isPaused ? "Paused" : session.phase.label)
+                    Text(session.isPaused ? Copy.paused : session.phase.label)
                         .retroLabel()
-                    Text(session.phase == .focus ? session.name : "Break after \(session.name)")
+                    Text(session.phase == .focus ? session.name : Copy.breakAfter(session.name))
                         .font(.system(size: height * 0.09, weight: .semibold, design: .serif))
                         .foregroundStyle(Retro.ink)
                         .lineLimit(1)
@@ -85,8 +85,8 @@ struct BedsideView: View {
     }
 
     private var endsLine: String {
-        if session.isPaused { return "Tap play to resume" }
+        if session.isPaused { return String(localized: "Tap play to resume") }
         guard let end = session.endDate else { return "" }
-        return session.phase == .focus ? "Ends \(TimeFormat.time(end))" : "Break until \(TimeFormat.time(end))"
+        return session.phase == .focus ? Copy.ends(end) : Copy.breakUntil(end)
     }
 }

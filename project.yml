@@ -17,6 +17,9 @@ settings:
     # The one place the App Group id lives: both entitlements and SharedStore read it.
     APP_GROUP_ID: group.com.moha.clockin
     ENABLE_USER_SCRIPT_SANDBOXING: YES
+    # Copy lives in Shared/Localizable.xcstrings; builds add new strings to it.
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
 targets:
   Clockin:
     type: application

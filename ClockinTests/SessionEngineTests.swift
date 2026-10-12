@@ -539,23 +539,22 @@ struct MotionTests {
     }
 }
 
+/// The copy deck: one phrase per moment, plurals from the String Catalog.
 @MainActor
-struct EndCopyTests {
-    @Test func breakPhraseFollowsTheBreakLength() {
-        let settings = DevSettings.shared
-        let original = settings.shortTimers
-        defer { settings.shortTimers = original }
-
-        settings.shortTimers = false
-        #expect(Durations.breakLengthPhrase == "5-minute")
-        settings.shortTimers = true
-        #expect(Durations.breakLengthPhrase == "5-second")
+struct CopyTests {
+    @Test func breakLineReadsAnyLength() {
+        #expect(Copy.breakLine(seconds: 300) == "Time for a 5-minute break.")
+        #expect(Copy.breakLine(seconds: 900) == "Time for a 15-minute break.")
+        #expect(Copy.breakLine(seconds: 5) == "Time for a 5-second break.")
+        #expect(Copy.startBreak(seconds: 600) == "Start 10-min break")
+        #expect(Copy.startBreak(seconds: 5) == "Start 5-sec break")
     }
 
-    @Test func breakPhraseReadsAnyLength() {
-        #expect(Durations.breakPhrase(seconds: 300) == "5-minute")
-        #expect(Durations.breakPhrase(seconds: 900) == "15-minute")
-        #expect(Durations.breakPhrase(seconds: 5) == "5-second")
+    @Test func countsUseTheirPluralForms() {
+        #expect(Copy.sessionsToday(1) == "1 focus session today")
+        #expect(Copy.sessionsToday(6) == "6 focus sessions today")
+        #expect(Copy.sessions(1) == "1 session")
+        #expect(Copy.sessions(0) == "0 sessions")
     }
 }
 

@@ -187,13 +187,13 @@ struct FocusView: View {
     private var primaryAction: (String, String, () -> Void) {
         switch engine.stage {
         case .idle:
-            ("Start focus", "play.fill", start)
+            (String(localized: "Start focus"), "play.fill", start)
         case .active(let session):
             session.isPaused
-                ? ("Resume", "play.fill", engine.resume)
-                : ("Pause", "pause.fill", engine.pause)
+                ? (String(localized: "Resume"), "play.fill", engine.resume)
+                : (String(localized: "Pause"), "pause.fill", engine.pause)
         case .focusComplete:
-            ("Start \(breakLength) break", "cup.and.saucer.fill", engine.startBreak)
+            (Copy.startBreak(seconds: Durations.duration(for: .rest)), "cup.and.saucer.fill", engine.startBreak)
         }
     }
 
@@ -215,20 +215,17 @@ struct FocusView: View {
             .accessibilityHidden(action.title == nil)
     }
 
-    /// "5-min", or "5-sec" with debug test timers.
-    private var breakLength: String {
-        let seconds = Int(Durations.duration(for: .rest))
-        return seconds >= 60 ? "\(seconds / 60)-min" : "\(seconds)-sec"
-    }
-
     private var secondaryAction: (title: String?, role: ButtonRole?, run: (() -> Void)?) {
         switch engine.stage {
         case .idle:
             (nil, nil, nil)
         case .active(let session) where session.phase == .focus:
-            ("Cancel session", .destructive, engine.cancel)
-        case .active, .focusComplete:
-            ("Skip break", nil, engine.skipBreak)
+            (String(localized: "Cancel session"), .destructive, engine.cancel)
+        case .active:
+            (String(localized: "Skip break"), nil, engine.skipBreak)
+        case .focusComplete:
+            // Moving on without a break isn't skipping anything that started.
+            (String(localized: "Done for now"), nil, engine.skipBreak)
         }
     }
 

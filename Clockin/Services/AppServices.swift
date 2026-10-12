@@ -156,7 +156,7 @@ final class AppServices: SessionEffects {
         case .cancelled:
             liveActivity.endAll()
             notifications.cancel()
-            announce("Session cancelled. Undo is available for a few seconds.")
+            announce(String(localized: "Session cancelled. Undo is available for a few seconds."))
         case .breakSkipped, .completionDismissed:
             liveActivity.endAll()
             notifications.cancel()
@@ -170,11 +170,13 @@ final class AppServices: SessionEffects {
                 celebrations += 1
             }
             clearLateAlert(freshness)
-            if freshness == .live { announce("Focus complete. Time for a break.") }
+            if freshness == .live {
+                announce("\(Copy.focusComplete). \(Copy.breakLine(seconds: Durations.duration(for: .rest)))")
+            }
         case .breakFinished(let freshness):
             liveActivity.endAll()
             clearLateAlert(freshness)
-            if freshness == .live { announce("Break's over. Ready when you are.") }
+            if freshness == .live { announce("\(Copy.breakOver). \(Copy.readyWhenYouAre)") }
         case .historySaved:
             break // The widget refresh below picks up the newly saved sessions.
         }

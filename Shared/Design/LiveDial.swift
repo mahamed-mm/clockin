@@ -115,7 +115,7 @@ struct FocusCountdown: View {
     var body: some View {
         Group {
             switch reading {
-            case .done: Text("00:00")
+            case .done: Text(verbatim: "00:00")
             case .paused(_, let remaining): Text(TimeFormat.clock(remaining))
             case .running(let range): Text(timerInterval: range, countsDown: true)
             }

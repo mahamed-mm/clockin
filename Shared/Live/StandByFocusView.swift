@@ -33,7 +33,9 @@ struct StandByFocusView: View {
                     .padding(.top, 2)
 
                 if done {
-                    Text(state.phase == .focus ? "Nice work.\nTake a break." : "Break's over.")
+                    Text(state.phase == .focus
+                         ? Copy.breakLine(seconds: state.breakDuration ?? Durations.shortBreak)
+                         : Copy.readyWhenYouAre)
                         .font(.system(size: 24, weight: .bold, design: .serif))
                         .foregroundStyle(tint)
                         .lineLimit(2)
@@ -69,14 +71,13 @@ struct StandByFocusView: View {
     }
 
     private var status: String {
-        if done { return "Complete" }
-        if state.isPaused { return "Paused" }
-        return state.phase.label
+        if done { return state.phase == .focus ? Copy.focusComplete : Copy.breakOver }
+        return state.isPaused ? Copy.paused : state.phase.label
     }
 
     private var detail: String {
-        if state.isPaused { return "Paused · tap play to resume" }
+        if state.isPaused { return String(localized: "Paused · tap play to resume") }
         guard let end = state.endDate else { return "" }
-        return state.phase == .focus ? "Ends \(TimeFormat.time(end))" : "Break until \(TimeFormat.time(end))"
+        return state.phase == .focus ? Copy.ends(end) : Copy.breakUntil(end)
     }
 }

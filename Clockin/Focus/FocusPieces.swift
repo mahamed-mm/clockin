@@ -24,7 +24,7 @@ struct FocusHeader: View {
                             .foregroundStyle(Retro.inkSoft)
                             .contentTransition(.numericText())
                     }
-                    Text("·").foregroundStyle(Retro.inkSoft.opacity(0.6))
+                    Text(verbatim: "·").foregroundStyle(Retro.inkSoft.opacity(0.6))
                     TodayChip(day: services.today)
                 }
                 .lineLimit(1)
@@ -47,29 +47,29 @@ struct FocusHeader: View {
 
     private var title: String {
         switch stage {
-        case .idle: "Focus"
-        case .active(let session): session.phase == .focus ? "Focus" : "Break"
-        case .focusComplete: "Well done"
+        case .idle: Copy.focus
+        case .active(let session): session.phase.label
+        case .focusComplete: Copy.focusComplete
         }
     }
 
     private func meta(at now: Date) -> String {
         switch stage {
         case .idle:
-            return "\(TimeFormat.duration(Durations.duration(for: .focus))) session"
+            return String(localized: "\(TimeFormat.duration(Durations.duration(for: .focus))) session")
         case .active(let session):
             if session.isPaused {
-                return "Paused · \(TimeFormat.clock(session.remaining(at: now))) left"
+                return String(localized: "Paused · \(TimeFormat.clock(session.remaining(at: now))) left")
             }
             let end = session.endDate ?? now
             return session.phase == .focus
                 ? TimeFormat.range(end.addingTimeInterval(-session.plannedDuration), end)
-                : "Until \(TimeFormat.time(end))"
+                : String(localized: "Until \(TimeFormat.time(end))")
         case .focusComplete(let focus):
             // An old completion opens quietly, saying when it was.
             return engine.freshness(endedAt: focus.completedAt, at: now) == .stale
                 ? TimeFormat.finished(focus.completedAt, now: now)
-                : "Take a breather"
+                : Copy.breakLine(seconds: Durations.duration(for: .rest))
         }
     }
 }
@@ -256,17 +256,20 @@ struct DialFace: View {
 
     private func status(_ session: ActiveSession?) -> String {
         switch stage {
-        case .idle: "Ready"
-        case .active(let s): s.isPaused ? "Paused" : "Running"
-        case .focusComplete: "Complete"
+        case .idle: String(localized: "Ready")
+        case .active(let s): s.isPaused ? Copy.paused : String(localized: "Running")
+        case .focusComplete: String(localized: "Complete")
         }
     }
 
     private func accessibilityText(remaining: TimeInterval, session: ActiveSession?) -> String {
         switch stage {
-        case .idle: "Ready, \(TimeFormat.duration(remaining)) session"
-        case .active(let s): "\(s.phase.label)\(s.isPaused ? ", paused" : ""), \(TimeFormat.spoken(remaining))"
-        case .focusComplete: "Focus complete"
+        case .idle: String(localized: "Ready, \(TimeFormat.duration(remaining)) session")
+        case .active(let s):
+            s.isPaused
+                ? String(localized: "\(s.phase.label), paused, \(TimeFormat.spoken(remaining))")
+                : "\(s.phase.label), \(TimeFormat.spoken(remaining))"
+        case .focusComplete: Copy.focusComplete
         }
     }
 }
@@ -307,7 +310,7 @@ struct SessionChip: View {
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Retro.tint(for: session.phase))
                 .contentTransition(.symbolEffect(.replace))
-            Text(session.phase == .focus ? session.name : "Break after \(session.name)")
+            Text(session.phase == .focus ? session.name : Copy.breakAfter(session.name))
                 .font(.retro(.headline))
                 .foregroundStyle(Retro.ink)
                 .lineLimit(1)
@@ -360,9 +363,9 @@ struct AlertHint: View {
 
     private var message: String? {
         switch status {
-        case .notAsked: "Clockin will ask once to alert you when time's up."
-        case .notificationsOff: "Alerts are off, so the timer can't ring. Turn on"
-        case .liveActivitiesOff: "Live Activities are off for Clockin. Turn on"
+        case .notAsked: String(localized: "Clockin will ask once to alert you when time's up.")
+        case .notificationsOff: String(localized: "Alerts are off, so the timer can't ring. Turn on")
+        case .liveActivitiesOff: String(localized: "Live Activities are off for Clockin. Turn on")
         case .unknown, .ready: nil
         }
     }
@@ -386,7 +389,7 @@ struct UndoCancelBar: View {
         HStack(spacing: 8) {
             Text("Session cancelled")
                 .foregroundStyle(Retro.inkSoft)
-            Text("·")
+            Text(verbatim: "·")
                 .foregroundStyle(Retro.inkSoft.opacity(0.6))
                 .accessibilityHidden(true)
             Button(action: undo) {

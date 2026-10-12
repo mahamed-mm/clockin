@@ -40,7 +40,7 @@ struct HistoryView: View {
                         ContentUnavailableView {
                             Label("No sessions yet", systemImage: "hourglass")
                         } description: {
-                            Text("Finish a 25-minute focus session and it will show up here.")
+                            Text("Finish a focus session and it will show up here.")
                                 .font(.retro(.body))
                         }
                         .foregroundStyle(Retro.inkSoft)
@@ -126,9 +126,9 @@ struct HistoryView: View {
 
     private func dayTitle(_ day: Date) -> String {
         let calendar = services.calendar
-        if calendar.isDate(day, inSameDayAs: services.today) { return "Today" }
+        if calendar.isDate(day, inSameDayAs: services.today) { return String(localized: "Today") }
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: services.today),
-           calendar.isDate(day, inSameDayAs: yesterday) { return "Yesterday" }
+           calendar.isDate(day, inSameDayAs: yesterday) { return String(localized: "Yesterday") }
         return day.formatted(.dateTime.weekday(.wide).month().day())
     }
 }

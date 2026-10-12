@@ -63,7 +63,7 @@ struct AppServicesTests {
         #expect(notifier.calls == ["schedule"]) // Its alert is playing right now.
         #expect(haptics.plays == 1)
         #expect(services.celebrations == 1)
-        #expect(announcer.spoken == ["Focus complete. Time for a break."])
+        #expect(announcer.spoken == ["Focus complete. Time for a 5-minute break."])
     }
 
     @Test func movingOnFromACompletionClearsTheCard() {
@@ -96,7 +96,7 @@ struct AppServicesTests {
 
         #expect(services.engine.stage == .idle)
         #expect(liveActivity.calls.last == "endAll")
-        #expect(announcer.spoken == ["Focus complete. Time for a break."])
+        #expect(announcer.spoken == ["Focus complete. Time for a 5-minute break."])
     }
 
     @Test func savedWaitingSessionsReloadTheWidget() {
