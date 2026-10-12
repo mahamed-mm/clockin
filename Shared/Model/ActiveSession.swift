@@ -23,6 +23,11 @@ struct ActiveSession: Codable, Equatable, Sendable {
     /// Focus only: the break that follows, taken from Settings at start so
     /// the end alert and the Lock Screen can name it. Nil from older builds.
     var nextBreakSeconds: TimeInterval? = nil
+    /// Focus only: the breaks it could earn, fixed at start. Which one it
+    /// gets is settled when it ends, from the sessions finished by then.
+    var breaks: BreakLengths? = nil
+    /// Break only: the long one after a full set.
+    var isLongBreak: Bool? = nil
 
     /// Longest name kept. The name rides along in the Live Activity, whose
     /// whole payload must stay under 4 KB or the request fails.

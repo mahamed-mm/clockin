@@ -66,7 +66,7 @@ final class AppServices: SessionEffects {
     /// The lengths a new session gets: Settings, or seconds-long test timers.
     var plan: TimerPlan {
         #if DEBUG
-        if DevSettings.shared.shortTimers { return .test }
+        if DevSettings.shared.shortTimers { return settings.plan.asTestTimers() }
         #endif
         return settings.plan
     }
@@ -181,14 +181,15 @@ final class AppServices: SessionEffects {
             // Found long after the fact, it opens quietly: no ding, no sunburst,
             // and no "done" card left behind on the Lock Screen.
             let celebrates = freshness != .stale
-            liveActivity.showFocusDone(completedToday: completedToday, lingers: celebrates)
+            let breakLength = engine.stage.completedFocus.map(engine.breakLength(after:)) ?? plan.shortBreak
+            liveActivity.showFocusDone(completedToday: completedToday, breakDuration: breakLength, lingers: celebrates)
             if celebrates {
                 haptics.play()
                 celebrations += 1
             }
             clearLateAlert(freshness)
-            if freshness == .live, let focus = engine.stage.completedFocus {
-                announce("\(Copy.focusComplete). \(Copy.breakLine(seconds: engine.breakLength(after: focus)))")
+            if freshness == .live {
+                announce("\(Copy.focusComplete). \(Copy.breakLine(seconds: breakLength))")
             }
         case .breakFinished(let freshness):
             liveActivity.endAll()
@@ -336,7 +337,7 @@ final class AppServices: SessionEffects {
 @MainActor
 private final class SilentEffects: LiveActivityControlling, EndNotifying, WidgetReloading, CompletionFeedback {
     func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval) {}
-    func showFocusDone(completedToday: Int, lingers: Bool) {}
+    func showFocusDone(completedToday: Int, breakDuration: TimeInterval, lingers: Bool) {}
     func endAll() {}
     func areActivitiesEnabled() async -> Bool { true }
     func flush() async {}

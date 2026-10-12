@@ -44,26 +44,32 @@ enum Preset: String, CaseIterable, Identifiable, Sendable {
 /// default, so settings written by another build still load.
 struct TimerSettings: Codable, Equatable, Sendable {
     var preset: Preset = .classic
+    /// A longer break after every fourth full session of the day.
+    var longBreak = true
 
-    init(preset: Preset = .classic) {
+    init(preset: Preset = .classic, longBreak: Bool = true) {
         self.preset = preset
+        self.longBreak = longBreak
     }
 
-    private enum CodingKeys: String, CodingKey { case preset }
+    private enum CodingKeys: String, CodingKey { case preset, longBreak }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let raw = try? container.decodeIfPresent(String.self, forKey: .preset)
         preset = raw.flatMap(Preset.init(rawValue:)) ?? .classic
+        longBreak = (try? container.decodeIfPresent(Bool.self, forKey: .longBreak)) ?? true
     }
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(preset.rawValue, forKey: .preset)
+        try container.encode(longBreak, forKey: .longBreak)
     }
 
     var plan: TimerPlan {
-        TimerPlan(focus: preset.focus, shortBreak: preset.shortBreak)
+        TimerPlan(focus: preset.focus, shortBreak: preset.shortBreak,
+                  longBreak: longBreak ? TimerPlan.longBreakLength : nil)
     }
 }
 
@@ -72,10 +78,34 @@ struct TimerSettings: Codable, Equatable, Sendable {
 struct TimerPlan: Equatable, Sendable {
     var focus: TimeInterval
     var shortBreak: TimeInterval
+    /// Nil when long breaks are off.
+    var longBreak: TimeInterval?
+
+    /// Full sessions in a set; the last one earns the long break.
+    static let sessionsPerSet = 4
+    static let longBreakLength: TimeInterval = 15 * 60
 
     static let classic = TimerSettings().plan
+
     /// Debug test timers: seconds instead of minutes.
-    static let test = TimerPlan(focus: 10, shortBreak: 5)
+    func asTestTimers() -> TimerPlan {
+        TimerPlan(focus: 10, shortBreak: 5, longBreak: longBreak == nil ? nil : 15)
+    }
+
+    var breaks: BreakLengths { BreakLengths(short: shortBreak, long: longBreak) }
+}
+
+/// The breaks a focus session can earn, fixed when it starts.
+struct BreakLengths: Codable, Equatable, Sendable {
+    var short: TimeInterval
+    /// Nil when long breaks were off.
+    var long: TimeInterval?
+
+    /// The break after the `position`th full session of the day (1-based).
+    func after(position: Int) -> (seconds: TimeInterval, isLong: Bool) {
+        if let long, position > 0, position % TimerPlan.sessionsPerSet == 0 { return (long, true) }
+        return (short, false)
+    }
 }
 
 protocol SettingsStoring {

@@ -11,6 +11,8 @@ struct CompletedFocus: Codable, Equatable, Sendable {
     /// Length of the break it earned, fixed when the focus phase started.
     /// Nil for completions saved by older builds.
     var breakSeconds: TimeInterval? = nil
+    /// True when that break is the long one after a full set.
+    var isLongBreak: Bool? = nil
     /// The length planned at start. Nil from older builds.
     var plannedSeconds: TimeInterval? = nil
     /// Nil from older builds, which only finished sessions by running out.

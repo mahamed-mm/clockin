@@ -21,19 +21,20 @@ struct SettingsTests {
     }
 
     @Test func missingOrUnknownValuesFallBackToClassic() throws {
-        #expect(try decode("{}").preset == .classic)
+        #expect(try decode("{}") == TimerSettings(preset: .classic, longBreak: true))
+        #expect(try decode(#"{"longBreak":false}"#).longBreak == false)
         #expect(try decode(#"{"preset":"marathon"}"#).preset == .classic)
         #expect(try decode(#"{"preset":"short","somethingNew":true}"#).preset == .short)
     }
 
     @Test func presetsHaveTheirLengths() {
-        #expect(TimerSettings(preset: .classic).plan == TimerPlan(focus: 1_500, shortBreak: 300))
-        #expect(TimerSettings(preset: .deep).plan == TimerPlan(focus: 3_000, shortBreak: 600))
-        #expect(TimerSettings(preset: .short).plan == TimerPlan(focus: 900, shortBreak: 180))
+        #expect(TimerSettings(preset: .classic).plan == TimerPlan(focus: 1_500, shortBreak: 300, longBreak: 900))
+        #expect(TimerSettings(preset: .deep).plan == TimerPlan(focus: 3_000, shortBreak: 600, longBreak: 900))
+        #expect(TimerSettings(preset: .short, longBreak: false).plan == TimerPlan(focus: 900, shortBreak: 180))
     }
 
     @Test func aSessionUsesThePlanItStartedWith() {
-        var plan = TimerPlan(focus: 3_000, shortBreak: 600)
+        var plan = TimerPlan(focus: 3_000, shortBreak: 600, longBreak: 900)
         let engine = SessionEngine(now: { [clock] in clock.now }, calendar: osloCalendar,
                                    store: InMemorySessionStateStore(), log: SpyLog(), schedulesCompletion: false)
         engine.plan = { plan }

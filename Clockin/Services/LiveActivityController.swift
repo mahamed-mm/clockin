@@ -5,10 +5,11 @@ import Foundation
 @MainActor
 protocol LiveActivityControlling: AnyObject {
     func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval)
-    /// Ends the session's card on a "focus done" note. With `lingers` it stays
-    /// on the Lock Screen until the user moves on; without, it goes at once,
-    /// for a completion only noticed long after the fact.
-    func showFocusDone(completedToday: Int, lingers: Bool)
+    /// Ends the session's card on a "focus done" note naming the break it
+    /// earned. With `lingers` it stays on the Lock Screen until the user
+    /// moves on; without, it goes at once, for a completion only noticed
+    /// long after the fact.
+    func showFocusDone(completedToday: Int, breakDuration: TimeInterval, lingers: Bool)
     func endAll()
     func areActivitiesEnabled() async -> Bool
     /// Waits until every queued ActivityKit call has run.
@@ -33,8 +34,11 @@ final class LiveActivityController: LiveActivityControlling {
         enqueue { await LiveActivities.sync(attributes: attributes, content: content) }
     }
 
-    func showFocusDone(completedToday: Int, lingers: Bool) {
-        enqueue { await LiveActivities.endRunningAsDone(completedToday: completedToday, lingers: lingers) }
+    func showFocusDone(completedToday: Int, breakDuration: TimeInterval, lingers: Bool) {
+        enqueue {
+            await LiveActivities.endRunningAsDone(completedToday: completedToday, breakDuration: breakDuration,
+                                                  lingers: lingers)
+        }
     }
 
     func endAll() {
@@ -101,10 +105,11 @@ private enum LiveActivities {
     }
 
     @concurrent
-    static func endRunningAsDone(completedToday: Int, lingers: Bool) async {
+    static func endRunningAsDone(completedToday: Int, breakDuration: TimeInterval, lingers: Bool) async {
         guard let activity = running else { return }
         var state = activity.content.state
         state.completedToday = completedToday
+        state.breakDuration = breakDuration
         state.pausedRemaining = nil
         state.endDate = min(state.endDate ?? .now, .now)
         await activity.end(Content(state: state, staleDate: nil), dismissalPolicy: lingers ? .default : .immediate)

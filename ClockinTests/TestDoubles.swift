@@ -28,6 +28,11 @@ final class SpyLog: FocusLogging {
         guard !recorded.contains(where: { $0.id == focus.id }) else { return }
         recorded.append(focus)
     }
+
+    func sessions(on day: Date, calendar: Calendar) throws -> [FocusRow] {
+        if failing { throw Failure() }
+        return recorded.filter { calendar.isDate($0.completedAt, inSameDayAs: day) }.map(\.row)
+    }
 }
 
 @MainActor
@@ -49,9 +54,10 @@ final class SpyLiveActivity: LiveActivityControlling {
         lastBreakDuration = breakDuration
         lastCompletedToday = completedToday
     }
-    func showFocusDone(completedToday: Int, lingers: Bool) {
+    func showFocusDone(completedToday: Int, breakDuration: TimeInterval, lingers: Bool) {
         calls.append(lingers ? "done" : "done-quietly")
         lastCompletedToday = completedToday
+        lastBreakDuration = breakDuration
     }
     func endAll() { calls.append("endAll") }
     func areActivitiesEnabled() async -> Bool { enabled }

@@ -13,7 +13,7 @@ struct SessionPills: View {
         case empty
     }
 
-    static let setSize = 4
+    static let setSize = TimerPlan.sessionsPerSet
 
     let completed: Int
     /// True while a focus phase runs (breaks don't count toward the set).

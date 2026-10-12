@@ -10,6 +10,7 @@ struct SettingsSheet: View {
         NavigationStack {
             List {
                 timer
+                longBreak
                 alerts
                 about
             }
@@ -58,6 +59,21 @@ struct SettingsSheet: View {
             Text("Timer").retroLabel()
         } footer: {
             Text("Applies from the next session.")
+        }
+    }
+
+    // MARK: Long break
+
+    private var longBreak: some View {
+        @Bindable var services = services
+        return Section {
+            Toggle(isOn: $services.settings.longBreak) {
+                Text("Long break after four")
+            }
+            .tint(Retro.orange)
+            .listRowBackground(rowBackground)
+        } footer: {
+            Text("Every fourth full session of the day earns a \(TimeFormat.duration(TimerPlan.longBreakLength)) break.")
         }
     }
 

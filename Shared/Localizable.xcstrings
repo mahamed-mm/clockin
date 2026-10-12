@@ -173,6 +173,9 @@
     "Ends %@" : {
 
     },
+    "Every fourth full session of the day earns a %@ break." : {
+
+    },
     "Everything stays on this iPhone." : {
 
     },
@@ -214,6 +217,12 @@
 
     },
     "Live Activities off" : {
+
+    },
+    "Long break" : {
+
+    },
+    "Long break after four" : {
 
     },
     "Minutes of focus you've finished today." : {

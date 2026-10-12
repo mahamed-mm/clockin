@@ -33,6 +33,7 @@ enum Copy {
 
     static var focus: String { String(localized: "Focus") }
     static var rest: String { String(localized: "Break") }
+    static var longBreak: String { String(localized: "Long break") }
     static var paused: String { String(localized: "Paused") }
 
     /// "Break after Organic chemistry"

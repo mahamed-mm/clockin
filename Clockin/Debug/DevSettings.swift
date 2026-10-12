@@ -66,7 +66,7 @@ struct TestTimersBadge: View {
 final class DevSettings {
     static let shared = DevSettings()
 
-    /// Seconds instead of minutes (`TimerPlan.test`), via this menu or the
+    /// Seconds instead of minutes (`TimerPlan.asTestTimers`), via this menu or the
     /// `-ShortTimers` launch argument.
     var shortTimers = ProcessInfo.processInfo.arguments.contains("-ShortTimers")
     /// Stretches every app animation ×4 so motion can be inspected frame by frame.

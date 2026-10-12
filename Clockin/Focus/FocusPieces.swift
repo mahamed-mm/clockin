@@ -61,7 +61,7 @@ struct FocusHeader: View {
     private var title: String {
         switch stage {
         case .idle: Copy.focus
-        case .active(let session): session.phase.label
+        case .active(let session): session.isLongBreak == true ? Copy.longBreak : session.phase.label
         case .focusComplete: Copy.focusComplete
         }
     }

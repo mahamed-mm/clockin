@@ -6,6 +6,8 @@ import SwiftData
 @MainActor
 protocol FocusLogging {
     func record(_ focus: CompletedFocus) throws
+    /// Saved sessions that finished on the day containing `day`.
+    func sessions(on day: Date, calendar: Calendar) throws -> [FocusRow]
 }
 
 @MainActor
@@ -36,6 +38,10 @@ final class SwiftDataFocusLog: FocusLogging {
             throw error
         }
     }
+
+    func sessions(on day: Date, calendar: Calendar) throws -> [FocusRow] {
+        try context.fetch(FetchDescriptor(predicate: FocusRecord.completed(on: day, calendar: calendar))).map(\.row)
+    }
 }
 
 /// Stands in when the store couldn't be opened: every save fails, so finished
@@ -46,4 +52,7 @@ struct UnavailableFocusLog: FocusLogging {
     func record(_ focus: CompletedFocus) throws {
         throw StoreUnavailable()
     }
+
+    /// Nothing saved can be read; sessions waiting to be saved still count.
+    func sessions(on day: Date, calendar: Calendar) throws -> [FocusRow] { [] }
 }

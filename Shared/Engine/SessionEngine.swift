@@ -135,6 +135,9 @@ final class SessionEngine {
         guard !hasActiveSession else { return false }
         let plan = plan()
         let startedAt = now()
+        // The break it will most likely earn, for the end alert and the
+        // Lock Screen. Settled for real when it ends.
+        let predicted = plan.breaks.after(position: fullSessions(on: startedAt) + 1)
         let session = ActiveSession(
             id: UUID(),
             name: ActiveSession.cleanName(name),
@@ -142,7 +145,8 @@ final class SessionEngine {
             plannedDuration: plan.focus,
             focusStartedAt: startedAt,
             state: .running(endDate: startedAt.addingTimeInterval(plan.focus)),
-            nextBreakSeconds: plan.shortBreak
+            nextBreakSeconds: predicted.seconds,
+            breaks: plan.breaks
         )
         apply(.active(session), event: .started)
         return true
@@ -212,7 +216,8 @@ final class SessionEngine {
             phase: .rest,
             plannedDuration: duration,
             focusStartedAt: start,
-            state: .running(endDate: start.addingTimeInterval(duration))
+            state: .running(endDate: start.addingTimeInterval(duration)),
+            isLongBreak: focus.isLongBreak
         )
         apply(.active(session), event: .breakStarted)
     }
@@ -241,10 +246,10 @@ final class SessionEngine {
         let endedAt = session.endDate ?? now()
         switch session.phase {
         case .focus:
-            let focus = CompletedFocus(id: session.id, name: session.name, startedAt: session.focusStartedAt,
+            var focus = CompletedFocus(id: session.id, name: session.name, startedAt: session.focusStartedAt,
                                        completedAt: endedAt, focusSeconds: session.plannedDuration,
-                                       breakSeconds: session.nextBreakSeconds ?? plan().shortBreak,
                                        plannedSeconds: session.plannedDuration, outcome: .completed)
+            settleBreak(for: &focus, from: session)
             record(focus)
             apply(.focusComplete(focus), event: .focusCompleted(freshness(of: focus, at: now())))
         case .rest:
@@ -263,6 +268,30 @@ final class SessionEngine {
     }
 
     // MARK: - Internals
+
+    /// Full sessions that finished on the day containing `date`, saved or
+    /// waiting to be saved, other than `excluded`.
+    private func fullSessions(on date: Date, excluding excluded: UUID? = nil) -> Int {
+        let saved: [FocusRow]
+        do {
+            saved = try log.sessions(on: date, calendar: calendar)
+        } catch {
+            Log.store.error("Couldn't count today's sessions: \(error, privacy: .public)")
+            saved = []
+        }
+        return TodayStats.rows(saved: saved, pending: pendingRecords(on: date)).filter { $0.id != excluded }.fullCount
+    }
+
+    /// Picks the break a focus phase earned, now that it has ended: the long
+    /// one if it completes a set on the day it ended. A session that doesn't
+    /// fill a pill doesn't move the set on, so it gets the short one.
+    private func settleBreak(for focus: inout CompletedFocus, from session: ActiveSession) {
+        let breaks = session.breaks ?? BreakLengths(short: session.nextBreakSeconds ?? plan().shortBreak)
+        let position = focus.countsAsFull ? fullSessions(on: focus.completedAt, excluding: focus.id) + 1 : 0
+        let earned = breaks.after(position: position)
+        focus.breakSeconds = earned.seconds
+        focus.isLongBreak = earned.isLong
+    }
 
     /// A running phase can't end further away than its full length unless the
     /// clock was set back. Rather than sit frozen at the full length until the
