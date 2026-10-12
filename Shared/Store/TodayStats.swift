@@ -1,11 +1,38 @@
 import Foundation
 import SwiftData
 
+/// One finished focus session, saved or still waiting to be saved: just
+/// what the totals need.
+struct FocusRow: Equatable, Sendable {
+    var id: UUID
+    var completedAt: Date
+    var seconds: TimeInterval
+    /// Fills a session pill. Every minute counts toward time focused, but a
+    /// session finished early only fills a pill at half its plan or more.
+    var countsAsFull: Bool
+
+    init(id: UUID = UUID(), completedAt: Date, seconds: TimeInterval, countsAsFull: Bool = true) {
+        self.id = id
+        self.completedAt = completedAt
+        self.seconds = seconds
+        self.countsAsFull = countsAsFull
+    }
+
+    /// The one rule for what fills a pill, used everywhere sessions are counted.
+    static func isFull(outcome: FocusOutcome, seconds: TimeInterval, planned: TimeInterval?) -> Bool {
+        guard outcome == .endedEarly, let planned, planned > 0 else { return true }
+        return seconds >= planned / 2
+    }
+}
+
+extension [FocusRow] {
+    /// Sessions that fill a pill.
+    var fullCount: Int { count { $0.countsAsFull } }
+    var totalSeconds: TimeInterval { reduce(0) { $0 + $1.seconds } }
+}
+
 /// Today's completed focus, shared by the Focus screen, History, and the widget.
 struct TodayStats: Equatable, Sendable {
-    /// One finished focus session, saved or still waiting to be saved.
-    typealias Row = (id: UUID, completedAt: Date, seconds: TimeInterval)
-
     var focusSeconds: TimeInterval
     var sessionCount: Int
 
@@ -15,15 +42,14 @@ struct TodayStats: Equatable, Sendable {
 
     /// Saved rows plus sessions still waiting to be saved, each counted once,
     /// so a session the app is keeping never drops out of the totals.
-    static func rows(saved: [Row], pending: [CompletedFocus]) -> [Row] {
+    static func rows(saved: [FocusRow], pending: [CompletedFocus]) -> [FocusRow] {
         let savedIDs = Set(saved.map(\.id))
-        return saved + pending.filter { !savedIDs.contains($0.id) }
-            .map { (id: $0.id, completedAt: $0.completedAt, seconds: $0.focusSeconds) }
+        return saved + pending.filter { !savedIDs.contains($0.id) }.map(\.row)
     }
 
     /// Builds stats from saved records and waiting ones, plus a focus phase that
     /// has finished but not been recorded yet (e.g. the app was suspended when it ended).
-    static func make(records: [Row],
+    static func make(records: [FocusRow],
                      pending: [CompletedFocus] = [],
                      unrecordedActive: ActiveSession?,
                      now: Date,
@@ -33,7 +59,7 @@ struct TodayStats: Equatable, Sendable {
         var seen = Set<UUID>()
         for r in rows(saved: records, pending: pending) where calendar.isDate(r.completedAt, inSameDayAs: now) {
             seconds += r.seconds
-            count += 1
+            if r.countsAsFull { count += 1 }
             seen.insert(r.id)
         }
         if let active = unrecordedActive, active.phase == .focus,
@@ -55,7 +81,10 @@ struct TodayStats: Equatable, Sendable {
 }
 
 extension FocusRecord {
-    var row: TodayStats.Row { (id: id, completedAt: completedAt, seconds: focusSeconds) }
+    var row: FocusRow {
+        FocusRow(id: id, completedAt: completedAt, seconds: focusSeconds,
+                 countsAsFull: FocusRow.isFull(outcome: outcome, seconds: focusSeconds, planned: plannedSeconds))
+    }
 
     /// Records completed on the day containing `day`, for fetches and `@Query`.
     static func completed(on day: Date, calendar: Calendar = .autoupdatingCurrent) -> Predicate<FocusRecord> {
@@ -85,16 +114,16 @@ struct DayTotal: Equatable, Sendable {
 }
 
 extension TodayStats {
-    /// Focus seconds and session count for each day of the week containing
+    /// Focus seconds and full sessions for each day of the week containing
     /// `day`, in the calendar's week order (e.g. Mon–Sun).
-    static func weekTotals(records: [(completedAt: Date, seconds: TimeInterval)],
+    static func weekTotals(records: [FocusRow],
                            containing day: Date,
                            calendar: Calendar = .current) -> [DayTotal] {
         guard let week = calendar.dateInterval(of: .weekOfYear, for: day) else { return [] }
         let days = (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: week.start) }
         return days.map { start in
             let sameDay = records.filter { calendar.isDate($0.completedAt, inSameDayAs: start) }
-            return DayTotal(day: start, seconds: sameDay.reduce(0) { $0 + $1.seconds }, sessions: sameDay.count)
+            return DayTotal(day: start, seconds: sameDay.totalSeconds, sessions: sameDay.fullCount)
         }
     }
 }

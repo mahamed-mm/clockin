@@ -24,7 +24,10 @@ final class SwiftDataFocusLog: FocusLogging {
         existing.fetchLimit = 1
         if try context.fetchCount(existing) > 0 { return }
         context.insert(FocusRecord(id: focus.id, name: focus.name, startedAt: focus.startedAt,
-                                   completedAt: focus.completedAt, focusSeconds: focus.focusSeconds))
+                                   completedAt: focus.completedAt, focusSeconds: focus.focusSeconds,
+                                   plannedSeconds: focus.plannedSeconds,
+                                   timeZoneIdentifier: TimeZone.current.identifier,
+                                   outcome: focus.outcome ?? .completed))
         do {
             try context.save()
         } catch {

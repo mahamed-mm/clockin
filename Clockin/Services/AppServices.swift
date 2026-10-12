@@ -304,14 +304,14 @@ final class AppServices: SessionEffects {
     }
 
     /// Focus sessions finished today, saved or waiting.
-    private func todayRows() -> [TodayStats.Row] {
+    private func todayRows() -> [FocusRow] {
         let now = engine.now()
         let saved = TodayStats.fetchRecords(on: now, calendar: calendar, context: container.mainContext)
         return TodayStats.rows(saved: saved.map(\.row), pending: engine.pendingRecords(on: now))
     }
 
     /// For the pills on the Lock Screen.
-    private var completedToday: Int { todayRows().count }
+    private var completedToday: Int { todayRows().fullCount }
 
     #if DEBUG
     /// In memory and without side effects, so previews never touch real data.

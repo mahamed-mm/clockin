@@ -10,19 +10,25 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         var id: UUID
         var completedAt: Date
         var seconds: TimeInterval
+        /// Nil in snapshots written before sessions could end early: full.
+        var countsAsFull: Bool?
     }
 
     /// Sessions that finished on the day the snapshot was written.
     var sessions: [Session]
     var writtenAt: Date
 
-    init(rows: [TodayStats.Row], writtenAt: Date) {
-        sessions = rows.map { Session(id: $0.id, completedAt: $0.completedAt, seconds: $0.seconds) }
+    init(rows: [FocusRow], writtenAt: Date) {
+        sessions = rows.map {
+            Session(id: $0.id, completedAt: $0.completedAt, seconds: $0.seconds, countsAsFull: $0.countsAsFull)
+        }
         self.writtenAt = writtenAt
     }
 
-    var rows: [TodayStats.Row] {
-        sessions.map { (id: $0.id, completedAt: $0.completedAt, seconds: $0.seconds) }
+    var rows: [FocusRow] {
+        sessions.map {
+            FocusRow(id: $0.id, completedAt: $0.completedAt, seconds: $0.seconds, countsAsFull: $0.countsAsFull ?? true)
+        }
     }
 
     /// The widget's numbers at `date`. Sessions from another day drop out, so a

@@ -243,7 +243,8 @@ final class SessionEngine {
         case .focus:
             let focus = CompletedFocus(id: session.id, name: session.name, startedAt: session.focusStartedAt,
                                        completedAt: endedAt, focusSeconds: session.plannedDuration,
-                                       breakSeconds: session.nextBreakSeconds ?? plan().shortBreak)
+                                       breakSeconds: session.nextBreakSeconds ?? plan().shortBreak,
+                                       plannedSeconds: session.plannedDuration, outcome: .completed)
             record(focus)
             apply(.focusComplete(focus), event: .focusCompleted(freshness(of: focus, at: now())))
         case .rest:

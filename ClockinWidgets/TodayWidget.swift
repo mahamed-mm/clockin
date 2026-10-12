@@ -43,7 +43,7 @@ struct TodayProvider: TimelineProvider {
     /// the store directly. Read-only, so the widget can never migrate it.
     private func fallbackSnapshot(state: PersistedSessionState) -> WidgetSnapshot {
         let now = Date.now
-        var saved: [TodayStats.Row] = []
+        var saved: [FocusRow] = []
         if let container = try? SharedStore.makeModelContainer(readOnly: true) {
             saved = TodayStats.fetchRecords(on: now, calendar: .autoupdatingCurrent,
                                             context: ModelContext(container)).map(\.row)
@@ -105,7 +105,7 @@ struct TodayWidgetView: View {
         } else {
             VStack(spacing: 4) {
                 ZStack {
-                    RetroDial(value: min(1, Double(entry.stats.sessionCount) / 4),
+                    RetroDial(value: min(1, Double(entry.stats.sessionCount) / Double(SessionPills.setSize)),
                               tint: Retro.orange, lineWidthRatio: 0.09)
                     VStack(spacing: 0) {
                         Text(entry.stats.focusMinutes, format: .number)
@@ -177,9 +177,9 @@ struct TodayWidgetView: View {
     }
 
     private var miniDial: some View {
-        // Same reading as the app: time left while running, otherwise today's sessions out of four.
+        // Same reading as the app: time left while running, otherwise today's sessions out of a set.
         let value = entry.active.map { $0.plannedDuration > 0 ? $0.remaining(at: entry.date) / $0.plannedDuration : 0 }
-            ?? min(1, Double(entry.stats.sessionCount) / 4)
+            ?? min(1, Double(entry.stats.sessionCount) / Double(SessionPills.setSize))
         return RetroDial(value: value,
                          tint: Retro.tint(for: entry.active?.phase ?? .focus),
                          showsTicks: family != .systemSmall,

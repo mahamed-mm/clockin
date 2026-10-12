@@ -392,9 +392,9 @@ struct TodayStatsTests {
         let now = calendar.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 15))!
         let yesterday = calendar.date(byAdding: .day, value: -1, to: now)!
         let stats = TodayStats.make(records: [
-            (UUID(), now.addingTimeInterval(-3_600), 1_500),
-            (UUID(), now.addingTimeInterval(-60), 1_500),
-            (UUID(), yesterday, 1_500),
+            FocusRow(completedAt: now.addingTimeInterval(-3_600), seconds: 1_500),
+            FocusRow(completedAt: now.addingTimeInterval(-60), seconds: 1_500),
+            FocusRow(completedAt: yesterday, seconds: 1_500),
         ], unrecordedActive: nil, now: now, calendar: calendar)
         #expect(stats.sessionCount == 2)
         #expect(stats.focusMinutes == 50)
@@ -403,7 +403,7 @@ struct TodayStatsTests {
     @Test func resetsAtMidnight() {
         let lateNight = calendar.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 23, minute: 50))!
         let afterMidnight = lateNight.addingTimeInterval(20 * 60)
-        let records = [(id: UUID(), completedAt: lateNight, seconds: 1_500.0)]
+        let records = [FocusRow(completedAt: lateNight, seconds: 1_500)]
         #expect(TodayStats.make(records: records, unrecordedActive: nil, now: lateNight, calendar: calendar).focusMinutes == 25)
         #expect(TodayStats.make(records: records, unrecordedActive: nil, now: afterMidnight, calendar: calendar) == .empty)
     }
@@ -411,7 +411,7 @@ struct TodayStatsTests {
     @Test func waitingSessionsCountOnce() {
         let now = calendar.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 15))!
         let saved = UUID()
-        let records = [(id: saved, completedAt: now.addingTimeInterval(-3_600), seconds: 1_500.0)]
+        let records = [FocusRow(id: saved, completedAt: now.addingTimeInterval(-3_600), seconds: 1_500)]
         let pending = [
             CompletedFocus(id: saved, name: "Also saved", startedAt: now, completedAt: now, focusSeconds: 1_500),
             CompletedFocus(id: UUID(), name: "Waiting", startedAt: now, completedAt: now.addingTimeInterval(-60),
@@ -428,7 +428,7 @@ struct TodayStatsTests {
         var monday = calendar
         monday.firstWeekday = 2
         let sunday = monday.date(from: DateComponents(year: 2026, month: 10, day: 25, hour: 12))!
-        let totals = TodayStats.weekTotals(records: [(sunday, 1_500)], containing: sunday, calendar: monday)
+        let totals = TodayStats.weekTotals(records: [FocusRow(completedAt: sunday, seconds: 1_500)], containing: sunday, calendar: monday)
 
         #expect(totals.map { monday.component(.day, from: $0.day) } == [19, 20, 21, 22, 23, 24, 25])
         #expect(totals.allSatisfy { monday.component(.hour, from: $0.day) == 0 })
@@ -439,7 +439,7 @@ struct TodayStatsTests {
         var sundayFirst = calendar
         sundayFirst.firstWeekday = 1
         let friday = sundayFirst.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 15))!
-        let totals = TodayStats.weekTotals(records: [(friday, 1_500)], containing: friday, calendar: sundayFirst)
+        let totals = TodayStats.weekTotals(records: [FocusRow(completedAt: friday, seconds: 1_500)], containing: friday, calendar: sundayFirst)
 
         #expect(sundayFirst.component(.weekday, from: totals[0].day) == 1)
         #expect(sundayFirst.component(.day, from: totals[0].day) == 4)
@@ -497,8 +497,9 @@ struct RedesignFormattingTests {
         let monday = calendar.date(from: DateComponents(year: 2026, month: 10, day: 5, hour: 9))!
         let lastSunday = calendar.date(from: DateComponents(year: 2026, month: 10, day: 4, hour: 9))!
         let totals = TodayStats.weekTotals(records: [
-            (friday, 1_500), (friday.addingTimeInterval(-3_600), 1_500),
-            (monday, 1_500), (lastSunday, 1_500),
+            FocusRow(completedAt: friday, seconds: 1_500),
+            FocusRow(completedAt: friday.addingTimeInterval(-3_600), seconds: 1_500),
+            FocusRow(completedAt: monday, seconds: 1_500), FocusRow(completedAt: lastSunday, seconds: 1_500),
         ], containing: friday, calendar: calendar)
 
         #expect(totals.count == 7)

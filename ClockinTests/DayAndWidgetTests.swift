@@ -68,7 +68,7 @@ struct WidgetSnapshotTests {
     let afternoon = osloCalendar.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 15))!
 
     func snapshot(_ completions: [Date]) -> WidgetSnapshot {
-        WidgetSnapshot(rows: completions.map { (id: UUID(), completedAt: $0, seconds: 1_500) }, writtenAt: afternoon)
+        WidgetSnapshot(rows: completions.map { FocusRow(completedAt: $0, seconds: 1_500) }, writtenAt: afternoon)
     }
 
     @Test func countsTheDaysSessions() {
@@ -101,5 +101,41 @@ struct WidgetSnapshotTests {
         let written = snapshot([afternoon])
         store.save(written)
         #expect(store.load() == written)
+    }
+}
+
+/// What fills a session pill: everything except a session finished early
+/// before half its plan. Its minutes always count.
+struct FullSessionTests {
+    let now = osloCalendar.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 15))!
+
+    @Test func onlyAnEarlyFinishUnderHalfIsLeftOut() {
+        #expect(FocusRow.isFull(outcome: .completed, seconds: 1_500, planned: 1_500))
+        #expect(FocusRow.isFull(outcome: .completed, seconds: 300, planned: nil))
+        #expect(FocusRow.isFull(outcome: .endedEarly, seconds: 750, planned: 1_500))
+        #expect(!FocusRow.isFull(outcome: .endedEarly, seconds: 749, planned: 1_500))
+        #expect(FocusRow.isFull(outcome: .endedEarly, seconds: 60, planned: nil))
+    }
+
+    @Test func shortSessionsAddMinutesButNoPill() {
+        let rows = [FocusRow(completedAt: now, seconds: 1_500),
+                    FocusRow(completedAt: now, seconds: 300, countsAsFull: false)]
+        let stats = TodayStats.make(records: rows, unrecordedActive: nil, now: now, calendar: osloCalendar)
+        #expect(stats.sessionCount == 1)
+        #expect(stats.focusMinutes == 30)
+        let week = TodayStats.weekTotals(records: rows, containing: now, calendar: osloCalendar)
+        #expect(week.reduce(0) { $0 + $1.sessions } == 1)
+    }
+
+    @Test func aSnapshotFromBeforeEarlyFinishesCountsEverySession() throws {
+        let json = #"{"sessions":[{"id":"6F9619FF-8B86-D011-B42D-00CF4FC964FF","completedAt":813340800,"seconds":1500}],"writtenAt":813340800}"#
+        let snapshot = try JSONDecoder().decode(WidgetSnapshot.self, from: Data(json.utf8))
+        #expect(snapshot.rows.map(\.countsAsFull) == [true])
+    }
+
+    @Test func aSnapshotKeepsWhichSessionsWereFull() throws {
+        let snapshot = WidgetSnapshot(rows: [FocusRow(completedAt: now, seconds: 300, countsAsFull: false)], writtenAt: now)
+        let decoded = try JSONDecoder().decode(WidgetSnapshot.self, from: JSONEncoder().encode(snapshot))
+        #expect(decoded.stats(at: now, active: nil, calendar: osloCalendar).sessionCount == 0)
     }
 }

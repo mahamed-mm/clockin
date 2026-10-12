@@ -28,6 +28,44 @@ struct HistoryStoreCompatibilityTests {
         #expect(try ModelContext(reopened).fetchCount(FetchDescriptor<FocusRecord>()) == 20)
     }
 
+    @Test func upgradeLeavesOldSessionsWithoutTheNewFields() throws {
+        let container = try SharedStore.makeModelContainer(url: try copyOfFixture())
+        let records = try ModelContext(container).fetch(FetchDescriptor<FocusRecord>())
+
+        #expect(records.count == 19)
+        #expect(records.allSatisfy { $0.plannedSeconds == nil && $0.timeZoneIdentifier == nil && $0.outcomeRaw == nil })
+        #expect(records.allSatisfy { $0.outcome == .completed && $0.row.countsAsFull })
+    }
+
+    @Test func newFieldsSurviveAReopen() throws {
+        let url = try copyOfFixture()
+        let id = UUID()
+        do {
+            let log = SwiftDataFocusLog(container: try SharedStore.makeModelContainer(url: url))
+            try log.record(CompletedFocus(id: id, name: "Early", startedAt: .now, completedAt: .now.addingTimeInterval(600),
+                                          focusSeconds: 600, plannedSeconds: 1_500, outcome: .endedEarly))
+        }
+        let reopened = try SharedStore.makeModelContainer(url: url)
+        let saved = try #require(try ModelContext(reopened).fetch(FetchDescriptor<FocusRecord>(
+            predicate: #Predicate { $0.id == id })).first)
+        #expect(saved.plannedSeconds == 1_500)
+        #expect(saved.outcome == .endedEarly)
+        #expect(saved.timeZoneIdentifier == TimeZone.current.identifier)
+        #expect(!saved.row.countsAsFull)
+    }
+
+    /// The widget opens the store read-only. Against a store the app hasn't
+    /// upgraded yet, that must leave the file alone, so the app can still.
+    @Test func aReadOnlyOpenNeverTouchesAnOldStore() throws {
+        let url = try copyOfFixture()
+        let before = try Data(contentsOf: url)
+        _ = try? SharedStore.makeModelContainer(url: url, readOnly: true)
+        #expect(try Data(contentsOf: url) == before)
+
+        let upgraded = try SharedStore.makeModelContainer(url: url)
+        #expect(try ModelContext(upgraded).fetchCount(FetchDescriptor<FocusRecord>()) == 19)
+    }
+
     private func copyOfFixture() throws -> URL {
         let fixture = try #require(Bundle(for: FakeClock.self).url(forResource: "ClockinV1", withExtension: "store"))
         let folder = FileManager.default.temporaryDirectory.appending(path: "clockin-\(UUID())", directoryHint: .isDirectory)

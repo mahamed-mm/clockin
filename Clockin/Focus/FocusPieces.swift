@@ -100,8 +100,7 @@ struct TodayChip: View {
     }
 
     var body: some View {
-        let seconds = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: day))
-            .reduce(0) { $0 + $1.seconds }
+        let seconds = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: day)).totalSeconds
         Text("Today \(TimeFormat.duration(seconds))")
             .font(.retro(.meta))
             .foregroundStyle(Retro.inkSoft)
@@ -129,7 +128,7 @@ struct TodaySessionPills: View {
     }
 
     var body: some View {
-        let count = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: day)).count
+        let count = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: day)).fullCount
         SessionPills(completed: count, inProgress: inProgress,
                      pillWidth: 20 * scale, pillHeight: 5.5 * scale, spacing: 4 * scale, tint: tint)
             .animation(.smooth, value: count)
@@ -437,8 +436,7 @@ struct CompletionSummary: View {
     }
 
     var body: some View {
-        let rows = TodayStats.rows(saved: today.map(\.row), pending: engine.pendingRecords(on: day))
-        let total = rows.reduce(0) { $0 + $1.seconds }
+        let total = TodayStats.rows(saved: today.map(\.row), pending: engine.pendingRecords(on: day)).totalSeconds
         HStack(spacing: 0) {
             stat(TimeFormat.duration(focus.focusSeconds), "Focused", index: 0)
             divider

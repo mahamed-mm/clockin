@@ -30,7 +30,7 @@ enum SharedStore {
     /// out from under the app.
     static func makeModelContainer(inMemory: Bool = false, url: URL? = nil,
                                    readOnly: Bool = false) throws -> ModelContainer {
-        let schema = Schema(versionedSchema: ClockinSchemaV1.self)
+        let schema = Schema(versionedSchema: ClockinSchemaV2.self)
         let config: ModelConfiguration
         if inMemory {
             config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)

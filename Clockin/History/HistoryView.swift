@@ -81,7 +81,7 @@ struct HistoryView: View {
 
     private var header: some View {
         let today = todayRows
-        let total = Text(TimeFormat.duration(today.reduce(0) { $0 + $1.seconds }))
+        let total = Text(TimeFormat.duration(today.totalSeconds))
             .font(.retro(.headline))
             .foregroundStyle(Retro.orange)
         return VStack(alignment: .leading, spacing: 8) {
@@ -94,7 +94,7 @@ struct HistoryView: View {
                     .font(.system(.title3, design: .serif))
                     .foregroundStyle(Retro.inkSoft)
                     .contentTransition(.numericText())
-                SessionPills(completed: today.count, pillWidth: 26, pillHeight: 7,
+                SessionPills(completed: today.fullCount, pillWidth: 26, pillHeight: 7,
                              showsCaption: true)
                     .padding(.top, 6)
             }
@@ -104,16 +104,16 @@ struct HistoryView: View {
     // MARK: Data
 
     /// Saved sessions plus any still waiting to be saved, each once.
-    private var allRows: [TodayStats.Row] {
+    private var allRows: [FocusRow] {
         TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords)
     }
 
-    private var todayRows: [TodayStats.Row] {
+    private var todayRows: [FocusRow] {
         allRows.filter { services.calendar.isDate($0.completedAt, inSameDayAs: services.today) }
     }
 
     private var weekTotals: [DayTotal] {
-        TodayStats.weekTotals(records: allRows.map { ($0.completedAt, $0.seconds) }, containing: services.today,
+        TodayStats.weekTotals(records: allRows, containing: services.today,
                               calendar: services.calendar)
     }
 

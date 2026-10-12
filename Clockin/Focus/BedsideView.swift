@@ -68,7 +68,7 @@ struct BedsideView: View {
                     }
 
                     SessionPills(completed: TodayStats.rows(saved: today.map(\.row),
-                                                            pending: engine.pendingRecords(on: day)).count,
+                                                            pending: engine.pendingRecords(on: day)).fullCount,
                                  inProgress: session.phase == .focus,
                                  pillWidth: height * 0.08, pillHeight: height * 0.022,
                                  spacing: height * 0.012,
