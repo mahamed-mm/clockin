@@ -140,7 +140,7 @@ struct FocusView: View {
         return VStack(spacing: 10) {
             primaryButton
             ZStack {
-                secondaryButton
+                secondaryRow
                 // Laid out in every stage, shown only when idle, so the slot
                 // keeps its height on Start and Cancel even when the hint wraps.
                 AlertHint(status: services.alertStatus)
@@ -197,30 +197,47 @@ struct FocusView: View {
         }
     }
 
-    /// Quiet text button under the primary action. Always takes the same
-    /// height so the layout doesn't jump between states.
-    private var secondaryButton: some View {
-        let action = secondaryAction
-        return Button(role: action.role) { action.run?() } label: {
+    /// Quiet text buttons under the primary action. Always the same height
+    /// so the layout doesn't jump between states.
+    @ViewBuilder
+    private var secondaryRow: some View {
+        if case .active(let session) = engine.stage, session.phase == .focus {
+            // Finish now opens after the first minute, so check every second.
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let canFinish = engine.canFinishEarly(at: context.date)
+                HStack(spacing: 28) {
+                    quietButton(String(localized: "Cancel session"), role: .destructive, action: engine.cancel)
+                    quietButton(Copy.finishNow, action: engine.finishEarly)
+                        .disabled(!canFinish)
+                        .opacity(canFinish ? 1 : 0.45)
+                        .accessibilityHint(String(localized: "Ends the session and keeps the minutes"))
+                }
+            }
+        } else {
+            let action = secondaryAction
+            quietButton(action.title ?? " ", role: action.role) { action.run?() }
+                .opacity(action.title == nil ? 0 : 1)
+                .disabled(action.title == nil)
+                .accessibilityHidden(action.title == nil)
+        }
+    }
+
+    private func quietButton(_ title: String, role: ButtonRole? = nil, action: @escaping () -> Void) -> some View {
+        Button(role: role, action: action) {
             // The frame sits inside the label so the whole 44 pt row takes the tap.
-            Text(action.title ?? " ")
+            Text(title)
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(.rect)
         }
-            .font(.retro(.body))
-            .foregroundStyle(Retro.inkSoft)
-            .buttonStyle(.borderless)
-            .opacity(action.title == nil ? 0 : 1)
-            .disabled(action.title == nil)
-            .accessibilityHidden(action.title == nil)
+        .font(.retro(.body))
+        .foregroundStyle(Retro.inkSoft)
+        .buttonStyle(.borderless)
     }
 
     private var secondaryAction: (title: String?, role: ButtonRole?, run: (() -> Void)?) {
         switch engine.stage {
         case .idle:
             (nil, nil, nil)
-        case .active(let session) where session.phase == .focus:
-            (String(localized: "Cancel session"), .destructive, engine.cancel)
         case .active:
             (String(localized: "Skip break"), nil, engine.skipBreak)
         case .focusComplete:

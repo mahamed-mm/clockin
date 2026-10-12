@@ -162,7 +162,7 @@ final class AppServices: SessionEffects {
 
     func sessionEngine(_ engine: SessionEngine, didEmit event: SessionEvent) {
         switch event {
-        case .started, .resumed, .breakStarted, .restored:
+        case .started, .resumed, .breakStarted, .restored, .extended:
             if let session = engine.active {
                 syncLiveActivity(session)
                 notifications.schedule(for: session)
@@ -191,6 +191,13 @@ final class AppServices: SessionEffects {
             if freshness == .live {
                 announce("\(Copy.focusComplete). \(Copy.breakLine(seconds: breakLength))")
             }
+        case .finishedEarly:
+            // Finished by hand in the app: no alert to come, no ding, and
+            // no card left on the Lock Screen.
+            notifications.cancel()
+            let breakLength = engine.stage.completedFocus.map(engine.breakLength(after:)) ?? plan.shortBreak
+            liveActivity.showFocusDone(completedToday: completedToday, breakDuration: breakLength, lingers: false)
+            announce("\(Copy.endedEarly). \(Copy.breakLine(seconds: breakLength))")
         case .breakFinished(let freshness):
             liveActivity.endAll()
             clearLateAlert(freshness)
@@ -358,7 +365,8 @@ struct EventStamp: Equatable {
     var feedback: SensoryFeedback? {
         switch event {
         case .started: .impact(weight: .medium, intensity: 0.8)
-        case .paused, .resumed: .selection
+        case .paused, .resumed, .extended: .selection
+        case .finishedEarly: .impact(weight: .medium, intensity: 0.6)
         case .cancelled: .warning
         case .breakStarted: .impact(flexibility: .soft, intensity: 0.7)
         case .breakSkipped: .impact(weight: .light)

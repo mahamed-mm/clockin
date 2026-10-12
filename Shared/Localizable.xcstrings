@@ -110,7 +110,13 @@
         }
       }
     },
+    "+%lld min" : {
+
+    },
     "About" : {
+
+    },
+    "Add 5 minutes" : {
 
     },
     "Alerts & Live Activities" : {
@@ -170,7 +176,16 @@
     "Done for now" : {
 
     },
+    "Ended" : {
+
+    },
+    "Ended early" : {
+
+    },
     "Ends %@" : {
+
+    },
+    "Ends the session and keeps the minutes" : {
 
     },
     "Every fourth full session of the day earns a %@ break." : {
@@ -180,6 +195,9 @@
 
     },
     "Finish a focus session and it will show up here." : {
+
+    },
+    "Finish now" : {
 
     },
     "Finished %@ at %@" : {

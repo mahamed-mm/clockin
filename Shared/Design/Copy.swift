@@ -9,6 +9,8 @@ enum Copy {
 
     /// A focus phase ran to its end.
     static var focusComplete: String { String(localized: "Focus complete") }
+    /// A focus phase finished with "Finish now".
+    static var endedEarly: String { String(localized: "Ended early") }
     /// A break ran to its end.
     static var breakOver: String { String(localized: "Break's over") }
     /// Under "Break's over".
@@ -27,6 +29,14 @@ enum Copy {
         let whole = Int(seconds.rounded())
         if whole < 60 { return String(localized: "Start \(whole)-sec break") }
         return String(localized: "Start \(whole / 60)-min break")
+    }
+
+    // MARK: Focus controls
+
+    static var finishNow: String { String(localized: "Finish now") }
+    /// "+5 min"
+    static func extend(seconds: TimeInterval) -> String {
+        String(localized: "+\(Int(seconds / 60)) min")
     }
 
     // MARK: Phases

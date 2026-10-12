@@ -28,6 +28,11 @@ struct ActiveSession: Codable, Equatable, Sendable {
     var breaks: BreakLengths? = nil
     /// Break only: the long one after a full set.
     var isLongBreak: Bool? = nil
+    /// Focus only: minutes added with "+5 min", already in `plannedDuration`.
+    var extendedSeconds: TimeInterval? = nil
+
+    /// The length planned at start, before any minutes were added.
+    var originalPlan: TimeInterval { plannedDuration - (extendedSeconds ?? 0) }
 
     /// Longest name kept. The name rides along in the Live Activity, whose
     /// whole payload must stay under 4 KB or the request fails.

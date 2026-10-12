@@ -18,18 +18,25 @@ struct FocusHeader: View {
                     .foregroundStyle(Retro.ink)
                     .contentTransition(.numericText())
                     .accessibilityAddTraits(.isHeader)
-                HStack(spacing: 10) {
-                    TimelineView(.periodic(from: .now, by: 1)) { context in
-                        Text(meta(at: context.date))
-                            .font(.retro(.meta))
-                            .foregroundStyle(Retro.inkSoft)
-                            .contentTransition(.numericText())
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    let meta = Text(meta(at: context.date))
+                        .font(.retro(.meta))
+                        .foregroundStyle(Retro.inkSoft)
+                        .contentTransition(.numericText())
+                    // One line when it fits, today's total under it when not.
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 10) {
+                            meta
+                            Text(verbatim: "·").foregroundStyle(Retro.inkSoft.opacity(0.6))
+                            TodayChip(day: services.today)
+                        }
+                        VStack(alignment: .leading, spacing: 4) {
+                            meta
+                            TodayChip(day: services.today)
+                        }
                     }
-                    Text(verbatim: "·").foregroundStyle(Retro.inkSoft.opacity(0.6))
-                    TodayChip(day: services.today)
+                    .lineLimit(1)
                 }
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 8)
             HStack(spacing: 2) {
@@ -62,7 +69,7 @@ struct FocusHeader: View {
         switch stage {
         case .idle: Copy.focus
         case .active(let session): session.isLongBreak == true ? Copy.longBreak : session.phase.label
-        case .focusComplete: Copy.focusComplete
+        case .focusComplete(let focus): focus.outcome == .endedEarly ? Copy.endedEarly : Copy.focusComplete
         }
     }
 
@@ -270,7 +277,8 @@ struct DialFace: View {
         switch stage {
         case .idle: String(localized: "Ready")
         case .active(let s): s.isPaused ? Copy.paused : String(localized: "Running")
-        case .focusComplete: String(localized: "Complete")
+        case .focusComplete(let focus):
+            focus.outcome == .endedEarly ? String(localized: "Ended") : String(localized: "Complete")
         }
     }
 
@@ -281,7 +289,7 @@ struct DialFace: View {
             s.isPaused
                 ? String(localized: "\(s.phase.label), paused, \(TimeFormat.spoken(remaining))")
                 : "\(s.phase.label), \(TimeFormat.spoken(remaining))"
-        case .focusComplete: Copy.focusComplete
+        case .focusComplete(let focus): focus.outcome == .endedEarly ? Copy.endedEarly : Copy.focusComplete
         }
     }
 }
@@ -312,26 +320,48 @@ private struct IdleKnobGlow: View {
 
 // MARK: - Session chip
 
-/// What you're working on, shown while a session runs.
+/// What you're working on, shown while a session runs. In the last five
+/// minutes of focus it offers "+5 min".
 struct SessionChip: View {
     let session: ActiveSession
+    @Environment(SessionEngine.self) private var engine
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: session.phase == .focus ? "book.closed.fill" : "cup.and.saucer.fill")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(Retro.tint(for: session.phase))
-                .contentTransition(.symbolEffect(.replace))
-            Text(session.phase == .focus ? session.name : Copy.breakAfter(session.name))
-                .font(.retro(.headline))
-                .foregroundStyle(Retro.ink)
-                .lineLimit(1)
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let canExtend = engine.canExtend(at: context.date)
+            HStack(spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: session.phase == .focus ? "book.closed.fill" : "cup.and.saucer.fill")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Retro.tint(for: session.phase))
+                        .contentTransition(.symbolEffect(.replace))
+                    Text(session.phase == .focus ? session.name : Copy.breakAfter(session.name))
+                        .font(.retro(.headline))
+                        .foregroundStyle(Retro.ink)
+                        .lineLimit(1)
+                }
+                .accessibilityElement(children: .combine)
+                if canExtend {
+                    Button(action: engine.extend) {
+                        Text(Copy.extend(seconds: SessionEngine.extensionStep))
+                            .font(.retro(.body).weight(.semibold))
+                            .foregroundStyle(Retro.orange)
+                            .frame(minHeight: 44)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(String(localized: "Add 5 minutes"))
+                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                }
+            }
+            .padding(.leading, 22)
+            .padding(.trailing, canExtend ? 16 : 22)
+            .padding(.vertical, canExtend ? 2 : 14)
+            .frame(maxWidth: .infinity, minHeight: 50)
+            .glassEffect(.regular, in: .capsule)
+            .animation(Motion.calm(reduceMotion), value: canExtend)
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 14)
-        .frame(maxWidth: .infinity)
-        .glassEffect(.regular, in: .capsule)
-        .accessibilityElement(children: .combine)
     }
 }
 

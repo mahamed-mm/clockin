@@ -18,6 +18,10 @@ enum SessionEvent: Equatable, Sendable {
     case restored
     /// Finished sessions that were waiting to be saved reached History.
     case historySaved
+    /// Minutes were added to the focus phase.
+    case extended
+    /// The focus phase was finished early; its minutes were kept.
+    case finishedEarly
 }
 
 /// How soon after a phase ended the engine noticed, which sets how loudly
@@ -52,6 +56,12 @@ protocol SessionEffects: AnyObject {
 final class SessionEngine {
     /// How long Cancel can be undone, normally.
     static let standardUndoWindow: TimeInterval = 6
+    /// "+5 min": offered in the last this-many seconds, and added each time.
+    static let extensionStep: TimeInterval = 5 * 60
+    /// The most "+5 min" can add to one session.
+    static let maxExtension: TimeInterval = 15 * 60
+    /// Before this much focus, Cancel (which can be undone) is the honest way out.
+    static let minimumToFinishEarly: TimeInterval = 60
 
     private(set) var stage: SessionStage = .idle
     /// The focus phase cancelled moments ago, so it can be brought back.
@@ -125,6 +135,22 @@ final class SessionEngine {
     /// The break a completed focus phase earned.
     func breakLength(after focus: CompletedFocus) -> TimeInterval {
         focus.breakSeconds ?? plan().shortBreak
+    }
+
+    /// Whether "+5 min" is on offer: the last five minutes of a focus phase,
+    /// up to `maxExtension` in all.
+    func canExtend(at date: Date) -> Bool {
+        guard let session = active, session.phase == .focus, !session.isFinished(at: date) else { return false }
+        return session.remaining(at: date) <= Self.extensionStep
+            && (session.extendedSeconds ?? 0) + Self.extensionStep <= Self.maxExtension
+    }
+
+    /// Whether "Finish now" is on offer: a focus phase past its first minute
+    /// (or its first tenth, for seconds-long test timers).
+    func canFinishEarly(at date: Date) -> Bool {
+        guard let session = active, session.phase == .focus, !session.isFinished(at: date) else { return false }
+        let minimum = min(Self.minimumToFinishEarly, session.originalPlan / 10)
+        return session.plannedDuration - session.remaining(at: date) >= minimum
     }
 
     // MARK: - Actions
@@ -206,6 +232,35 @@ final class SessionEngine {
         apply(.active(session), event: .restored)
     }
 
+    /// Adds five minutes to the focus phase, running or paused.
+    func extend() {
+        reconcile()
+        guard canExtend(at: now()), var session = active else { return }
+        session.plannedDuration += Self.extensionStep
+        session.extendedSeconds = (session.extendedSeconds ?? 0) + Self.extensionStep
+        session.state = switch session.state {
+        case .running(let end): .running(endDate: end.addingTimeInterval(Self.extensionStep))
+        case .paused(let remaining): .paused(remaining: remaining + Self.extensionStep)
+        }
+        apply(.active(session), event: .extended)
+    }
+
+    /// Ends the focus phase now and keeps the minutes done so far. Time spent
+    /// paused doesn't count. If the timer had already run out, it completes
+    /// normally instead.
+    func finishEarly() {
+        reconcile()
+        let now = now()
+        guard canFinishEarly(at: now), let session = active else { return }
+        let elapsed = (session.plannedDuration - session.remaining(at: now)).rounded(.down)
+        var focus = CompletedFocus(id: session.id, name: session.name, startedAt: session.focusStartedAt,
+                                   completedAt: now, focusSeconds: elapsed,
+                                   plannedSeconds: session.originalPlan, outcome: .endedEarly)
+        settleBreak(for: &focus, from: session)
+        record(focus)
+        apply(.focusComplete(focus), event: .finishedEarly)
+    }
+
     func startBreak() {
         guard case .focusComplete(let focus) = stage else { return }
         let duration = breakLength(after: focus)
@@ -248,7 +303,7 @@ final class SessionEngine {
         case .focus:
             var focus = CompletedFocus(id: session.id, name: session.name, startedAt: session.focusStartedAt,
                                        completedAt: endedAt, focusSeconds: session.plannedDuration,
-                                       plannedSeconds: session.plannedDuration, outcome: .completed)
+                                       plannedSeconds: session.originalPlan, outcome: .completed)
             settleBreak(for: &focus, from: session)
             record(focus)
             apply(.focusComplete(focus), event: .focusCompleted(freshness(of: focus, at: now())))
