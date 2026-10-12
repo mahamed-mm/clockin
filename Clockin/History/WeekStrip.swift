@@ -1,19 +1,20 @@
 import SwiftUI
 
-/// The current week as seven pill columns: each day's focus sessions fill a
-/// column of four from the bottom, in the same colours and states as the
-/// session pills everywhere else. Today is marked with a dot.
+/// A week as seven pill columns: each day's focus sessions fill a column of
+/// four from the bottom, in the same colours and states as the session
+/// pills everywhere else. Today is marked with a dot.
 struct WeekStrip: View {
     let totals: [DayTotal]
     /// From `AppServices.today`, so the marker moves at midnight.
     let today: Date
+    let calendar: Calendar
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
             ForEach(Array(totals.enumerated()), id: \.offset) { index, entry in
-                let isToday = Calendar.autoupdatingCurrent.isDate(entry.day, inSameDayAs: today)
+                let isToday = calendar.isDate(entry.day, inSameDayAs: today)
                 let isFuture = entry.day > today && !isToday
                 VStack(spacing: 8) {
                     Text(entry.day.formatted(.dateTime.weekday(.narrow)))

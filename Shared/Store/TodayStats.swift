@@ -86,6 +86,13 @@ extension FocusRecord {
                  countsAsFull: FocusRow.isFull(outcome: outcome, seconds: focusSeconds, planned: plannedSeconds))
     }
 
+    /// Records completed within `interval`, e.g. one week of History.
+    static func completed(in interval: DateInterval) -> Predicate<FocusRecord> {
+        let start = interval.start
+        let end = interval.end
+        return #Predicate { $0.completedAt >= start && $0.completedAt < end }
+    }
+
     /// Records completed on the day containing `day`, for fetches and `@Query`.
     static func completed(on day: Date, calendar: Calendar = .autoupdatingCurrent) -> Predicate<FocusRecord> {
         let range = calendar.dayRange(containing: day)
@@ -104,6 +111,23 @@ extension Calendar {
         let start = startOfDay(for: date)
         return start..<(self.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86_400))
     }
+
+    /// The week containing `date`, starting on the calendar's first weekday.
+    /// Use `includes` to test dates against it: `contains` counts the end
+    /// moment, which is the start of the next week.
+    func weekInterval(containing date: Date) -> DateInterval {
+        if let week = dateInterval(of: .weekOfYear, for: date) { return week }
+        let start = startOfDay(for: date)
+        return DateInterval(start: start, end: self.date(byAdding: .day, value: 7, to: start) ?? start)
+    }
+}
+
+extension DateInterval {
+    /// From `start` up to, but not including, `end`, so back-to-back
+    /// intervals never share a moment. (`contains` includes `end`.)
+    func includes(_ date: Date) -> Bool {
+        start <= date && date < end
+    }
 }
 
 /// One day's focus in the History week strip.
@@ -114,6 +138,15 @@ struct DayTotal: Equatable, Sendable {
 }
 
 extension TodayStats {
+    /// The week strip's numbers: saved sessions plus any waiting to be saved
+    /// that finished that week, each once.
+    static func weekTotals(saved: [FocusRow], pending: [CompletedFocus], containing day: Date,
+                           calendar: Calendar) -> [DayTotal] {
+        let week = calendar.weekInterval(containing: day)
+        let waiting = pending.filter { week.includes($0.completedAt) }
+        return weekTotals(records: rows(saved: saved, pending: waiting), containing: day, calendar: calendar)
+    }
+
     /// Focus seconds and full sessions for each day of the week containing
     /// `day`, in the calendar's week order (e.g. Mon–Sun).
     static func weekTotals(records: [FocusRow],

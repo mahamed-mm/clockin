@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 import Testing
 @testable import Clockin
 
@@ -137,5 +138,70 @@ struct FullSessionTests {
         let snapshot = WidgetSnapshot(rows: [FocusRow(completedAt: now, seconds: 300, countsAsFull: false)], writtenAt: now)
         let decoded = try JSONDecoder().decode(WidgetSnapshot.self, from: JSONEncoder().encode(snapshot))
         #expect(decoded.stats(at: now, active: nil, calendar: osloCalendar).sessionCount == 0)
+    }
+}
+
+/// History pages a week at a time, and every week can be reached.
+@MainActor
+struct HistoryWeekTests {
+    func at(_ month: Int, _ day: Int, _ hour: Int) -> Date {
+        osloCalendar.date(from: DateComponents(year: 2026, month: month, day: day, hour: hour))!
+    }
+
+    @Test func weeksFollowTheCalendarsFirstWeekday() {
+        var monday = osloCalendar
+        monday.firstWeekday = 2
+        var sunday = osloCalendar
+        sunday.firstWeekday = 1
+        let friday = at(10, 9, 15)
+        #expect(monday.weekInterval(containing: friday).start == at(10, 5, 0))
+        #expect(sunday.weekInterval(containing: friday).start == at(10, 4, 0))
+    }
+
+    @Test func aWeekWithTheClocksGoingBackIsOneHourLonger() {
+        var monday = osloCalendar
+        monday.firstWeekday = 2
+        // Oslo leaves summer time on Sunday 25 October 2026.
+        let week = monday.weekInterval(containing: at(10, 21, 12))
+        #expect(week.duration == 7 * 86_400 + 3_600)
+        #expect(week.end == at(10, 26, 0))
+    }
+
+    @Test func aWeeksQueryFindsOnlyThatWeek() throws {
+        let container = try SharedStore.makeModelContainer(inMemory: true)
+        let log = SwiftDataFocusLog(container: container)
+        for date in [at(10, 4, 23), at(10, 5, 9), at(10, 11, 22), at(10, 12, 0)] {
+            try log.record(CompletedFocus(id: UUID(), name: "S", startedAt: date.addingTimeInterval(-1_500),
+                                          completedAt: date, focusSeconds: 1_500))
+        }
+        var monday = osloCalendar
+        monday.firstWeekday = 2
+        let week = monday.weekInterval(containing: at(10, 7, 12))
+        let found = try log.context.fetch(FetchDescriptor(predicate: FocusRecord.completed(in: week)))
+        #expect(Set(found.map(\.completedAt)) == [at(10, 5, 9), at(10, 11, 22)])
+    }
+
+    @Test func sessionsWaitingToBeSavedCountInTheirWeekOnly() {
+        var monday = osloCalendar
+        monday.firstWeekday = 2
+        let waiting = [
+            CompletedFocus(id: UUID(), name: "This week", startedAt: at(10, 6, 9), completedAt: at(10, 6, 9),
+                           focusSeconds: 1_500),
+            CompletedFocus(id: UUID(), name: "Last week", startedAt: at(9, 30, 9), completedAt: at(9, 30, 9),
+                           focusSeconds: 1_500),
+        ]
+        let totals = TodayStats.weekTotals(saved: [FocusRow(completedAt: at(10, 5, 9), seconds: 1_500)],
+                                           pending: waiting, containing: at(10, 7, 12), calendar: monday)
+        #expect(totals.map(\.sessions) == [1, 1, 0, 0, 0, 0, 0])
+    }
+}
+
+struct DateIntervalTests {
+    @Test func backToBackWeeksShareNoMoment() {
+        let monday = Date(timeIntervalSince1970: 1_800_000_000)
+        let lastWeek = DateInterval(start: monday.addingTimeInterval(-7 * 86_400), end: monday)
+        #expect(!lastWeek.includes(monday))
+        #expect(lastWeek.includes(monday.addingTimeInterval(-1)))
+        #expect(lastWeek.includes(lastWeek.start))
     }
 }

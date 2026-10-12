@@ -1,26 +1,32 @@
 import SwiftData
 import SwiftUI
 
+/// Today's total up top, then one week at a time: the week strip and that
+/// week's sessions by day. Paging back reaches every session ever saved.
 struct HistoryView: View {
-    @Query(sort: \FocusRecord.completedAt, order: .reverse) private var records: [FocusRecord]
     @Environment(AppServices.self) private var services
-    @Environment(SessionEngine.self) private var engine
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var appeared = false
+    @Query(HistoryView.newestFirst) private var newest: [FocusRecord]
+    @Query(HistoryView.oldestFirst) private var oldest: [FocusRecord]
+    /// A day in the week shown, or nil to follow the current week.
+    @State private var shownDay: Date?
+
+    private static var newestFirst: FetchDescriptor<FocusRecord> { firstRecord(order: .reverse) }
+    private static var oldestFirst: FetchDescriptor<FocusRecord> { firstRecord(order: .forward) }
+
+    private static func firstRecord(order: SortOrder) -> FetchDescriptor<FocusRecord> {
+        var descriptor = FetchDescriptor<FocusRecord>(sortBy: [SortDescriptor(\.completedAt, order: order)])
+        descriptor.fetchLimit = 1
+        return descriptor
+    }
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    header
+                    HistoryHeader(day: services.today, calendar: services.calendar,
+                                  showsTotals: !services.historyUnavailable)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 8, leading: 4, bottom: 4, trailing: 4))
-                    // Without the store these would be zeros that look real.
-                    if !services.historyUnavailable {
-                        WeekStrip(totals: weekTotals, today: services.today)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 16, leading: 0, bottom: 12, trailing: 0))
-                    }
                 }
                 .listRowSeparator(.hidden)
 
@@ -35,61 +41,77 @@ struct HistoryView: View {
                         .foregroundStyle(Retro.inkSoft)
                         .listRowBackground(Color.clear)
                     }
-                } else if records.isEmpty {
-                    Section {
-                        ContentUnavailableView {
-                            Label("No sessions yet", systemImage: "hourglass")
-                        } description: {
-                            Text("Finish a focus session and it will show up here.")
-                                .font(.retro(.body))
-                        }
-                        .foregroundStyle(Retro.inkSoft)
-                        .listRowBackground(Color.clear)
-                    }
-                }
-
-                ForEach(Array(days.enumerated()), id: \.element.day) { dayIndex, group in
-                    Section {
-                        ForEach(Array(group.records.enumerated()), id: \.element.id) { rowIndex, record in
-                            SessionRow(record: record)
-                                .opacity(appeared ? 1 : 0)
-                                .offset(y: appeared || reduceMotion ? 0 : 10)
-                                .animation(Motion.calm(reduceMotion)
-                                    .delay(reduceMotion ? 0 : 0.04 * Double(min(dayIndex * 3 + rowIndex, 10))),
-                                           value: appeared)
-                        }
-                    } header: {
-                        HStack {
-                            Text(dayTitle(group.day)).retroLabel()
-                            Spacer()
-                            Text(TimeFormat.duration(group.records.reduce(0) { $0 + $1.focusSeconds }))
-                                .font(.retro(.meta))
-                                .foregroundStyle(Retro.inkSoft)
+                } else {
+                    HistoryWeek(week: week, today: services.today, calendar: services.calendar,
+                                canGoBack: canGoBack, canGoForward: canGoForward, page: page)
+                    if newest.isEmpty {
+                        Section {
+                            ContentUnavailableView {
+                                Label("No sessions yet", systemImage: "hourglass")
+                            } description: {
+                                Text("Finish a focus session and it will show up here.")
+                                    .font(.retro(.body))
+                            }
+                            .foregroundStyle(Retro.inkSoft)
+                            .listRowBackground(Color.clear)
                         }
                     }
-                    .listRowBackground(Retro.paperDeep.opacity(0.6))
                 }
             }
             .scrollContentBackground(.hidden)
             .background(PaperBackground())
             .toolbar(.hidden, for: .navigationBar)
-            .onAppear { appeared = true }
         }
     }
 
-    // MARK: Header
+    // MARK: Paging
 
-    private var header: some View {
-        let today = todayRows
+    private var week: DateInterval {
+        services.calendar.weekInterval(containing: shownDay ?? services.today)
+    }
+
+    private var canGoBack: Bool {
+        oldest.first.map { $0.completedAt < week.start } ?? false
+    }
+
+    private var canGoForward: Bool {
+        week.end <= services.today
+    }
+
+    private func page(by weeks: Int) {
+        guard let day = services.calendar.date(byAdding: .weekOfYear, value: weeks, to: week.start) else { return }
+        // Back on this week, follow it again so it moves on at midnight.
+        shownDay = services.calendar.weekInterval(containing: day).includes(services.today) ? nil : day
+    }
+}
+
+// MARK: - Header
+
+/// "History", today's minutes and today's pills. Today only, whatever week
+/// is shown below.
+private struct HistoryHeader: View {
+    let showsTotals: Bool
+    private let day: Date
+    @Query private var records: [FocusRecord]
+    @Environment(SessionEngine.self) private var engine
+
+    init(day: Date, calendar: Calendar, showsTotals: Bool) {
+        self.day = day
+        self.showsTotals = showsTotals
+        _records = Query(filter: FocusRecord.completed(on: day, calendar: calendar))
+    }
+
+    var body: some View {
+        let today = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: day))
         let total = Text(TimeFormat.duration(today.totalSeconds))
             .font(.retro(.headline))
             .foregroundStyle(Retro.orange)
-        return VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("History")
                 .font(.retro(.title))
                 .foregroundStyle(Retro.ink)
                 .accessibilityAddTraits(.isHeader)
-            if !services.historyUnavailable {
+            if showsTotals {
                 Text("You focused \(total) today.")
                     .font(.system(.title3, design: .serif))
                     .foregroundStyle(Retro.inkSoft)
@@ -100,34 +122,132 @@ struct HistoryView: View {
             }
         }
     }
+}
 
-    // MARK: Data
+// MARK: - Week
 
-    /// Saved sessions plus any still waiting to be saved, each once.
-    private var allRows: [FocusRow] {
-        TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords)
+/// One week: its strip with paging, then its sessions by day, newest first.
+private struct HistoryWeek: View {
+    let week: DateInterval
+    let today: Date
+    let calendar: Calendar
+    let canGoBack: Bool
+    let canGoForward: Bool
+    let page: (Int) -> Void
+    @Query private var records: [FocusRecord]
+    @Environment(SessionEngine.self) private var engine
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var appeared = false
+
+    init(week: DateInterval, today: Date, calendar: Calendar, canGoBack: Bool, canGoForward: Bool,
+         page: @escaping (Int) -> Void) {
+        self.week = week
+        self.today = today
+        self.calendar = calendar
+        self.canGoBack = canGoBack
+        self.canGoForward = canGoForward
+        self.page = page
+        _records = Query(filter: FocusRecord.completed(in: week), sort: \.completedAt, order: .reverse)
     }
 
-    private var todayRows: [FocusRow] {
-        allRows.filter { services.calendar.isDate($0.completedAt, inSameDayAs: services.today) }
+    var body: some View {
+        Section {
+            VStack(spacing: 12) {
+                pager
+                WeekStrip(totals: totals, today: today, calendar: calendar)
+                    // A new week fills in afresh.
+                    .id(week.start)
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 12, trailing: 0))
+            .onAppear { appeared = true }
+        }
+        .listRowSeparator(.hidden)
+
+        if records.isEmpty && !week.includes(today) {
+            Section {
+                Text("No sessions this week.")
+                    .font(.retro(.body))
+                    .foregroundStyle(Retro.inkSoft)
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+            }
+        }
+
+        ForEach(Array(days.enumerated()), id: \.element.day) { dayIndex, group in
+            Section {
+                ForEach(Array(group.records.enumerated()), id: \.element.id) { rowIndex, record in
+                    SessionRow(record: record)
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared || reduceMotion ? 0 : 10)
+                        .animation(Motion.calm(reduceMotion)
+                            .delay(reduceMotion ? 0 : 0.04 * Double(min(dayIndex * 3 + rowIndex, 10))),
+                                   value: appeared)
+                }
+            } header: {
+                HStack {
+                    Text(dayTitle(group.day)).retroLabel()
+                    Spacer()
+                    Text(TimeFormat.duration(group.records.reduce(0) { $0 + $1.focusSeconds }))
+                        .font(.retro(.meta))
+                        .foregroundStyle(Retro.inkSoft)
+                }
+            }
+            .listRowBackground(Retro.paperDeep.opacity(0.6))
+        }
     }
 
-    private var weekTotals: [DayTotal] {
-        TodayStats.weekTotals(records: allRows, containing: services.today,
-                              calendar: services.calendar)
+    private var pager: some View {
+        HStack {
+            pageButton("chevron.left", label: String(localized: "Previous week"), enabled: canGoBack) { page(-1) }
+            Spacer()
+            Text(weekTitle)
+                .retroLabel()
+                .contentTransition(.opacity)
+            Spacer()
+            pageButton("chevron.right", label: String(localized: "Next week"), enabled: canGoForward) { page(1) }
+        }
     }
 
-    /// Records grouped by calendar day, newest first. Kept to the last 14 days.
+    private func pageButton(_ symbol: String, label: String, enabled: Bool,
+                            action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.body.weight(.semibold))
+                .frame(width: 44, height: 44)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.borderless)
+        .foregroundStyle(Retro.inkSoft)
+        .opacity(enabled ? 1 : 0.3)
+        .disabled(!enabled)
+        .accessibilityLabel(label)
+    }
+
+    /// "This week", "Last week", or "28 Sept – 4 Oct".
+    private var weekTitle: String {
+        if week.includes(today) { return String(localized: "This week") }
+        if let next = calendar.date(byAdding: .weekOfYear, value: 1, to: week.start),
+           calendar.weekInterval(containing: next).includes(today) {
+            return String(localized: "Last week")
+        }
+        let lastDay = week.end.addingTimeInterval(-1)
+        return (week.start..<lastDay).formatted(.interval.day().month(.abbreviated))
+    }
+
+    private var totals: [DayTotal] {
+        TodayStats.weekTotals(saved: records.map(\.row), pending: engine.pendingRecords,
+                              containing: week.start, calendar: calendar)
+    }
+
     private var days: [(day: Date, records: [FocusRecord])] {
-        let calendar = services.calendar
         let grouped = Dictionary(grouping: records) { calendar.startOfDay(for: $0.completedAt) }
-        return grouped.keys.sorted(by: >).prefix(14).map { ($0, grouped[$0] ?? []) }
+        return grouped.keys.sorted(by: >).map { ($0, grouped[$0] ?? []) }
     }
 
     private func dayTitle(_ day: Date) -> String {
-        let calendar = services.calendar
-        if calendar.isDate(day, inSameDayAs: services.today) { return String(localized: "Today") }
-        if let yesterday = calendar.date(byAdding: .day, value: -1, to: services.today),
+        if calendar.isDate(day, inSameDayAs: today) { return String(localized: "Today") }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: today),
            calendar.isDate(day, inSameDayAs: yesterday) { return String(localized: "Yesterday") }
         return day.formatted(.dateTime.weekday(.wide).month().day())
     }

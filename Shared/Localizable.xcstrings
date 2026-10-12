@@ -231,6 +231,9 @@
     "History couldn't be loaded" : {
 
     },
+    "Last week" : {
+
+    },
     "Live Activities are off for Clockin. Turn on" : {
 
     },
@@ -244,6 +247,12 @@
 
     },
     "Minutes of focus you've finished today." : {
+
+    },
+    "Next week" : {
+
+    },
+    "No sessions this week." : {
 
     },
     "No sessions yet" : {
@@ -271,6 +280,9 @@
 
     },
     "Paused · tap play to resume" : {
+
+    },
+    "Previous week" : {
 
     },
     "Ready" : {
@@ -331,6 +343,9 @@
 
     },
     "Test timers" : {
+
+    },
+    "This week" : {
 
     },
     "Time for a %lld-minute break." : {
