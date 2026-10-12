@@ -27,6 +27,9 @@
         }
       }
     },
+    "%lld already here" : {
+
+    },
     "%lld focus sessions today" : {
       "localizations" : {
         "en" : {
@@ -64,6 +67,28 @@
     },
     "%lld min" : {
 
+    },
+    "%lld new sessions" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld new session"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld new sessions"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld of %lld today" : {
       "localizations" : {
@@ -110,6 +135,31 @@
         }
       }
     },
+    "%lld sessions updated" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld session updated"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sessions updated"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld skipped as unreadable" : {
+
+    },
     "+%lld min" : {
 
     },
@@ -134,6 +184,9 @@
     "Asked on your first start" : {
 
     },
+    "Back up History" : {
+
+    },
     "Break" : {
 
     },
@@ -147,6 +200,12 @@
 
     },
     "Brings the session back" : {
+
+    },
+    "CSV opens in Numbers or Excel. A backup restores here, keeping the sessions you already have." : {
+
+    },
+    "Can't restore" : {
 
     },
     "Cancel" : {
@@ -209,7 +268,13 @@
     "Every saved session is deleted from this iPhone. This can't be undone." : {
 
     },
+    "Every session in this backup is already here." : {
+
+    },
     "Everything stays on this iPhone." : {
+
+    },
+    "Export as CSV" : {
 
     },
     "Finish a focus session and it will show up here." : {
@@ -238,6 +303,9 @@
 
     },
     "Focus complete" : {
+
+    },
+    "Focus session" : {
 
     },
     "Haptics lab" : {
@@ -277,6 +345,15 @@
 
     },
     "No sessions yet" : {
+
+    },
+    "Nothing to restore" : {
+
+    },
+    "Nothing was restored. Try again." : {
+
+    },
+    "OK" : {
 
     },
     "On" : {
@@ -328,6 +405,15 @@
 
     },
     "Replay celebration" : {
+
+    },
+    "Restore" : {
+
+    },
+    "Restore from a backup…" : {
+
+    },
+    "Restore this backup?" : {
 
     },
     "Resume" : {
@@ -385,6 +471,15 @@
 
     },
     "Test timers" : {
+
+    },
+    "The file couldn't be read." : {
+
+    },
+    "This backup is from a newer version of Clockin." : {
+
+    },
+    "This file isn't a Clockin backup." : {
 
     },
     "This week" : {

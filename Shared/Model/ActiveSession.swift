@@ -41,12 +41,12 @@ struct ActiveSession: Codable, Equatable, Sendable {
     /// hundreds of bytes on its own.
     static let maxNameBytes = 240
 
-    /// Trimmed and capped; "Focus" when nothing is left.
+    /// Trimmed and capped. Empty stays empty: a name is optional, and
+    /// screens show `Copy.displayName` for a session without one.
     static func cleanName(_ raw: String) -> String {
         var capped = String(raw.trimmingCharacters(in: .whitespacesAndNewlines).prefix(maxNameLength))
         while capped.utf8.count > maxNameBytes { capped.removeLast() }
-        capped = capped.trimmingCharacters(in: .whitespacesAndNewlines)
-        return capped.isEmpty ? "Focus" : capped
+        return capped.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var isPaused: Bool {

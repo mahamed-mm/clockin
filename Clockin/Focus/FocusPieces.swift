@@ -336,7 +336,7 @@ struct SessionChip: View {
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(Retro.tint(for: session.phase))
                         .contentTransition(.symbolEffect(.replace))
-                    Text(session.phase == .focus ? session.name : Copy.breakAfter(session.name))
+                    Text(session.phase == .focus ? Copy.displayName(session.name) : Copy.breakAfter(session.name))
                         .font(.retro(.headline))
                         .foregroundStyle(Retro.ink)
                         .lineLimit(1)
@@ -516,7 +516,7 @@ struct CompletionSummary: View {
         HStack(spacing: 0) {
             stat(TimeFormat.duration(focus.focusSeconds), "Focused", index: 0)
             divider
-            stat(focus.name, "Session", index: 1)
+            stat(Copy.displayName(focus.name), "Session", index: 1)
             divider
             stat(TimeFormat.duration(total), "Today", index: 2)
         }

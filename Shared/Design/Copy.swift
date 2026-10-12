@@ -46,8 +46,15 @@ enum Copy {
     static var longBreak: String { String(localized: "Long break") }
     static var paused: String { String(localized: "Paused") }
 
-    /// "Break after Organic chemistry"
-    static func breakAfter(_ name: String) -> String { String(localized: "Break after \(name)") }
+    /// The session's name, or "Focus session" when it has none.
+    static func displayName(_ name: String) -> String {
+        name.isEmpty ? String(localized: "Focus session") : name
+    }
+
+    /// "Break after Organic chemistry", or just "Break" after an unnamed session.
+    static func breakAfter(_ name: String) -> String {
+        name.isEmpty ? rest : String(localized: "Break after \(name)")
+    }
 
     /// "Ends 14:30"
     static func ends(_ date: Date) -> String { String(localized: "Ends \(TimeFormat.time(date))") }

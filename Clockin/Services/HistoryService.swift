@@ -52,6 +52,38 @@ final class HistoryService {
         try save()
     }
 
+    /// Every saved session, oldest first, for export.
+    func allSessions() throws -> [CompletedFocus] {
+        try context.fetch(FetchDescriptor<FocusRecord>(sortBy: [SortDescriptor(\.completedAt)])).map(\.completedFocus)
+    }
+
+    /// The saved sessions with these ids, by id.
+    func sessions(ids: Set<UUID>) throws -> [UUID: CompletedFocus] {
+        let records = try context.fetch(FetchDescriptor<FocusRecord>(predicate: #Predicate { ids.contains($0.id) }))
+        return Dictionary(records.map { ($0.id, $0.completedFocus) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    /// Saves each session over the one with its id, or as a new one.
+    func upsert(_ sessions: [CompletedFocus]) throws {
+        let ids = Set(sessions.map(\.id))
+        let records = try context.fetch(FetchDescriptor<FocusRecord>(predicate: #Predicate { ids.contains($0.id) }))
+        let existing = Dictionary(records.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for focus in sessions {
+            if let record = existing[focus.id] {
+                record.name = focus.name
+                record.startedAt = focus.startedAt
+                record.completedAt = focus.completedAt
+                record.focusSeconds = focus.focusSeconds
+                record.plannedSeconds = focus.plannedSeconds
+                record.outcomeRaw = (focus.outcome ?? .completed).rawValue
+                record.timeZoneIdentifier = focus.timeZoneIdentifier ?? record.timeZoneIdentifier
+            } else {
+                context.insert(FocusRecord(focus))
+            }
+        }
+        try save()
+    }
+
     /// Recent session names for quick picks: newest first, each once, no
     /// blanks, leaving out what's already typed.
     nonisolated static func recentNames(_ names: [String], excluding typed: String, limit: Int) -> [String] {

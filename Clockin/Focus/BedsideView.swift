@@ -29,7 +29,7 @@ struct BedsideView: View {
                 VStack(alignment: .leading, spacing: height * 0.03) {
                     Text(session.isPaused ? Copy.paused : session.phase.label)
                         .retroLabel()
-                    Text(session.phase == .focus ? session.name : Copy.breakAfter(session.name))
+                    Text(session.phase == .focus ? Copy.displayName(session.name) : Copy.breakAfter(session.name))
                         .font(.system(size: height * 0.09, weight: .semibold, design: .serif))
                         .foregroundStyle(Retro.ink)
                         .lineLimit(1)

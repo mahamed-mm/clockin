@@ -305,7 +305,7 @@ private struct SessionRow: View {
                 .font(.retro(.meta))
                 .foregroundStyle(Retro.inkSoft)
                 .frame(minWidth: 52, alignment: .leading)
-            Text(record.name)
+            Text(Copy.displayName(record.name))
                 .font(.retro(.headline))
                 .foregroundStyle(Retro.ink)
                 .lineLimit(1)

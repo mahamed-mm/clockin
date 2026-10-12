@@ -33,10 +33,14 @@ struct SessionEngineTests {
         #expect(effects.events.last == .focusCompleted(.live))
     }
 
-    @Test func emptyNameFallsBackToFocus() {
+    @Test func aBlankNameStaysBlankAndReadsAsAFocusSession() {
         let engine = makeEngine()
         engine.start(name: "   ")
-        #expect(engine.active?.name == "Focus")
+        #expect(engine.active?.name == "")
+        #expect(Copy.displayName("") == "Focus session")
+        #expect(Copy.displayName("Essay") == "Essay")
+        #expect(Copy.breakAfter("") == "Break")
+        #expect(Copy.breakAfter("Essay") == "Break after Essay")
     }
 
     @Test func onlyOneSessionCanBeActive() {

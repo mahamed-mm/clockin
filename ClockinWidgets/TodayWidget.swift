@@ -98,7 +98,7 @@ struct TodayWidgetView: View {
                         .foregroundStyle(Retro.ink)
                         .padding(.horizontal, 30)
                 }
-                Text(active.phase == .focus ? active.name : Copy.rest)
+                Text(active.phase == .focus ? Copy.displayName(active.name) : Copy.rest)
                     .retroLabel()
                     .lineLimit(1)
             }
@@ -191,7 +191,7 @@ struct TodayWidgetView: View {
     private func activeLine(_ active: ActiveSession) -> some View {
         HStack(spacing: 4) {
             Circle().fill(Retro.tint(for: active.phase)).frame(width: 6, height: 6)
-            Text(active.phase == .focus ? active.name : Copy.rest)
+            Text(active.phase == .focus ? Copy.displayName(active.name) : Copy.rest)
                 .lineLimit(1)
             Spacer(minLength: 2)
             if let end = active.endDate {

@@ -96,7 +96,7 @@ final class EndNotifier: EndNotifying {
         switch session.phase {
         case .focus:
             content.title = Copy.focusComplete
-            content.subtitle = session.name
+            content.subtitle = Copy.displayName(session.name)
             content.body = Copy.breakLine(seconds: session.nextBreakSeconds ?? Preset.classic.shortBreak)
         case .rest:
             content.title = Copy.breakOver

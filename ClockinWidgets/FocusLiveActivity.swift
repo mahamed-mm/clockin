@@ -27,7 +27,7 @@ struct FocusLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.center) {
-                    Text(context.attributes.sessionName)
+                    Text(Copy.displayName(context.attributes.sessionName))
                         .font(.retro(.headline))
                         .lineLimit(1)
                 }
@@ -119,7 +119,7 @@ private struct LockScreenFocusView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(cardStatus(state, done: done))
                         .retroLabel()
-                    Text(context.attributes.sessionName)
+                    Text(Copy.displayName(context.attributes.sessionName))
                         .font(.retro(.headline))
                         .foregroundStyle(Retro.ink)
                         .lineLimit(1)

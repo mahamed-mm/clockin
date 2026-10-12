@@ -25,7 +25,7 @@ struct StandByFocusView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(status)
                     .retroLabel()
-                Text(sessionName)
+                Text(Copy.displayName(sessionName))
                     .font(.system(size: 17, weight: .semibold, design: .serif))
                     .foregroundStyle(Retro.ink)
                     .lineLimit(1)

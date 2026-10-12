@@ -277,6 +277,22 @@ final class AppServices: SessionEffects {
         historyChanged()
     }
 
+    /// What restoring `data` would change. Nothing is saved yet.
+    func planImport(of data: Data) throws -> HistoryExport.ImportPlan {
+        guard let history else { throw HistoryExport.ImportError.unreadable }
+        let backup = try HistoryExport.readBackup(data)
+        let existing = try history.sessions(ids: Set(backup.sessions.map(\.id)))
+        return HistoryExport.plan(backup, existing: existing, now: engine.now())
+    }
+
+    /// Saves a restore worked out by `planImport`, all at once.
+    func importSessions(_ plan: HistoryExport.ImportPlan) throws {
+        guard let history else { return }
+        try history.upsert(plan.changes)
+        clearUndoableDeletion()
+        historyChanged()
+    }
+
     /// Redraws today's totals wherever they show outside the app.
     func historyChanged() {
         if let session = engine.active { syncLiveActivity(session) }
