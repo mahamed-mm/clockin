@@ -21,26 +21,43 @@ struct FocusView: View {
     private static let spacing: CGFloat = 24
     private static let margins = EdgeInsets(top: 8, leading: 28, bottom: 20, trailing: 28)
 
-    /// iPhone on its side during a session: switch to the bedside layout.
+    @State private var bedside = BedsideController()
+
+    private var onItsSide: Bool { verticalSizeClass == .compact }
+
+    /// The session as a bedside clock: chosen with the moon button, or the
+    /// phone turned on its side.
     private var bedsideSession: ActiveSession? {
-        verticalSizeClass == .compact ? engine.active : nil
+        bedside.shows(engine.active, onItsSide: onItsSide) ? engine.active : nil
+    }
+
+    /// The moon button's action, while there's a session to show.
+    private var showBedside: (@MainActor () -> Void)? {
+        guard engine.active != nil else { return nil }
+        return { [bedside] in bedside.enter() }
     }
 
     var body: some View {
         Group {
             if let session = bedsideSession {
-                BedsideView(session: session, day: services.today)
-                    .transition(.opacity)
+                BedsideView(session: session, day: services.today) {
+                    bedside.leave(onItsSide: onItsSide)
+                }
+                .transition(.opacity)
             } else {
                 standardLayout
             }
         }
         .toolbar(bedsideSession == nil ? .visible : .hidden, for: .tabBar)
-        .onChange(of: bedsideSession != nil, initial: true) { _, isBedside in
-            // Keep the screen on while the phone is used as a bedside clock.
-            UIApplication.shared.isIdleTimerDisabled = isBedside
+        .onChange(of: BedsideController.keepsScreenOn(showing: bedsideSession != nil, session: engine.active),
+                  initial: true) { _, keepOn in
+            // A bedside clock stays lit while it runs; paused, the phone may sleep.
+            UIApplication.shared.isIdleTimerDisabled = keepOn
         }
+        .onChange(of: engine.active?.id, initial: true) { bedside.sessionChanged(to: engine.active) }
+        .onChange(of: onItsSide) { _, sideways in bedside.orientationChanged(onItsSide: sideways) }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+        .environment(\.showBedside, showBedside)
         .sensoryFeedback(trigger: services.lastEvent) { _, stamp in stamp.feedback }
         // VoiceOver's two-finger double tap does the main thing: start,
         // pause or resume, or start the break.

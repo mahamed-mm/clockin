@@ -77,7 +77,7 @@ struct StandByFocusView: View {
     }
 
     private var detail: String {
-        if state.isPaused { return String(localized: "Paused · tap play to resume") }
+        if state.isPaused { return Copy.paused }
         guard let end = state.endDate else { return "" }
         return state.phase == .focus ? Copy.ends(end) : Copy.breakUntil(end)
     }

@@ -1,20 +1,23 @@
 import SwiftData
 import SwiftUI
 
-/// Full-screen timer for a phone lying on its side while Clockin is open:
-/// the dial on the left, a bedside-clock countdown on the right. Mirrors the
-/// StandBy Live Activity, but works without charging and keeps the screen awake.
+/// Full-screen timer for a phone on the nightstand while Clockin is open:
+/// the dial on the left, a bedside-clock countdown on the right, always in
+/// the dark palette with softened numerals. Mirrors the StandBy Live
+/// Activity, but works without charging; the screen stays on while it runs.
 struct BedsideView: View {
     let session: ActiveSession
     private let day: Date
+    private let leave: () -> Void
     @Environment(SessionEngine.self) private var engine
     @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var today: [FocusRecord]
 
-    init(session: ActiveSession, day: Date) {
+    init(session: ActiveSession, day: Date, leave: @escaping () -> Void) {
         self.session = session
         self.day = day
+        self.leave = leave
         _today = Query(filter: FocusRecord.completed(on: day))
     }
 
@@ -27,8 +30,23 @@ struct BedsideView: View {
                     .frame(width: height * 0.84, height: height * 0.84)
 
                 VStack(alignment: .leading, spacing: height * 0.03) {
-                    Text(session.isPaused ? Copy.paused : session.phase.label)
-                        .retroLabel()
+                    HStack {
+                        Text(session.isPaused ? Copy.paused : session.phase.label)
+                            .retroLabel()
+                        Spacer()
+                        Button(action: leave) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: height * 0.045, weight: .semibold))
+                                .frame(width: 44, height: 44)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(Retro.inkSoft)
+                        .accessibilityLabel(String(localized: "Leave bedside clock"))
+                        .accessibilityShowsLargeContentViewer {
+                            Label(String(localized: "Leave bedside clock"), systemImage: "xmark")
+                        }
+                    }
                     Text(session.phase == .focus ? Copy.displayName(session.name) : Copy.breakAfter(session.name))
                         .font(.system(size: height * 0.09, weight: .semibold, design: .serif))
                         .foregroundStyle(Retro.ink)
@@ -40,7 +58,8 @@ struct BedsideView: View {
                         Text(clock)
                             .font(.retroDisplay(size: height * 0.3))
                             .tracking(-2)
-                            .foregroundStyle(Retro.ink)
+                            // A little softer than full ink in a dark room.
+                            .foregroundStyle(Retro.ink.opacity(0.85))
                             .retroNumber(countsDown: true)
                             .animation(Motion.snappy(reduceMotion), value: clock)
                             .modifier(BlinkWhilePaused(active: session.isPaused))
@@ -86,10 +105,14 @@ struct BedsideView: View {
         .background(PaperBackground(wash: Retro.tint(for: session.phase)))
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
+        // Night palette whatever the phone's appearance; this view only.
+        .environment(\.colorScheme, .dark)
+        // VoiceOver's scrub gesture leaves, like the X.
+        .accessibilityAction(.escape, leave)
     }
 
     private var endsLine: String {
-        if session.isPaused { return String(localized: "Tap play to resume") }
+        if session.isPaused { return "" }
         guard let end = session.endDate else { return "" }
         return session.phase == .focus ? Copy.ends(end) : Copy.breakUntil(end)
     }

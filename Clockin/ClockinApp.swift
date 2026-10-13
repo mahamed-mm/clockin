@@ -3,6 +3,8 @@ import UserNotifications
 
 @main
 struct ClockinApp: App {
+    /// Only for the orientations bedside mode allows.
+    @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @Environment(\.scenePhase) private var scenePhase
     private let services: AppServices
 

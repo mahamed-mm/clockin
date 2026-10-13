@@ -232,6 +232,9 @@
     "Back up History" : {
 
     },
+    "Bedside clock" : {
+
+    },
     "Break" : {
 
     },
@@ -373,6 +376,9 @@
 
     },
     "Last week" : {
+
+    },
+    "Leave bedside clock" : {
 
     },
     "Live Activities are off for Clockin. Turn on" : {
@@ -568,6 +574,9 @@
 
     },
     "Turn on" : {
+
+    },
+    "Turns the screen sideways and dims it" : {
 
     },
     "Undo" : {
