@@ -26,7 +26,7 @@ struct StandByFocusView: View {
                 Text(status)
                     .retroLabel()
                 Text(Copy.displayName(sessionName))
-                    .font(.system(size: 17, weight: .semibold, design: .serif))
+                    .font(.retroFixed(.text, size: 17))
                     .foregroundStyle(Retro.ink)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -36,7 +36,7 @@ struct StandByFocusView: View {
                     Text(state.phase == .focus
                          ? Copy.breakLine(seconds: state.breakDuration ?? Preset.classic.shortBreak)
                          : Copy.readyWhenYouAre)
-                        .font(.system(size: 24, weight: .bold, design: .serif))
+                        .font(.retroFixed(.title, size: 24))
                         .foregroundStyle(Retro.text(for: state.phase))
                         .lineLimit(2)
                         .padding(.vertical, 8)
@@ -51,8 +51,7 @@ struct StandByFocusView: View {
                     .padding(.top, 2)
 
                     Text(detail)
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .monospacedDigit()
+                        .font(.retroRounded(size: 13))
                         .foregroundStyle(Retro.inkSoft)
                         .lineLimit(1)
                 }

@@ -109,6 +109,11 @@ extension Font {
     static func retroFixed(_ cut: Fraunces, size: CGFloat) -> Font {
         .custom(cut.rawValue, fixedSize: size)
     }
+
+    /// The rounded sans at a size that fits a shape (bedside, StandBy).
+    static func retroRounded(size: CGFloat, weight: Font.Weight = .medium) -> Font {
+        .system(size: size, weight: weight, design: .rounded).monospacedDigit()
+    }
 }
 
 /// Sets a type-scale font that follows Bold Text.

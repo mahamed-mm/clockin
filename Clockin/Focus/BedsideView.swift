@@ -48,7 +48,7 @@ struct BedsideView: View {
                         }
                     }
                     Text(session.phase == .focus ? Copy.displayName(session.name) : Copy.breakAfter(session.name))
-                        .font(.system(size: height * 0.09, weight: .semibold, design: .serif))
+                        .font(.retroFixed(.title, size: height * 0.09))
                         .foregroundStyle(Retro.ink)
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
@@ -70,8 +70,7 @@ struct BedsideView: View {
 
                     HStack {
                         Text(endsLine)
-                            .font(.system(size: height * 0.06, weight: .medium, design: .rounded))
-                            .monospacedDigit()
+                            .font(.retroRounded(size: height * 0.06))
                             .foregroundStyle(Retro.inkSoft)
                         Spacer(minLength: 8)
                         Button(action: engine.togglePause) {

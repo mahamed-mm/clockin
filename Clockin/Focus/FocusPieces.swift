@@ -15,7 +15,7 @@ struct FocusHeader: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
-                    .font(.retro(.title))
+                    .retroFont(.title)
                     .foregroundStyle(Retro.ink)
                     .contentTransition(.numericText())
                     .accessibilityAddTraits(.isHeader)
@@ -401,7 +401,7 @@ struct SessionChip: View {
                         .contentTransition(.symbolEffect(.replace))
                         .accessibilityHidden(true)
                     Text(session.phase == .focus ? Copy.displayName(session.name) : Copy.breakAfter(session.name))
-                        .font(.retro(.headline))
+                        .retroFont(.headline)
                         .foregroundStyle(Retro.ink)
                         .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
                 }
@@ -609,7 +609,7 @@ struct CompletionSummary: View {
     private func stat(_ value: String, _ caption: String, index: Int) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.retro(.headline))
+                .retroFont(.headline)
                 .foregroundStyle(Retro.ink)
                 .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
                 .minimumScaleFactor(0.7)

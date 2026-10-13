@@ -46,7 +46,7 @@ struct SettingsSheet: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(preset.title)
-                                .font(.retro(.headline))
+                                .retroFont(.headline)
                                 .foregroundStyle(Retro.ink)
                             Text(preset.detail)
                                 .font(.retro(.meta))

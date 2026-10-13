@@ -106,6 +106,7 @@ private struct HistoryHeader: View {
     private let day: Date
     @Query private var records: [FocusRecord]
     @Environment(SessionEngine.self) private var engine
+    @Environment(\.legibilityWeight) private var legibilityWeight
 
     init(day: Date, calendar: Calendar, showsTotals: Bool) {
         self.day = day
@@ -116,16 +117,16 @@ private struct HistoryHeader: View {
     var body: some View {
         let today = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: day))
         let total = Text(TimeFormat.duration(today.totalSeconds))
-            .font(.retro(.headline))
+            .font(.retro(.headline, bold: legibilityWeight == .bold))
             .foregroundStyle(Retro.orangeText)
         VStack(alignment: .leading, spacing: 8) {
             Text("History")
-                .font(.retro(.title))
+                .retroFont(.title)
                 .foregroundStyle(Retro.ink)
                 .accessibilityAddTraits(.isHeader)
             if showsTotals {
                 Text("You focused \(total) today.")
-                    .font(.system(.title3, design: .serif))
+                    .font(.retro(.headline, bold: legibilityWeight == .bold))
                     .foregroundStyle(Retro.inkSoft)
                     .contentTransition(.numericText())
                     .accessibilityLabel("You focused \(TimeFormat.spokenDuration(today.totalSeconds)) today.")
@@ -318,12 +319,12 @@ private struct SessionRow: View {
                 .foregroundStyle(Retro.inkSoft)
                 .frame(minWidth: 52, alignment: .leading)
             Text(Copy.displayName(record.name))
-                .font(.retro(.headline))
+                .retroFont(.headline)
                 .foregroundStyle(Retro.ink)
                 .lineLimit(stacked ? nil : 1)
             if !stacked { Spacer(minLength: 8) }
             Text(TimeFormat.duration(record.focusSeconds))
-                .font(.system(.body, design: .serif).weight(.bold))
+                .retroFont(.headline)
                 .foregroundStyle(Retro.orangeText)
                 .retroNumber()
         }

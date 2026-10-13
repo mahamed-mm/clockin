@@ -174,7 +174,7 @@ struct TodayWidgetView: View {
                 .foregroundStyle(Retro.ink)
                 .minimumScaleFactor(0.6)
             Text("min")
-                .font(.retro(.headline))
+                .retroFont(.headline)
                 .foregroundStyle(Retro.inkSoft)
         }
         .accessibilityElement(children: .ignore)

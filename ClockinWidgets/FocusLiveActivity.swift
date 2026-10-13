@@ -28,7 +28,7 @@ struct FocusLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.center) {
                     Text(Copy.displayName(context.attributes.sessionName))
-                        .font(.retro(.headline))
+                        .retroFont(.headline)
                         .lineLimit(1)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -49,7 +49,7 @@ struct FocusLiveActivity: Widget {
                     .accessibilityLabel(cardStatus(state, done: done))
             } compactTrailing: {
                 FocusCountdown(reading: TimerReading(state: state, done: done))
-                    .font(.system(.body, design: .serif).weight(.black))
+                    .font(.retroDisplay(size: 17))
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: 52)
                     .foregroundStyle(tint)
@@ -124,7 +124,7 @@ private struct LockScreenFocusView: View {
                     Text(cardStatus(state, done: done))
                         .retroLabel()
                     Text(Copy.displayName(context.attributes.sessionName))
-                        .font(.retro(.headline))
+                        .retroFont(.headline)
                         .foregroundStyle(Retro.ink)
                         .lineLimit(1)
                     if done {

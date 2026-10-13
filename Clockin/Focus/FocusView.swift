@@ -225,7 +225,7 @@ struct FocusView: View {
             } icon: {
                 Image(systemName: symbol).contentTransition(.symbolEffect(.replace))
             }
-            .font(.system(.title3, design: .rounded).weight(.semibold))
+            .font(.retro(.button))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
         }
