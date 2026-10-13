@@ -28,8 +28,11 @@ struct SettingsSheet: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                // Changes apply as they're made, so there's nothing to confirm:
+                // the same X as every other modal.
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(role: .close) { dismiss() }
+                        .tint(Retro.ink)
                 }
             }
         }
@@ -96,7 +99,7 @@ struct SettingsSheet: View {
         @Bindable var services = services
         return Section {
             Toggle(isOn: $services.settings.longBreak) {
-                Text("Long break after four")
+                RowLabel("Long break after four", symbol: "cup.and.saucer")
             }
             .tint(Retro.orange)
             .listRowBackground(rowBackground)
@@ -111,13 +114,15 @@ struct SettingsSheet: View {
         @Bindable var services = services
         return Section {
             Toggle(isOn: $services.settings.bedsideWhenSideways) {
-                Text("Turn sideways for the bedside clock")
+                RowLabel("Turn sideways for the bedside clock", symbol: "rotate.right")
             }
             .tint(Retro.orange)
             .listRowBackground(rowBackground)
-            Button("Show bedside clock") {
+            Button {
                 services.bedside.enter()
                 dismiss()
+            } label: {
+                RowLabel("Show bedside clock", symbol: "moon.stars")
             }
             .disabled(services.engine.active == nil)
             .listRowBackground(rowBackground)
@@ -132,13 +137,16 @@ struct SettingsSheet: View {
 
     private var alerts: some View {
         Section {
-            LabeledContent("Alerts & Live Activities") {
+            LabeledContent {
                 Text(alertSummary)
+            } label: {
+                RowLabel("Alerts & Live Activities", symbol: "bell")
             }
             .listRowBackground(rowBackground)
             if let settingsURL {
-                Button("Open Settings") { openURL(settingsURL) }
-                    .foregroundStyle(Retro.orangeText)
+                Button { openURL(settingsURL) } label: {
+                    RowLabel("Open Settings", symbol: "arrow.up.forward.app")
+                }
                     .listRowBackground(rowBackground)
             }
         } header: {
@@ -169,10 +177,19 @@ struct SettingsSheet: View {
     private var data: some View {
         Section {
             Group {
-                Button("Export as CSV") { export(.commaSeparatedText) }
-                Button("Back up History") { export(.json) }
-                Button("Restore from a backup…") { importing = true }
-                Button("Erase all history…", role: .destructive) { confirmingErase = true }
+                Button { export(.commaSeparatedText) } label: {
+                    RowLabel("Export as CSV", symbol: "tablecells")
+                }
+                Button { export(.json) } label: {
+                    RowLabel("Back up History", symbol: "externaldrive")
+                }
+                Button { importing = true } label: {
+                    RowLabel("Restore from a backup…", symbol: "arrow.counterclockwise")
+                }
+                Button(role: .destructive) { confirmingErase = true } label: {
+                    RowLabel("Erase all history…", symbol: "trash", tint: Retro.rustText)
+                }
+                .foregroundStyle(Retro.rustText)
             }
             .disabled(services.history == nil)
             .listRowBackground(rowBackground)
@@ -295,7 +312,11 @@ struct SettingsSheet: View {
 
     private var about: some View {
         Section {
-            LabeledContent("Version", value: version)
+            LabeledContent {
+                Text(version)
+            } label: {
+                RowLabel("Version", symbol: "info.circle")
+            }
                 .listRowBackground(rowBackground)
         } header: {
             Text("About").retroLabel()
@@ -314,9 +335,27 @@ struct SettingsSheet: View {
     private var rowBackground: Color { Retro.paperDeep.opacity(0.6) }
 }
 
-#if DEBUG
-#Preview {
-    SettingsSheet()
-        .environment(AppServices.preview)
+/// A settings row's words with a quiet symbol column in front, like
+/// Opal's rows. Destructive rows tint the symbol too.
+private struct RowLabel: View {
+    let title: LocalizedStringKey
+    let symbol: String
+    var tint: Color = Retro.inkSoft
+    @ScaledMetric(relativeTo: .body) private var iconWidth: CGFloat = 28
+
+    init(_ title: LocalizedStringKey, symbol: String, tint: Color = Retro.inkSoft) {
+        self.title = title
+        self.symbol = symbol
+        self.tint = tint
+    }
+
+    var body: some View {
+        HStack(spacing: Space.s) {
+            Image(systemName: symbol)
+                .foregroundStyle(tint)
+                .frame(width: iconWidth)
+                .accessibilityHidden(true)
+            Text(title)
+        }
+    }
 }
-#endif

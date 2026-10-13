@@ -297,7 +297,8 @@ struct FocusView: View {
                 .contentShape(.rect)
         }
         .font(.retro(.body))
-        .foregroundStyle(Retro.inkSoft)
+        // Rust says it throws something away; everything else stays quiet.
+        .foregroundStyle(role == .destructive ? Retro.rustText : Retro.inkSoft)
         .buttonStyle(.borderless)
     }
 
