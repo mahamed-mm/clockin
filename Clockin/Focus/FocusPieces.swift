@@ -496,6 +496,43 @@ struct UndoBar: View {
     }
 }
 
+// MARK: - Length chips
+
+/// The three lengths under the dial while waiting to start: the same
+/// choice as Settings › Timer, one tap away. The dial's digits roll to the
+/// new length.
+struct LengthChips: View {
+    @Environment(AppServices.self) private var services
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        // Side by side, or a column when large text wouldn't fit three.
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: Space.xs)) : AnyLayout(HStackLayout(spacing: Space.xs))
+        GlassEffectContainer(spacing: Space.xs) {
+            layout {
+                ForEach(Preset.allCases) { preset in
+                    let selected = services.settings.preset == preset
+                    Button { services.settings.preset = preset } label: {
+                        Text(preset.chipTitle)
+                            .font(.retro(.meta))
+                            .fontWeight(selected ? .bold : .medium)
+                            .foregroundStyle(selected ? Retro.ink : Retro.inkSoft)
+                            .lineLimit(1)
+                            .retroChip(selected: selected)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(preset.spokenSummary)
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                }
+            }
+        }
+        .sensoryFeedback(.selection, trigger: services.settings.preset)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(String(localized: "Session length"))
+    }
+}
+
 // MARK: - Recent names
 
 /// Up to four recent session names under the name field; a tap fills it in.

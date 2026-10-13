@@ -109,4 +109,24 @@ struct SettingsTests {
         #expect(services.engine.active?.plannedDuration == 900)
         #expect(liveActivity.lastBreakDuration == 180)
     }
+
+    /// The length chips set the same preset; a session already running keeps its length.
+    @Test func changingLengthMidSessionWaitsForTheNextOne() {
+        let services = AppServices(container: AppServices.makeEmptyContainer(), stateStore: InMemorySessionStateStore(),
+                                   settingsStore: InMemorySettingsStore(), now: { [clock] in clock.now },
+                                   calendar: osloCalendar, schedulesCompletion: false, liveActivity: SpyLiveActivity(),
+                                   notifications: SpyNotifier(), widgets: SpyWidgets(), haptics: SpyHaptics(),
+                                   announce: { _ in })
+        services.engine.start(name: "Essay")
+        #expect(services.engine.active?.plannedDuration == 1_500)
+
+        services.settings.preset = .deep
+        #expect(services.engine.active?.plannedDuration == 1_500)
+        #expect(services.plan.focus == 3_000)
+    }
+
+    @Test func chipsReadTheirLengths() {
+        #expect(Preset.classic.chipTitle == "25 min")
+        #expect(Preset.deep.spokenSummary == "Deep, 50 minutes focus, 10 minutes break")
+    }
 }

@@ -23,6 +23,16 @@
     "%@ session" : {
 
     },
+    "%@, %@ focus, %@ break" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@ focus, %3$@ break"
+          }
+        }
+      }
+    },
     "%@, %@ to %@" : {
       "localizations" : {
         "en" : {
@@ -520,6 +530,9 @@
 
     },
     "Session deleted. Undo is available for a few seconds." : {
+
+    },
+    "Session length" : {
 
     },
     "Session name" : {

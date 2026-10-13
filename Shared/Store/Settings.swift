@@ -37,6 +37,16 @@ enum Preset: String, CaseIterable, Identifiable, Sendable {
     var detail: String {
         String(localized: "\(TimeFormat.duration(focus)) focus · \(TimeFormat.duration(shortBreak)) break")
     }
+
+    /// The length chip on the Focus screen: "25 min".
+    var chipTitle: String { TimeFormat.duration(focus) }
+
+    /// The chip for VoiceOver: "Classic, 25 minutes focus, 5 minutes break".
+    var spokenSummary: String {
+        String(localized: """
+            \(title), \(TimeFormat.spokenDuration(focus)) focus, \(TimeFormat.spokenDuration(shortBreak)) break
+            """)
+    }
 }
 
 /// Light or dark, or whatever the phone is set to.

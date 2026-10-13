@@ -153,6 +153,7 @@ struct FocusView: View {
             switch engine.stage {
             case .idle:
                 VStack(spacing: Space.s) {
+                    LengthChips()
                     nameField
                         .glassEffectID("session", in: glass)
                         .glassEffectTransition(.matchedGeometry)
