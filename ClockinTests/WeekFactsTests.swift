@@ -65,3 +65,64 @@ struct WeekFactsTests {
         #expect(try sentence([session(day: 15, hour: 9), session(day: 15, hour: 20)]) == "All on Thursday this week.")
     }
 }
+
+/// The on-device model's line is optional, checked, and only ever sees numbers.
+struct WeekSentenceTests {
+    private struct FakeWriter: WeekSentenceWriting {
+        var isAvailable = true
+        var reply: Result<String, Error> = .success("A quiet week, mostly mornings.")
+        func write(prompt: String, instructions: String) async throws -> String { try reply.get() }
+    }
+
+    private struct Unavailable: Error {}
+
+    private let calendar: Calendar = {
+        var calendar = osloCalendar
+        calendar.locale = Locale(identifier: "en_GB")
+        return calendar
+    }()
+
+    private var facts: WeekFacts {
+        let start = calendar.date(from: DateComponents(year: 2026, month: 10, day: 13, hour: 9))!
+        let sessions = [0, 1, 2].map { i in
+            WeekFacts.Session(startedAt: start.addingTimeInterval(Double(i) * 3_600),
+                              completedAt: start.addingTimeInterval(Double(i) * 3_600 + 1_500), seconds: 1_500)
+        }
+        return WeekFacts(sessions: sessions, calendar: calendar)!
+    }
+
+    @Test func theModelOnlySeesNumbersAndADay() {
+        #expect(WeekSentence.prompt(for: facts, calendar: calendar) == """
+            Sessions: 3
+            Total focus: 75 minutes
+            Longest session: 25 minutes
+            Days with focus: 1
+            Busiest day: Tuesday
+            Mostly in the morning
+            """)
+    }
+
+    @Test func onlyOneShortCalmSentenceIsKept() {
+        #expect(WeekSentence.validate("A quiet week, mostly mornings.") == "A quiet week, mostly mornings.")
+        #expect(WeekSentence.validate("  \"mostly mornings this week\" ") == "Mostly mornings this week.")
+        #expect(WeekSentence.validate("") == nil)
+        #expect(WeekSentence.validate("Great job!") == nil)
+        #expect(WeekSentence.validate("Mornings. Tuesday was long.") == nil)
+        #expect(WeekSentence.validate("Why not try evenings?") == nil)
+        #expect(WeekSentence.validate("Line one\nline two") == nil)
+        #expect(WeekSentence.validate(String(repeating: "word ", count: 30)) == nil)
+    }
+
+    @Test func theFixedSentenceStandsInWhenTheModelCant() async {
+        let fixed = Copy.weekSentence(facts, calendar: calendar)
+        #expect(await WeekSentence.line(for: facts, calendar: calendar, writer: FakeWriter(), enabled: true)
+            == "A quiet week, mostly mornings.")
+        #expect(await WeekSentence.line(for: facts, calendar: calendar, writer: FakeWriter(), enabled: false) == fixed)
+        #expect(await WeekSentence.line(for: facts, calendar: calendar, writer: FakeWriter(isAvailable: false),
+                                        enabled: true) == fixed)
+        #expect(await WeekSentence.line(for: facts, calendar: calendar,
+                                        writer: FakeWriter(reply: .failure(Unavailable())), enabled: true) == fixed)
+        #expect(await WeekSentence.line(for: facts, calendar: calendar,
+                                        writer: FakeWriter(reply: .success("Amazing work!!")), enabled: true) == fixed)
+    }
+}

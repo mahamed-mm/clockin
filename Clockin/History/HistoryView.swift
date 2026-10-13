@@ -177,12 +177,7 @@ private struct HistoryWeek: View {
                     // A new week fills in afresh.
                     .id(week.start)
                 if let facts {
-                    Text(Copy.weekSentence(facts, calendar: calendar))
-                        .font(.retro(.meta))
-                        .foregroundStyle(Retro.inkSoft)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .padding(.horizontal, Space.m)
+                    WeekSentenceLine(facts: facts, calendar: calendar)
                         .id(week.start)
                         .transition(.opacity)
                 }

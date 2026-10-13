@@ -36,6 +36,11 @@ struct SettingsTests {
         #expect(try decode(#"{"appearance":"sepia"}"#).appearance == .system)
     }
 
+    @Test func weekSummariesAreOnUnlessTurnedOff() throws {
+        #expect(try decode(#"{"preset":"deep"}"#).weekSummaries)
+        #expect(try decode(#"{"weekSummaries":false}"#).weekSummaries == false)
+    }
+
     @Test func appearanceAndSidewaysAreSaved() {
         let store = DefaultsSettingsStore(defaults: UserDefaults(suiteName: "clockin.tests.\(UUID())")!)
         store.save(TimerSettings(appearance: .dark, bedsideWhenSideways: false))

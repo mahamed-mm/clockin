@@ -83,6 +83,8 @@ final class AppServices: SessionEffects {
     @ObservationIgnored private let settingsStore: SettingsStoring
     /// Low Power Mode and heat: when set, decoration stops.
     let power: PowerState
+    /// Writes History's week line on the device, when Apple Intelligence can.
+    var weekWriter: any WeekSentenceWriting = OnDeviceWeekWriter()
     /// The bedside clock, shared by the Focus screen and Settings.
     let bedside: BedsideController
     /// Nil when the store couldn't be opened: History can't be changed then.

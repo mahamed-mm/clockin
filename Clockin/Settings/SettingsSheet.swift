@@ -19,6 +19,7 @@ struct SettingsSheet: View {
                 longBreak
                 bedside
                 alerts
+                weekSummaries
                 data
                 about
             }
@@ -116,6 +117,25 @@ struct SettingsSheet: View {
             .listRowBackground(rowBackground)
         } footer: {
             Text("Every fourth full session of the day earns a \(TimeFormat.duration(TimerPlan.longBreakLength)) break.")
+        }
+    }
+
+    // MARK: Week summaries
+
+    /// Only on phones whose Apple Intelligence can write them.
+    @ViewBuilder
+    private var weekSummaries: some View {
+        @Bindable var services = services
+        if services.weekWriter.isAvailable {
+            Section {
+                Toggle(isOn: $services.settings.weekSummaries) {
+                    RowLabel("Week summaries", symbol: "apple.intelligence")
+                }
+                .tint(Retro.orange)
+                .listRowBackground(rowBackground)
+            } footer: {
+                Text("Apple Intelligence writes History's line about your week on this iPhone, from session times only. Nothing leaves the phone.")
+            }
         }
     }
 

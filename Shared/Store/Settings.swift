@@ -142,6 +142,8 @@ struct TimerSettings: Codable, Equatable, Sendable {
     var appearance: Appearance = .system
     /// Turning the phone on its side during a session shows the bedside clock.
     var bedsideWhenSideways = true
+    /// History's week line written by the on-device model, where there is one.
+    var weekSummaries = true
 
     init(preset: Preset = .classic, longBreak: Bool = true, appearance: Appearance = .system,
          bedsideWhenSideways: Bool = true) {
@@ -167,7 +169,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case preset, customMinutes, longBreak, appearance, bedsideWhenSideways
+        case preset, customMinutes, longBreak, appearance, bedsideWhenSideways, weekSummaries
     }
 
     init(from decoder: Decoder) throws {
@@ -183,6 +185,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
         let appearance = try? container.decodeIfPresent(String.self, forKey: .appearance)
         self.appearance = appearance.flatMap(Appearance.init(rawValue:)) ?? .system
         bedsideWhenSideways = (try? container.decodeIfPresent(Bool.self, forKey: .bedsideWhenSideways)) ?? true
+        weekSummaries = (try? container.decodeIfPresent(Bool.self, forKey: .weekSummaries)) ?? true
     }
 
     func encode(to encoder: Encoder) throws {
@@ -192,6 +195,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
         try container.encode(longBreak, forKey: .longBreak)
         try container.encode(appearance.rawValue, forKey: .appearance)
         try container.encode(bedsideWhenSideways, forKey: .bedsideWhenSideways)
+        try container.encode(weekSummaries, forKey: .weekSummaries)
     }
 
     var plan: TimerPlan {
