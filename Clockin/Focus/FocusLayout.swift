@@ -20,6 +20,15 @@ enum DialLength {
         return angle < 0 ? angle + 2 * .pi : angle
     }
 
+    /// The whole face: 60 minutes round, set or running.
+    static let face: TimeInterval = 60 * 60
+
+    /// How far round the arc reaches with `remaining` left, so a running
+    /// session unwinds from where the knob was set. Full past an hour.
+    static func arcValue(remaining: TimeInterval) -> Double {
+        min(1, max(0, remaining / face))
+    }
+
     /// The angle the knob sits at for `minutes`.
     static func angle(forMinutes minutes: Int) -> Double {
         Double(minutes) / 60 * 2 * .pi

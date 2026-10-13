@@ -236,6 +236,17 @@ struct DialLengthTests {
         #expect(DialLength.minutes(atAngle: DialLength.angle(forMinutes: 40), previous: 35) == 40)
     }
 
+    @Test func aRunningSessionUnwindsFromWhereTheKnobWasSet() {
+        #expect(DialLength.arcValue(remaining: 45 * 60) == 0.75)
+        #expect(DialLength.arcValue(remaining: 60 * 60) == 1)
+        #expect(DialLength.arcValue(remaining: 75 * 60) == 1)
+        #expect(DialLength.arcValue(remaining: 0) == 0)
+        #expect(DialLength.arcValue(remaining: -30) == 0)
+        // Starting a 45-minute session leaves the arc where the idle dial had it.
+        #expect(DialLength.arcValue(remaining: TimeInterval(SessionLength.custom(minutes: 45).minutes * 60))
+            == Double(45) / 60)
+    }
+
     @Test func theKnobSitsOnTheArcAtItsMinutes() {
         let top = DialLength.knobPoint(minutes: 60, side: 200)
         #expect(abs(top.x - 100) < 1e-9)

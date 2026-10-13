@@ -158,9 +158,10 @@ struct TodaySessionPills: View {
 
 // MARK: - Dial
 
-/// The dial with its countdown. The arc shows the time *left*, like a kitchen
-/// timer: it winds up on start, unwinds as time passes, rewinds on cancel,
-/// and closes into a full ring on completion.
+/// The dial with its countdown. The arc is the time *left* on a 60-minute
+/// face, like a kitchen timer: set it, and it unwinds from there as time
+/// passes; it rewinds to the set length on cancel and closes into a full
+/// ring on completion.
 struct DialFace: View {
     let stage: SessionStage
     let size: CGFloat
@@ -355,8 +356,8 @@ struct DialFace: View {
 
     private func arcValue(session: ActiveSession?, now: Date) -> Double {
         switch stage {
-        case .idle: Double(idleMinutes) / 60
-        case .active(let s): s.plannedDuration > 0 ? s.remaining(at: now) / s.plannedDuration : 0
+        case .idle: DialLength.arcValue(remaining: TimeInterval(idleMinutes * 60))
+        case .active(let s): DialLength.arcValue(remaining: s.remaining(at: now))
         case .focusComplete: 1
         }
     }
