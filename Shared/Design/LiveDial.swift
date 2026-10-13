@@ -3,6 +3,9 @@ import SwiftUI
 
 /// How a timer should be drawn outside the app (Live Activity, widget,
 /// StandBy), where nothing can redraw a custom view between updates.
+/// Every surface shows time left, draining, like the app's dial: a ring or
+/// bar is full at the start, empties as time passes, and a finished phase
+/// shows a full mustard ring.
 enum TimerReading: Equatable {
     /// Running: the system animates anything built from this range.
     case running(ClosedRange<Date>)
@@ -43,25 +46,31 @@ struct LiveDial<Center: View>: View {
     let reading: TimerReading
     let phase: SessionPhase
     var lineWidthRatio: CGFloat = 0.1
+    var showsTicks = true
     @ViewBuilder var center: () -> Center
 
     var body: some View {
         GeometryReader { proxy in
             let side = min(proxy.size.width, proxy.size.height)
-            let ring = side * RetroDial.arcRadiusRatio(showsTicks: true)
+            let ring = side * RetroDial.arcRadiusRatio(showsTicks: showsTicks)
             ZStack {
-                RetroDial(value: 0, tint: tint, showsKnob: false, lineWidthRatio: lineWidthRatio)
-                timerRing
-                    .progressViewStyle(.circular)
-                    .tint(tint)
-                    .frame(width: ring, height: ring)
+                Group {
+                    RetroDial(value: 0, tint: tint, showsTicks: showsTicks, showsKnob: false,
+                              lineWidthRatio: lineWidthRatio)
+                    timerRing
+                        .progressViewStyle(.circular)
+                        .tint(tint)
+                        .frame(width: ring, height: ring)
+                }
+                // The ring is decoration; whatever sits in the middle (a
+                // countdown, say) is still read.
+                .accessibilityHidden(true)
                 center()
             }
             .frame(width: side, height: side)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
-        .accessibilityHidden(true)
     }
 
     private var tint: Color {
@@ -105,6 +114,7 @@ struct LiveDialSymbol: View {
                 .foregroundStyle(Retro.ink)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .accessibilityHidden(true)
     }
 }
 

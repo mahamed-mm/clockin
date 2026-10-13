@@ -176,15 +176,19 @@ struct TodayWidgetView: View {
         }
     }
 
+    /// Same reading as the app: time left, draining on its own between
+    /// timeline entries while a session runs; otherwise today's sessions out of a set.
+    @ViewBuilder
     private var miniDial: some View {
-        // Same reading as the app: time left while running, otherwise today's sessions out of a set.
-        let value = entry.active.map { $0.plannedDuration > 0 ? $0.remaining(at: entry.date) / $0.plannedDuration : 0 }
-            ?? min(1, Double(entry.stats.sessionCount) / Double(SessionPills.setSize))
-        return RetroDial(value: value,
-                         tint: Retro.tint(for: entry.active?.phase ?? .focus),
-                         showsTicks: family != .systemSmall,
-                         showsKnob: family != .systemSmall,
-                         lineWidthRatio: family == .systemSmall ? 0.16 : 0.09)
+        let small = family == .systemSmall
+        if let active = entry.active {
+            LiveDial(reading: TimerReading(session: active, at: entry.date), phase: active.phase,
+                     lineWidthRatio: small ? 0.16 : 0.09, showsTicks: !small) { EmptyView() }
+        } else {
+            RetroDial(value: min(1, Double(entry.stats.sessionCount) / Double(SessionPills.setSize)),
+                      tint: Retro.orange, showsTicks: !small, showsKnob: !small,
+                      lineWidthRatio: small ? 0.16 : 0.09)
+        }
     }
 
     @ViewBuilder

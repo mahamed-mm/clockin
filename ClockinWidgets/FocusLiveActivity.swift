@@ -36,7 +36,7 @@ struct FocusLiveActivity: Widget {
                         FocusCountdown(reading: TimerReading(state: state, done: done))
                             .font(.retroDisplay(size: 40))
                             .multilineTextAlignment(.center)
-                        ProgressBar(state: state, done: done, tint: tint)
+                        ProgressBar(reading: TimerReading(state: state, done: done), tint: tint)
                         if let ends = endsLine(state, done: done) {
                             Text(ends).font(.retro(.meta)).foregroundStyle(.secondary)
                         }
@@ -54,7 +54,7 @@ struct FocusLiveActivity: Widget {
                     .foregroundStyle(tint)
             } minimal: {
                 if let end = state.endDate, !done {
-                    ProgressView(timerInterval: state.timerRange, countsDown: false) {
+                    ProgressView(timerInterval: state.timerRange, countsDown: true) {
                         EmptyView()
                     } currentValueLabel: {
                         Image(systemName: state.phase.symbol).font(.caption2)
@@ -161,26 +161,28 @@ private struct LockScreenFocusView: View {
 
 // MARK: - Pieces
 
+/// Time left, draining, like every other timer in the app.
 private struct ProgressBar: View {
-    let state: FocusActivityAttributes.ContentState
-    let done: Bool
+    let reading: TimerReading
     let tint: Color
 
     var body: some View {
         Group {
-            if !done, !state.isPaused, state.endDate != nil {
-                ProgressView(timerInterval: state.timerRange, countsDown: false) {
+            switch reading {
+            case .running(let range):
+                ProgressView(timerInterval: range, countsDown: true) {
                     EmptyView()
                 } currentValueLabel: {
                     EmptyView()
                 }
-            } else {
-                let value = done ? 1 : 1 - (state.pausedRemaining ?? 0) / max(state.plannedDuration, 1)
-                ProgressView(value: value)
+            case .paused(let fraction, _):
+                ProgressView(value: fraction)
+            case .done:
+                ProgressView(value: 1)
             }
         }
         .progressViewStyle(.linear)
-        .tint(tint)
+        .tint(reading == .done ? Retro.mustard : tint)
     }
 }
 

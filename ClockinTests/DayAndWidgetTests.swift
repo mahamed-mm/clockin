@@ -205,3 +205,44 @@ struct DateIntervalTests {
         #expect(lastWeek.includes(lastWeek.start))
     }
 }
+
+/// Every timer outside the app shows time left, draining.
+struct TimerReadingTests {
+    let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+    func session(_ state: ActiveSession.RunState, planned: TimeInterval = 1_500) -> ActiveSession {
+        ActiveSession(id: UUID(), name: "Essay", phase: .focus, plannedDuration: planned, focusStartedAt: now,
+                      state: state)
+    }
+
+    @Test func aRunningTimerDrainsFromItsFullLength() {
+        let end = now.addingTimeInterval(600)
+        #expect(TimerReading(session: session(.running(endDate: end)), at: now)
+                == .running(end.addingTimeInterval(-1_500)...end))
+    }
+
+    @Test func aPausedTimerShowsTheShareLeft() {
+        #expect(TimerReading(session: session(.paused(remaining: 375)), at: now)
+                == .paused(fraction: 0.25, remaining: 375))
+    }
+
+    @Test func aTimerThatRanOutIsDone() {
+        #expect(TimerReading(session: session(.running(endDate: now.addingTimeInterval(-1))), at: now) == .done)
+    }
+
+    @Test func minutesAddedLengthenTheWholeRing() {
+        // +5 min on a 25-minute session with 100 s left: 400 s of 1 800.
+        let end = now.addingTimeInterval(400)
+        let extended = session(.running(endDate: end), planned: 1_800)
+        #expect(TimerReading(session: extended, at: now) == .running(end.addingTimeInterval(-1_800)...end))
+        let state = FocusActivityAttributes.ContentState(session: session(.paused(remaining: 400), planned: 1_800))
+        #expect(TimerReading(state: state, done: false) == .paused(fraction: 400.0 / 1_800, remaining: 400))
+    }
+
+    @Test func theLockScreenReadsTheSameAsTheApp() {
+        let end = now.addingTimeInterval(600)
+        let state = FocusActivityAttributes.ContentState(session: session(.running(endDate: end)))
+        #expect(TimerReading(state: state, done: false) == .running(state.timerRange))
+        #expect(TimerReading(state: state, done: true) == .done)
+    }
+}

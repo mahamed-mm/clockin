@@ -36,7 +36,7 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 ## Design
 
 - **Warm 70s palette:** paper, ink, rust, burnt orange, mustard and avocado, with full light and dark modes.
-- **One progress language:** the dial shows the running timer; pills show focus sessions (four per set, filling rust → orange → mustard → avocado). The same pills appear in the app, the widget, the Lock Screen and StandBy.
+- **One progress language:** every ring and bar shows time left and drains as it runs, in the app, the widget, the Lock Screen, StandBy and the Dynamic Island; a finished phase is a full mustard ring. Pills show focus sessions (four per set, filling rust → orange → mustard → avocado), the same everywhere.
 - **Typography:** serif display numerals for the countdown, small tracked labels and rounded text for details.
 - **Liquid Glass:** a prominent glass primary button and a session field that morphs into the session chip.
 
