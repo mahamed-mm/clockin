@@ -110,6 +110,8 @@ CI (`.github/workflows/ci.yml`) generates the project, runs the tests on an iPho
 
 Copy lives in `Shared/Design/Copy.swift` (one phrase per moment) and `Shared/Localizable.xcstrings`, which holds the plural forms. Xcode adds new strings to the catalog when it builds; after a command-line build, run `scripts/sync-strings.sh`.
 
+README screenshots come from a simulator launched with `-DemoData`, captured with `xcrun simctl io <device> screenshot --mask=alpha` and framed by `scripts/frame-screenshot.sh`.
+
 Logs go to the unified log under the subsystem `com.moha.clockin` (categories `store`, `live-activity`, `notifications`). Filter for it in Console.app. Errors are logged in full, and session names are never logged.
 
 ### Data compatibility
