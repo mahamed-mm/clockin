@@ -12,8 +12,9 @@ enum Retro {
         static let inkSoft = "InkSoft"
         static let orangeText = "OrangeText"
         static let avocadoText = "AvocadoText"
+        static let rustText = "RustText"
         /// Colours that carry words, checked against both paper tones.
-        static let text = [ink, inkSoft, orangeText, avocadoText]
+        static let text = [ink, inkSoft, orangeText, avocadoText, rustText]
     }
 
     static let paper = Color(Asset.paper)
@@ -29,6 +30,8 @@ enum Retro {
     static let orangeText = Color(Asset.orangeText)
     /// The avocado for words.
     static let avocadoText = Color(Asset.avocadoText)
+    /// Words for actions that throw something away: Cancel session, Delete.
+    static let rustText = Color(Asset.rustText)
 
     /// The four stripe colors, warmest last.
     static let stripes: [Color] = [avocado, mustard, orange, rust]
@@ -50,8 +53,20 @@ enum Retro {
 
 // MARK: - Typography
 
-/// The type scale. Serif (New York) carries the voice; rounded sans handles
-/// labels and numbers. All system fonts, so nothing is bundled.
+/// Clockin's three Fraunces cuts, built from the variable font by
+/// scripts/make-fonts.sh with tabular digits. Registered in both targets'
+/// Info.plist, so the widget and Live Activity use them too.
+enum Fraunces: String, CaseIterable {
+    /// Heaviest and softest: the countdown and big numbers.
+    case display = "FrauncesClockin-Display"
+    /// Screen titles.
+    case title = "FrauncesClockin-Title"
+    /// Session names and rows.
+    case text = "FrauncesClockin-Text"
+}
+
+/// The type scale. Fraunces carries the voice and the numbers; SF Pro
+/// Rounded handles everything you read in passing.
 enum RetroText {
     /// Phase titles: "Focus", "Break", "History".
     case title
@@ -63,29 +78,55 @@ enum RetroText {
     case meta
     /// Fields and rows.
     case body
-    /// Large numbers outside the dial (History total, widget minutes).
+    /// Large numbers outside the dial (stats, History total, widget minutes).
     case number
+    /// The main action's title.
+    case button
 }
 
 extension Font {
-    static func retro(_ style: RetroText) -> Font {
+    /// - Parameter bold: Bold Text is on. System fonts follow it by
+    ///   themselves; the Fraunces roles move up to a heavier cut.
+    static func retro(_ style: RetroText, bold: Bool = false) -> Font {
         switch style {
-        case .title: .system(.largeTitle, design: .serif).weight(.bold)
-        case .headline: .system(.title3, design: .serif).weight(.semibold)
+        case .title: .custom((bold ? Fraunces.display : .title).rawValue, size: 34, relativeTo: .largeTitle)
+        case .headline: .custom((bold ? Fraunces.title : .text).rawValue, size: 20, relativeTo: .title3)
         case .label: .system(.caption, design: .rounded).weight(.bold)
         case .meta: .system(.subheadline, design: .rounded).weight(.medium).monospacedDigit()
         case .body: .system(.body, design: .rounded).weight(.medium)
-        case .number: .system(.largeTitle, design: .serif).weight(.black).monospacedDigit()
+        case .number: .custom(Fraunces.display.rawValue, size: 34, relativeTo: .largeTitle)
+        case .button: .system(.title3, design: .rounded).weight(.semibold)
         }
     }
 
-    /// The countdown: New York black with monospaced digits.
+    /// The countdown and other numbers drawn to fit a shape (the dial,
+    /// bedside, widgets): a fixed size, already tabular.
     static func retroDisplay(size: CGFloat) -> Font {
-        .system(size: size, weight: .black, design: .serif).monospacedDigit()
+        .custom(Fraunces.display.rawValue, fixedSize: size)
+    }
+
+    /// Fraunces at a size that fits a shape rather than following Dynamic Type.
+    static func retroFixed(_ cut: Fraunces, size: CGFloat) -> Font {
+        .custom(cut.rawValue, fixedSize: size)
+    }
+}
+
+/// Sets a type-scale font that follows Bold Text.
+private struct RetroFont: ViewModifier {
+    let style: RetroText
+    @Environment(\.legibilityWeight) private var weight
+
+    func body(content: Content) -> some View {
+        content.font(.retro(style, bold: weight == .bold))
     }
 }
 
 extension View {
+    /// A font from the type scale, heavier with Bold Text.
+    func retroFont(_ style: RetroText) -> some View {
+        modifier(RetroFont(style: style))
+    }
+
     /// Small caps-style appliance label.
     func retroLabel() -> some View {
         font(.retro(.label))
