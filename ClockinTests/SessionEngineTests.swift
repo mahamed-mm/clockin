@@ -85,6 +85,23 @@ struct SessionEngineTests {
         #expect(engine.stage.completedFocus?.name == "Math")
     }
 
+    @Test func pausingRemembersWhenAcrossARelaunch() throws {
+        let engine = makeEngine()
+        engine.start(name: "Math")
+        clock.advance(300)
+        engine.pause()
+        let pausedAt = clock.now
+        #expect(engine.active?.pausedAt == pausedAt)
+
+        let relaunched = makeEngine()
+        relaunched.restore()
+        #expect(relaunched.active?.pausedAt == pausedAt)
+
+        clock.advance(60)
+        relaunched.resume()
+        #expect(relaunched.active?.pausedAt == nil)
+    }
+
     @Test func breakTimeIsNeverRecorded() {
         let engine = makeEngine()
         engine.start(name: "Piano")

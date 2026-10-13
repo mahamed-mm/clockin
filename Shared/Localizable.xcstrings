@@ -469,6 +469,9 @@
     "Paused" : {
 
     },
+    "Paused at %@" : {
+
+    },
     "Paused · %@ left" : {
 
     },

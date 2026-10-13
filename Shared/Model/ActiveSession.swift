@@ -30,6 +30,8 @@ struct ActiveSession: Codable, Equatable, Sendable {
     var isLongBreak: Bool? = nil
     /// Focus only: minutes added with "+5 min", already in `plannedDuration`.
     var extendedSeconds: TimeInterval? = nil
+    /// When the timer was paused; nil while it runs, and from older builds.
+    var pausedAt: Date? = nil
 
     /// The length planned at start, before any minutes were added.
     var originalPlan: TimeInterval { plannedDuration - (extendedSeconds ?? 0) }

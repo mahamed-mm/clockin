@@ -57,7 +57,7 @@ final class SessionEngine {
     /// How long Cancel can be undone, normally.
     static let standardUndoWindow: TimeInterval = 6
     /// "+5 min": offered in the last this-many seconds, and added each time.
-    static let extensionStep: TimeInterval = 5 * 60
+    nonisolated static let extensionStep: TimeInterval = 5 * 60
     /// The most "+5 min" can add to one session.
     static let maxExtension: TimeInterval = 15 * 60
     /// Before this much focus, Cancel (which can be undone) is the honest way out.
@@ -193,12 +193,14 @@ final class SessionEngine {
         let remaining = session.remaining(at: now())
         guard remaining > 0 else { reconcile(); return }
         session.state = .paused(remaining: remaining)
+        session.pausedAt = now()
         apply(.active(session), event: .paused)
     }
 
     func resume() {
         guard var session = active, case .paused(let remaining) = session.state else { return }
         session.state = .running(endDate: now().addingTimeInterval(remaining))
+        session.pausedAt = nil
         apply(.active(session), event: .resumed)
     }
 

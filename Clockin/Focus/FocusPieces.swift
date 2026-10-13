@@ -92,7 +92,7 @@ struct FocusHeader: View {
             return String(localized: "\(TimeFormat.duration(services.plan.focus)) session")
         case .active(let session):
             if session.isPaused {
-                return String(localized: "Paused · \(TimeFormat.clock(session.remaining(at: now))) left")
+                return Copy.pausedMeta(at: session.pausedAt, remaining: session.remaining(at: now))
             }
             let end = session.endDate ?? now
             return session.phase == .focus
@@ -212,7 +212,7 @@ struct DialFace: View {
             // when the phone asks to save power it moves once a minute.
             TimelineView(TickSchedule(countdownEnd: session?.endDate, interval: constrained ? 60 : 1)) { context in
                 RetroDial(value: arcValue(session: session, now: context.date), tint: tint, glowTint: glowTint)
-                    .saturation(session?.isPaused == true ? 0.45 : 1)
+                    .modifier(PausedTone(active: session?.isPaused == true))
                     // Spring the arc when the stage changes; between ticks it just steps.
                     .animation(Motion.wind(reduceMotion), value: stageKey)
                     // A new length winds the idle arc there, one detent at a time while dragging.
@@ -341,7 +341,9 @@ struct DialFace: View {
             .onChanged { drag in
                 let center = CGPoint(x: size / 2, y: size / 2)
                 let angle = DialLength.angle(of: drag.location, around: center)
-                draftMinutes = DialLength.minutes(atAngle: angle, previous: draftMinutes)
+                // The drag starts on the knob, so it starts from the current
+                // length: grabbing it at 60 can't read as just past 12.
+                draftMinutes = DialLength.minutes(atAngle: angle, previous: idleMinutes)
             }
             .onEnded { _ in
                 if let draftMinutes {
@@ -411,6 +413,18 @@ private struct IdleKnobGlow: View {
             .modifier(BreatheThrice(low: 0.08, high: 0.38, resting: 0.2))
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+    }
+}
+
+/// A paused dial goes still and warm, like an old photograph: less colour,
+/// with a mustard cast over the ring.
+private struct PausedTone: ViewModifier {
+    let active: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .saturation(active ? 0.35 : 1)
+            .colorMultiply(active ? Color(red: 1, green: 0.9, blue: 0.72) : .white)
     }
 }
 

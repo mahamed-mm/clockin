@@ -30,6 +30,12 @@ enum Motion {
             : .spring(response: 0.7 * speed, dampingFraction: 0.78)
     }
 
+    /// The screen stepping back round a running dial, and coming forward
+    /// again (faster, since a touch asked for it).
+    static func stepBack(_ reduceMotion: Bool, returning: Bool) -> Animation {
+        .easeInOut(duration: (returning ? 0.25 : reduceMotion ? 0.4 : 1.2) * speed)
+    }
+
     /// Colour changes between focus and break.
     static func tint(_ reduceMotion: Bool) -> Animation {
         .easeInOut(duration: (reduceMotion ? 0.2 : 0.6) * speed)

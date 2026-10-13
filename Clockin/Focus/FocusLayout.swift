@@ -26,15 +26,15 @@ enum DialLength {
     }
 
     /// Whole minutes on the dial for a touch at `angle`, snapped to five.
-    /// While dragging (`previous` set), crossing 12 o'clock holds at the end
-    /// the finger came from, so 60 never jumps to 5 or back.
-    static func minutes(atAngle angle: Double, previous: Int?) -> Int {
+    /// Crossing 12 o'clock from `previous` holds at the end the finger came
+    /// from, so 60 never jumps to 5 or back.
+    static func minutes(atAngle angle: Double, previous: Int) -> Int {
         let range = SessionLength.minuteRange
         let raw = angle / (2 * .pi) * 60
         let step = Double(SessionLength.minuteStep)
         let snapped = Int((raw / step).rounded() * step)
         let minutes = min(max(snapped, range.lowerBound), range.upperBound)
-        if let previous, abs(minutes - previous) > 30 {
+        if abs(minutes - previous) > 30 {
             return previous > 30 ? range.upperBound : range.lowerBound
         }
         return minutes
@@ -57,5 +57,27 @@ extension View {
     /// Keeps `height` up to date with this view's laid-out height.
     func measuredHeight(_ height: Binding<CGFloat>) -> some View {
         onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height.wrappedValue = $0 }
+    }
+}
+
+/// While a session runs untouched, everything round the dial fades back so
+/// only the countdown and Pause stand out. A touch brings it all back.
+enum StepBack {
+    /// How long after the last touch the screen steps back.
+    static let delay: TimeInterval = 8
+    /// How far the pieces round the dial fade.
+    static let opacity = 0.25
+
+    /// When the screen may be stepped back: from `delay` after the last touch
+    /// until the controls are wanted again, when "+5 min" can appear in the
+    /// last minutes of focus, or when a break ends. Nil when nothing runs,
+    /// while paused, and with VoiceOver or Switch Control, which move
+    /// through the controls.
+    static func window(for session: ActiveSession?, lastTouch: Date, assistive: Bool) -> DateInterval? {
+        guard !assistive, let session, let end = session.endDate else { return nil }
+        let wanted = session.phase == .focus ? end.addingTimeInterval(-SessionEngine.extensionStep) : end
+        let start = lastTouch.addingTimeInterval(delay)
+        guard start < wanted else { return nil }
+        return DateInterval(start: start, end: wanted)
     }
 }

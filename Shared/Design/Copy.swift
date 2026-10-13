@@ -51,6 +51,13 @@ enum Copy {
     static var longBreak: String { String(localized: "Long break") }
     static var paused: String { String(localized: "Paused") }
 
+    /// "Paused at 9:36". The dial already shows the time left; a session
+    /// paused by an older build says how much instead: "Paused · 12:34 left".
+    static func pausedMeta(at pausedAt: Date?, remaining: TimeInterval) -> String {
+        guard let pausedAt else { return String(localized: "Paused · \(TimeFormat.clock(remaining)) left") }
+        return String(localized: "Paused at \(TimeFormat.time(pausedAt))")
+    }
+
     /// The session's name, or "Focus session" when it has none.
     static func displayName(_ name: String) -> String {
         name.isEmpty ? String(localized: "Focus session") : name

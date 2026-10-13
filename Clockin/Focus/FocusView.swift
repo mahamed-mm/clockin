@@ -8,7 +8,12 @@ struct FocusView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @AppStorage("lastSessionName") private var sessionName = ""
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    @Environment(\.accessibilitySwitchControlEnabled) private var switchControl
     @FocusState private var nameFocused: Bool
+    /// The last tap or scroll, which the screen waits on before stepping back.
+    @State private var lastTouch = Date.now
+    @State private var steppedBack = false
     @Namespace private var glass
     /// The visible area and what the pieces around the dial take, measured,
     /// so the dial gets what's left and the page scrolls when nothing is.
@@ -59,6 +64,37 @@ struct FocusView: View {
         .accessibilityAction(.magicTap) { primaryAction.2() }
         .animation(Motion.calm(reduceMotion), value: engine.stage)
         .animation(Motion.calm(reduceMotion), value: bedsideSession != nil)
+        .onChange(of: engine.stage) { touched() }
+        .task(id: stepBackWindow) { await stepBack(during: stepBackWindow) }
+    }
+
+    // MARK: Stepping back
+
+    private var stepBackWindow: DateInterval? {
+        StepBack.window(for: engine.active, lastTouch: lastTouch, assistive: voiceOver || switchControl)
+    }
+
+    /// Everything round the dial, faded while the screen has stepped back.
+    private var chromeOpacity: Double { steppedBack ? StepBack.opacity : 1 }
+
+    private func touched() {
+        lastTouch = .now
+    }
+
+    /// Comes forward at once, then fades back for `window`, if there is one.
+    private func stepBack(during window: DateInterval?) async {
+        if steppedBack {
+            withAnimation(Motion.stepBack(reduceMotion, returning: true)) { steppedBack = false }
+        }
+        guard let window else { return }
+        do {
+            try await Task.sleep(for: .seconds(max(0, window.start.timeIntervalSinceNow)))
+            withAnimation(Motion.stepBack(reduceMotion, returning: false)) { steppedBack = true }
+            try await Task.sleep(for: .seconds(max(0, window.end.timeIntervalSinceNow)))
+            withAnimation(Motion.stepBack(reduceMotion, returning: true)) { steppedBack = false }
+        } catch {
+            // Cancelled: a touch or a new stage starts over.
+        }
     }
 
     private var standardLayout: some View {
@@ -75,7 +111,9 @@ struct FocusView: View {
                         ScrollView {
                             VStack(alignment: .leading, spacing: Space.l) {
                                 FocusHeader(stage: engine.stage)
+                                    .opacity(chromeOpacity)
                                 sessionSlot
+                                    .opacity(chromeOpacity)
                                 controls
                             }
                             .frame(minHeight: geo.size.height)
@@ -89,6 +127,8 @@ struct FocusView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Any tap counts, including ones a button takes.
+            .simultaneousGesture(TapGesture().onEnded { touched() })
         }
     }
 
@@ -105,10 +145,12 @@ struct FocusView: View {
             VStack(spacing: Self.spacing) {
                 FocusHeader(stage: engine.stage)
                     .measuredHeight($headerHeight)
+                    .opacity(chromeOpacity)
                 DialFace(stage: engine.stage, size: side, celebration: services.celebrations)
                     .frame(maxWidth: .infinity)
                 sessionSlot
                     .measuredHeight($slotHeight)
+                    .opacity(chromeOpacity)
                 controls
                     .measuredHeight($controlsHeight)
             }
@@ -119,6 +161,9 @@ struct FocusView: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .scrollDismissesKeyboard(.interactively)
+        .onScrollPhaseChange { _, phase in
+            if phase.isScrolling { touched() }
+        }
         .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
     }
 
@@ -217,6 +262,7 @@ struct FocusView: View {
                 }
             }
             .animation(Motion.calm(reduceMotion), value: undoable)
+            .opacity(chromeOpacity)
         }
     }
 

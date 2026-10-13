@@ -213,11 +213,11 @@ struct DialLengthTests {
 
     @Test func anglesSnapToFiveMinutesWithinTheDial() {
         let quarter = Double.pi / 2
-        #expect(DialLength.minutes(atAngle: quarter, previous: nil) == 15)
-        #expect(DialLength.minutes(atAngle: quarter * 1.1, previous: nil) == 15)
-        #expect(DialLength.minutes(atAngle: quarter * 2, previous: nil) == 30)
-        #expect(DialLength.minutes(atAngle: 0.01, previous: nil) == 5)
-        #expect(DialLength.minutes(atAngle: 2 * .pi - 0.01, previous: nil) == 60)
+        #expect(DialLength.minutes(atAngle: quarter, previous: 25) == 15)
+        #expect(DialLength.minutes(atAngle: quarter * 1.1, previous: 25) == 15)
+        #expect(DialLength.minutes(atAngle: quarter * 2, previous: 25) == 30)
+        #expect(DialLength.minutes(atAngle: 0.01, previous: 10) == 5)
+        #expect(DialLength.minutes(atAngle: 2 * .pi - 0.01, previous: 55) == 60)
         #expect(DialLength.angle(forMinutes: 15) == quarter)
     }
 
@@ -225,8 +225,8 @@ struct DialLengthTests {
         // Clockwise past 60 stays at 60; anticlockwise past 5 stays at 5.
         #expect(DialLength.minutes(atAngle: 0.2, previous: 60) == 60)
         #expect(DialLength.minutes(atAngle: 2 * .pi - 0.2, previous: 5) == 5)
-        // A first touch can land anywhere.
-        #expect(DialLength.minutes(atAngle: 2 * .pi - 0.2, previous: nil) == 60)
+        // Grabbing the knob at 60 just past 12 stays at 60.
+        #expect(DialLength.minutes(atAngle: 0.05, previous: 60) == 60)
         // Ordinary steps follow the finger.
         #expect(DialLength.minutes(atAngle: DialLength.angle(forMinutes: 40), previous: 35) == 40)
     }

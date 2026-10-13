@@ -99,6 +99,8 @@ struct SessionStateCompatibilityTests {
         let session = try #require(try decode(Self.pausedBreak).active)
         #expect(session.phase == .rest)
         #expect(session.state == .paused(remaining: 120))
+        // 1.0 didn't save when it paused; the header then just says "Paused".
+        #expect(session.pausedAt == nil)
     }
 
     @Test func readsCompletionAndIdleFrom1_0() throws {
