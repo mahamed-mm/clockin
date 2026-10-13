@@ -23,6 +23,16 @@
     "%@ session" : {
 
     },
+    "%@, %@ to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@ to %3$@"
+          }
+        }
+      }
+    },
     "%@, %@, finished at %@" : {
       "localizations" : {
         "en" : {
@@ -261,7 +271,13 @@
     "Clockin will ask once to alert you when time's up." : {
 
     },
+    "Close" : {
+
+    },
     "Complete" : {
+
+    },
+    "Counts" : {
 
     },
     "Dark" : {
@@ -273,16 +289,19 @@
     "Delete" : {
 
     },
+    "Delete session" : {
+
+    },
     "Developer options" : {
 
     },
     "Dismiss" : {
 
     },
-    "Done" : {
+    "Done for now" : {
 
     },
-    "Done for now" : {
+    "Early, with Finish now" : {
 
     },
     "Ended" : {
@@ -352,6 +371,9 @@
     "Focus session" : {
 
     },
+    "Focused" : {
+
+    },
     "Focused %@, %@, today %@" : {
       "localizations" : {
         "en" : {
@@ -393,9 +415,6 @@
 
     },
     "Minutes of focus you've finished today." : {
-
-    },
-    "Name" : {
 
     },
     "Next week" : {
@@ -443,6 +462,9 @@
     "Paused, %@" : {
 
     },
+    "Planned" : {
+
+    },
     "Previous week" : {
 
     },
@@ -461,10 +483,7 @@
     "Recent names" : {
 
     },
-    "Rename session" : {
-
-    },
-    "Renames the session" : {
+    "Rename" : {
 
     },
     "Replay celebration" : {
@@ -485,7 +504,7 @@
     "Running" : {
 
     },
-    "Save" : {
+    "Save name" : {
 
     },
     "Session" : {
@@ -506,6 +525,9 @@
     "Session name" : {
 
     },
+    "Set of four" : {
+
+    },
     "Settings" : {
 
     },
@@ -516,6 +538,9 @@
 
     },
     "Show bedside clock" : {
+
+    },
+    "Shows the session, to rename or delete it" : {
 
     },
     "Skip break" : {
@@ -581,6 +606,9 @@
     "Turn sideways for the bedside clock" : {
 
     },
+    "Under half its plan" : {
+
+    },
     "Undo" : {
 
     },
@@ -597,6 +625,9 @@
 
     },
     "What are you focusing on?" : {
+
+    },
+    "When time was up" : {
 
     },
     "When time's up" : {

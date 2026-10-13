@@ -8,6 +8,8 @@ struct CardSheet<Title: View, Rows: View, Actions: View>: View {
     var symbol: String?
     var tint: Color = Retro.orangeText
     var overline: String
+    /// What VoiceOver reads for the overline, when the printed one reads badly.
+    var spokenOverline: String?
     @ViewBuilder var title: Title
     @ViewBuilder var rows: Rows
     @ViewBuilder var actions: Actions
@@ -34,7 +36,8 @@ struct CardSheet<Title: View, Rows: View, Actions: View>: View {
                     }
                 }
             }
-            .background(Retro.paperDeep.opacity(0.6), in: .rect(cornerRadius: Radius.card))
+            // A wash of ink rather than paper: it reads on the glass in both appearances.
+            .background(Retro.ink.opacity(0.06), in: .rect(cornerRadius: Radius.card))
             VStack(spacing: Space.xxs) {
                 actions
             }
@@ -60,6 +63,7 @@ struct CardSheet<Title: View, Rows: View, Actions: View>: View {
                 .tracking(2.2)
                 .foregroundStyle(tint)
                 .multilineTextAlignment(.center)
+                .accessibilityLabel(spokenOverline ?? overline)
             title
                 .multilineTextAlignment(.center)
         }
@@ -97,7 +101,8 @@ struct CardRow: View {
     }
 }
 
-/// A quiet text action under a card's rows; destructive ones are rust.
+/// A text action under a card's rows: orange, rust when it throws
+/// something away, quiet ink when it only backs out.
 struct CardAction: View {
     let title: String
     var role: ButtonRole?
@@ -110,8 +115,16 @@ struct CardAction: View {
                 .contentShape(.rect)
         }
         .font(.retro(.body).weight(.semibold))
-        .foregroundStyle(role == .destructive ? Retro.rustText : Retro.orangeText)
+        .foregroundStyle(color)
         .buttonStyle(.borderless)
+    }
+
+    private var color: Color {
+        switch role {
+        case .destructive: Retro.rustText
+        case .cancel: Retro.inkSoft
+        default: Retro.orangeText
+        }
     }
 }
 
@@ -125,8 +138,8 @@ struct CloseButton: View {
                 .font(.body.weight(.semibold))
                 .foregroundStyle(Retro.ink)
                 .frame(width: 44, height: 44)
+                .background(Retro.ink.opacity(0.08), in: .circle)
                 .contentShape(.circle)
-                .glassEffect(.regular.interactive(), in: .circle)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(String(localized: "Close"))

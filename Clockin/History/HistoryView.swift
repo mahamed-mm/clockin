@@ -155,8 +155,8 @@ private struct HistoryWeek: View {
     @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
-    @State private var renaming: FocusRecord?
-    @State private var newName = ""
+    /// The session whose card is open.
+    @State private var opened: SessionSummary?
 
     init(week: DateInterval, today: Date, calendar: Calendar, canGoBack: Bool, canGoForward: Bool,
          page: @escaping (Int) -> Void) {
@@ -197,12 +197,12 @@ private struct HistoryWeek: View {
             Section {
                 ForEach(Array(group.records.enumerated()), id: \.element.id) { rowIndex, record in
                     // A real button, so Full Keyboard Access and Switch Control reach it too.
-                    Button { startRenaming(record) } label: {
+                    Button { opened = SessionSummary(record) } label: {
                         SessionRow(record: record)
                             .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityHint(String(localized: "Renames the session"))
+                    .accessibilityHint(String(localized: "Shows the session, to rename or delete it"))
                     .accessibilityInputLabels([Copy.displayName(record.name)])
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
@@ -227,22 +227,12 @@ private struct HistoryWeek: View {
             }
             .listRowBackground(Retro.paperDeep.opacity(0.6))
         }
-        .alert("Rename session", isPresented: isRenaming) {
-            TextField("Name", text: $newName)
-            Button("Save") {
-                if let renaming { services.renameSession(renaming.id, to: newName) }
-            }
-            Button("Cancel", role: .cancel) {}
+        .sheet(item: $opened) { summary in
+            SessionCard(summary: summary, now: today, calendar: calendar,
+                        rename: { services.renameSession(summary.id, to: $0) },
+                        delete: { services.deleteSessions([summary.id]) })
+                .fittedSheet()
         }
-    }
-
-    private var isRenaming: Binding<Bool> {
-        Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })
-    }
-
-    private func startRenaming(_ record: FocusRecord) {
-        newName = record.name
-        renaming = record
     }
 
     private var pager: some View {
