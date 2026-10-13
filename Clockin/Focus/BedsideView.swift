@@ -65,6 +65,10 @@ struct BedsideView: View {
                         .buttonBorderShape(.circle)
                         .tint(Retro.tint(for: session.phase))
                         .accessibilityLabel(session.isPaused ? "Resume" : "Pause")
+                        .accessibilityShowsLargeContentViewer {
+                            Label(session.isPaused ? "Resume" : "Pause",
+                                  systemImage: session.isPaused ? "play.fill" : "pause.fill")
+                        }
                     }
 
                     SessionPills(completed: TodayStats.rows(saved: today.map(\.row),

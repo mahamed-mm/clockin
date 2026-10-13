@@ -32,12 +32,13 @@ struct FocusHeader: View {
                             Text(verbatim: "·").foregroundStyle(Retro.inkSoft.opacity(0.6))
                             TodayChip(day: services.today)
                         }
+                        .lineLimit(1)
+                        // Stacked, each may wrap: at large text sizes nothing is cut off.
                         VStack(alignment: .leading, spacing: 4) {
                             meta
                             TodayChip(day: services.today)
                         }
                     }
-                    .lineLimit(1)
                 }
             }
             Spacer(minLength: 8)
@@ -57,6 +58,7 @@ struct FocusHeader: View {
                         .contentShape(.rect)
                 }
                 .accessibilityLabel("Settings")
+                .accessibilityShowsLargeContentViewer { Label("Settings", systemImage: "gearshape") }
             }
             .foregroundStyle(Retro.inkSoft)
             .buttonStyle(.borderless)
@@ -381,6 +383,7 @@ struct SessionChip: View {
     let session: ActiveSession
     @Environment(SessionEngine.self) private var engine
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         // Redraws only when "+5 min" appears or goes away.
@@ -397,7 +400,7 @@ struct SessionChip: View {
                     Text(session.phase == .focus ? Copy.displayName(session.name) : Copy.breakAfter(session.name))
                         .font(.retro(.headline))
                         .foregroundStyle(Retro.ink)
-                        .lineLimit(1)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
                 }
                 .accessibilityElement(children: .combine)
                 if canExtend {
@@ -452,6 +455,7 @@ struct AlertHint: View {
                             .contentShape(.rect)
                     }
                     .accessibilityLabel("Dismiss")
+                    .accessibilityShowsLargeContentViewer { Label("Dismiss", systemImage: "xmark") }
                 } else {
                     Text(message)
                 }
@@ -567,6 +571,7 @@ struct CompletionSummary: View {
     @Query private var today: [FocusRecord]
     @Environment(SessionEngine.self) private var engine
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     init(focus: CompletedFocus, day: Date) {
         self.focus = focus
@@ -576,11 +581,14 @@ struct CompletionSummary: View {
 
     var body: some View {
         let total = TodayStats.rows(saved: today.map(\.row), pending: engine.pendingRecords(on: day)).totalSeconds
-        HStack(spacing: 0) {
+        // Three across, or a column when large text wouldn't fit them.
+        let stacked = dynamicTypeSize.isAccessibilitySize
+        let layout = stacked ? AnyLayout(VStackLayout(spacing: 14)) : AnyLayout(HStackLayout(spacing: 0))
+        layout {
             stat(TimeFormat.duration(focus.focusSeconds), "Focused", index: 0)
-            divider
+            if !stacked { divider }
             stat(Copy.displayName(focus.name), "Session", index: 1)
-            divider
+            if !stacked { divider }
             stat(TimeFormat.duration(total), "Today", index: 2)
         }
         .padding(.vertical, 12)
@@ -600,8 +608,9 @@ struct CompletionSummary: View {
             Text(value)
                 .font(.retro(.headline))
                 .foregroundStyle(Retro.ink)
-                .lineLimit(1)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
                 .minimumScaleFactor(0.7)
+                .multilineTextAlignment(.center)
             Text(caption).retroLabel()
         }
         .frame(maxWidth: .infinity)

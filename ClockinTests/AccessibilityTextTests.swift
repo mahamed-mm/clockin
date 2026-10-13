@@ -55,3 +55,25 @@ struct AccessibilityTextTests {
                 == "Tuesday 13 October, upcoming")
     }
 }
+
+/// The dial takes what's left of the screen, and the page scrolls before
+/// anything falls off it.
+struct FocusLayoutTests {
+    @Test func theDialFillsTheHeightLeft() {
+        #expect(FocusLayout.dialSide(viewportHeight: 700, chrome: 400, minimum: 160, width: 340) == 300)
+    }
+
+    @Test func itIsNeverWiderThanTheColumn() {
+        #expect(FocusLayout.dialSide(viewportHeight: 900, chrome: 300, minimum: 160, width: 340) == 340)
+    }
+
+    @Test func itStopsAtItsMinimumAndThePageScrolls() {
+        #expect(FocusLayout.dialSide(viewportHeight: 600, chrome: 900, minimum: 200, width: 340) == 200)
+        // A minimum wider than the column still fits the column.
+        #expect(FocusLayout.dialSide(viewportHeight: 600, chrome: 900, minimum: 400, width: 320) == 320)
+    }
+
+    @Test func nothingIsDrawnBeforeTheFirstMeasurement() {
+        #expect(FocusLayout.dialSide(viewportHeight: 0, chrome: 0, minimum: 160, width: 0) == 0)
+    }
+}

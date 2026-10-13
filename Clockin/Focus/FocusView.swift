@@ -7,8 +7,19 @@ struct FocusView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @AppStorage("lastSessionName") private var sessionName = ""
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @FocusState private var nameFocused: Bool
     @Namespace private var glass
+    /// The visible area and what the pieces around the dial take, measured,
+    /// so the dial gets what's left and the page scrolls when nothing is.
+    @State private var viewport: CGSize = .zero
+    @State private var headerHeight: CGFloat = 0
+    @State private var slotHeight: CGFloat = 0
+    @State private var controlsHeight: CGFloat = 0
+    /// The smallest the dial gets before the page scrolls instead; grows with text size.
+    @ScaledMetric(relativeTo: .body) private var dialMinimum: CGFloat = 160
+    private static let spacing: CGFloat = 24
+    private static let margins = EdgeInsets(top: 8, leading: 28, bottom: 20, trailing: 28)
 
     /// iPhone on its side during a session: switch to the bedside layout.
     private var bedsideSession: ActiveSession? {
@@ -49,28 +60,54 @@ struct FocusView: View {
                     HStack(spacing: 48) {
                         flexibleDial
                             .padding(.vertical, 24)
-                        VStack(alignment: .leading, spacing: 28) {
-                            FocusHeader(stage: engine.stage)
-                            sessionSlot
-                            controls
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 28) {
+                                FocusHeader(stage: engine.stage)
+                                sessionSlot
+                                controls
+                            }
+                            .frame(minHeight: geo.size.height)
                         }
+                        .scrollBounceBehavior(.basedOnSize)
                         .frame(maxWidth: 380)
                     }
                     .padding(.horizontal, 40)
                 } else {
-                    VStack(spacing: 24) {
-                        FocusHeader(stage: engine.stage)
-                        flexibleDial
-                        sessionSlot
-                        controls
-                    }
-                    .padding(.horizontal, 28)
-                    .padding(.bottom, 20)
-                    .padding(.top, 8)
+                    compactLayout
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    /// One column. Everything stays in one scroll view whatever the size,
+    /// so the name field keeps its keyboard and its glass morph; the dial
+    /// takes the height left over, and below its minimum the page scrolls,
+    /// which keeps Start reachable at the largest text sizes on a small phone.
+    private var compactLayout: some View {
+        let chrome = headerHeight + slotHeight + controlsHeight + 3 * Self.spacing
+            + Self.margins.top + Self.margins.bottom
+        let side = FocusLayout.dialSide(viewportHeight: viewport.height, chrome: chrome, minimum: dialMinimum,
+                                        width: viewport.width - Self.margins.leading - Self.margins.trailing)
+        return ScrollView {
+            VStack(spacing: Self.spacing) {
+                FocusHeader(stage: engine.stage)
+                    .measuredHeight($headerHeight)
+                DialFace(stage: engine.stage, size: side, celebration: services.celebrations)
+                    .frame(maxWidth: .infinity)
+                sessionSlot
+                    .measuredHeight($slotHeight)
+                controls
+                    .measuredHeight($controlsHeight)
+            }
+            .padding(Self.margins)
+            .frame(minHeight: viewport.height)
+            .contentShape(.rect)
+            .onTapGesture { nameFocused = false }
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .scrollDismissesKeyboard(.interactively)
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
     }
 
     /// A soft colour wash at the top of the page for each phase.
@@ -150,10 +187,14 @@ struct FocusView: View {
                 secondaryRow
                 // Laid out in every stage, shown only when idle, so the slot
                 // keeps its height on Start and Cancel even when the hint wraps.
-                AlertHint(status: services.alertStatus)
-                    .opacity(idle && !undoable ? 1 : 0)
-                    .allowsHitTesting(idle && !undoable)
-                    .accessibilityHidden(!idle || undoable)
+                // At the largest text sizes it can run to several lines,
+                // so then it only takes space when it shows.
+                if idle || !dynamicTypeSize.isAccessibilitySize {
+                    AlertHint(status: services.alertStatus)
+                        .opacity(idle && !undoable ? 1 : 0)
+                        .allowsHitTesting(idle && !undoable)
+                        .accessibilityHidden(!idle || undoable)
+                }
                 // Takes Cancel's place for a few seconds, right under the finger.
                 UndoBar(message: String(localized: "Session cancelled"),
                         hint: String(localized: "Brings the session back"), undo: engine.undoCancel)
@@ -214,7 +255,10 @@ struct FocusView: View {
             let schedule = TickSchedule(wakeDates: engine.controlChanges(after: .now))
             TimelineView(schedule) { context in
                 let canFinish = engine.canFinishEarly(at: context.date)
-                HStack(spacing: 28) {
+                // Side by side, or stacked when large text won't fit them.
+                let layout = dynamicTypeSize.isAccessibilitySize
+                    ? AnyLayout(VStackLayout(spacing: 0)) : AnyLayout(HStackLayout(spacing: 28))
+                layout {
                     quietButton(String(localized: "Cancel session"), role: .destructive, action: engine.cancel)
                     quietButton(Copy.finishNow, action: engine.finishEarly)
                         .disabled(!canFinish)

@@ -268,6 +268,7 @@ private struct HistoryWeek: View {
         .opacity(enabled ? 1 : 0.3)
         .disabled(!enabled)
         .accessibilityLabel(label)
+        .accessibilityShowsLargeContentViewer { Label(label, systemImage: symbol) }
     }
 
     /// "This week", "Last week", or "28 Sept – 4 Oct".
@@ -302,9 +303,16 @@ private struct HistoryWeek: View {
 /// TIDE-style log row: time, name, minutes.
 private struct SessionRow: View {
     let record: FocusRecord
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 14) {
+        // Time, name and minutes in a row, or stacked at large text sizes
+        // so the name isn't squeezed to nothing.
+        let stacked = dynamicTypeSize.isAccessibilitySize
+        let layout = stacked
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 14))
+        layout {
             Text(TimeFormat.time(record.completedAt))
                 .font(.retro(.meta))
                 .foregroundStyle(Retro.inkSoft)
@@ -312,8 +320,8 @@ private struct SessionRow: View {
             Text(Copy.displayName(record.name))
                 .font(.retro(.headline))
                 .foregroundStyle(Retro.ink)
-                .lineLimit(1)
-            Spacer(minLength: 8)
+                .lineLimit(stacked ? nil : 1)
+            if !stacked { Spacer(minLength: 8) }
             Text(TimeFormat.duration(record.focusSeconds))
                 .font(.system(.body, design: .serif).weight(.bold))
                 .foregroundStyle(Retro.orangeText)
