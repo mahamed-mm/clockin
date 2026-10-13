@@ -31,6 +31,9 @@ struct FocusView: View {
         }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
         .sensoryFeedback(trigger: services.lastEvent) { _, stamp in stamp.feedback }
+        // VoiceOver's two-finger double tap does the main thing: start,
+        // pause or resume, or start the break.
+        .accessibilityAction(.magicTap) { primaryAction.2() }
         .animation(Motion.calm(reduceMotion), value: engine.stage)
         .animation(Motion.calm(reduceMotion), value: bedsideSession != nil)
     }
@@ -133,6 +136,7 @@ struct FocusView: View {
             .padding(.vertical, 16)
             .glassEffect(.regular.interactive(), in: .capsule)
             .accessibilityLabel("Session name")
+            .accessibilityInputLabels(["What are you focusing on", "Session name"])
     }
 
     // MARK: Controls

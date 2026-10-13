@@ -114,6 +114,8 @@ struct TodayWidgetView: View {
                             .minimumScaleFactor(0.6)
                         Text("min").font(.retro(.label)).foregroundStyle(Retro.inkSoft)
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(focusedToday)
                 }
                 SessionPills(completed: entry.stats.sessionCount,
                              pillWidth: 16, pillHeight: 5, spacing: 3)
@@ -147,6 +149,7 @@ struct TodayWidgetView: View {
                 Image(systemName: entry.active?.phase == .rest ? "cup.and.saucer.fill" : "timer")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(Retro.ink)
+                    .accessibilityHidden(true)
             }
             .frame(width: 104, height: 104)
             VStack(alignment: .leading, spacing: 6) {
@@ -174,6 +177,13 @@ struct TodayWidgetView: View {
                 .font(.retro(.headline))
                 .foregroundStyle(Retro.inkSoft)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(focusedToday)
+    }
+
+    /// "50 minutes of focus today", rather than "50", "min".
+    private var focusedToday: String {
+        String(localized: "\(TimeFormat.spokenDuration(TimeInterval(entry.stats.focusMinutes * 60))) of focus today")
     }
 
     /// Same reading as the app: time left, draining on its own between
@@ -195,6 +205,7 @@ struct TodayWidgetView: View {
     private func activeLine(_ active: ActiveSession) -> some View {
         HStack(spacing: 4) {
             Circle().fill(Retro.tint(for: active.phase)).frame(width: 6, height: 6)
+                .accessibilityHidden(true)
             Text(active.phase == .focus ? Copy.displayName(active.name) : Copy.rest)
                 .lineLimit(1)
             Spacer(minLength: 2)

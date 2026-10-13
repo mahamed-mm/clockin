@@ -128,6 +128,7 @@ private struct HistoryHeader: View {
                     .font(.system(.title3, design: .serif))
                     .foregroundStyle(Retro.inkSoft)
                     .contentTransition(.numericText())
+                    .accessibilityLabel("You focused \(TimeFormat.spokenDuration(today.totalSeconds)) today.")
                 SessionPills(completed: today.fullCount, pillWidth: 26, pillHeight: 7,
                              showsCaption: true)
                     .padding(.top, 6)
@@ -192,11 +193,14 @@ private struct HistoryWeek: View {
         ForEach(Array(days.enumerated()), id: \.element.day) { dayIndex, group in
             Section {
                 ForEach(Array(group.records.enumerated()), id: \.element.id) { rowIndex, record in
-                    SessionRow(record: record)
-                        .contentShape(.rect)
-                        .onTapGesture { startRenaming(record) }
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityHint(String(localized: "Renames the session"))
+                    // A real button, so Full Keyboard Access and Switch Control reach it too.
+                    Button { startRenaming(record) } label: {
+                        SessionRow(record: record)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(String(localized: "Renames the session"))
+                    .accessibilityInputLabels([Copy.displayName(record.name)])
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 services.deleteSessions([record.id])
@@ -316,6 +320,10 @@ private struct SessionRow: View {
                 .retroNumber()
         }
         .padding(.vertical, 6)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(String(localized: """
+            \(Copy.displayName(record.name)), \(TimeFormat.spokenDuration(record.focusSeconds)), \
+            finished at \(TimeFormat.time(record.completedAt))
+            """))
     }
 }

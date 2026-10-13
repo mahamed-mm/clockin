@@ -39,6 +39,11 @@ enum Copy {
         String(localized: "+\(Int(seconds / 60)) min")
     }
 
+    /// "+5 min" read aloud: "Add 5 minutes".
+    static func extendSpoken(seconds: TimeInterval) -> String {
+        String(localized: "Add \(TimeFormat.spokenDuration(seconds))")
+    }
+
     // MARK: Phases
 
     static var focus: String { String(localized: "Focus") }
@@ -75,6 +80,15 @@ enum Copy {
     /// "6 focus sessions today", never "6 of 4".
     static func sessionsToday(_ count: Int) -> String {
         String(localized: "\(count) focus sessions today")
+    }
+
+    /// The pills read aloud: "2 of 4 today, one in progress". Past a full
+    /// set it counts sessions instead ("6 focus sessions today").
+    static func pillsSpoken(completed: Int, setSize: Int, inProgress: Bool) -> String {
+        let count = completed > setSize
+            ? sessionsToday(completed)
+            : String(localized: "\(completed) of \(setSize) today")
+        return inProgress ? String(localized: "\(count), one in progress") : count
     }
 
     /// "3 sessions"

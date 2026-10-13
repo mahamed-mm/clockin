@@ -67,7 +67,8 @@ struct StandByFocusView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
-        .accessibilityElement(children: .combine)
+        // Each line on its own, so the pause button stays a button.
+        .accessibilityElement(children: .contain)
     }
 
     private var status: String {

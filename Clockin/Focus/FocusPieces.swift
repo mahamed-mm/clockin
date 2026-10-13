@@ -122,7 +122,7 @@ struct TodayChip: View {
             .font(.retro(.meta))
             .foregroundStyle(Retro.inkSoft)
             .contentTransition(.numericText())
-            .accessibilityLabel("Today: \(TimeFormat.duration(seconds)) of focus")
+            .accessibilityLabel("Today: \(TimeFormat.spokenDuration(seconds)) of focus")
     }
 }
 
@@ -172,8 +172,29 @@ struct DialFace: View {
 
     var body: some View {
         let session = activeSession
+        // VoiceOver's value changes about once a minute, so it's worked out
+        // every ten seconds rather than with the digits.
+        TimelineView(TickSchedule(countdownEnd: session?.endDate, interval: 10)) { context in
+            dial(session: session)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(accessibilityLabel)
+                .accessibilityValue(accessibilityValue(session: session, at: context.date))
+                .accessibilityAddTraits(session.map { $0.isPaused ? [] : .updatesFrequently } ?? [])
+                .accessibilityActions {
+                    if let session {
+                        Button(session.isPaused ? String(localized: "Resume") : String(localized: "Pause")) {
+                            services.engine.togglePause()
+                        }
+                    }
+                }
+                // Bedside prints the countdown beside the dial; read it there, once.
+                .accessibilityHidden(!showsCountdown)
+        }
+    }
+
+    private func dial(session: ActiveSession?) -> some View {
         let constrained = services.power.isConstrained
-        ZStack {
+        return ZStack {
             if !constrained {
                 Sunburst(trigger: celebration)
                     .frame(width: size, height: size)
@@ -205,9 +226,6 @@ struct DialFace: View {
                 .padding(size * 0.25)
         }
         .frame(width: size, height: size)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityText(remaining: session?.remaining(at: .now) ?? services.plan.focus,
-                                              session: session))
     }
 
     @ViewBuilder
@@ -295,14 +313,25 @@ struct DialFace: View {
         }
     }
 
-    private func accessibilityText(remaining: TimeInterval, session: ActiveSession?) -> String {
+    /// What the dial is. It stays put while the value changes.
+    private var accessibilityLabel: String {
         switch stage {
-        case .idle: String(localized: "Ready, \(TimeFormat.duration(remaining)) session")
-        case .active(let s):
-            s.isPaused
-                ? String(localized: "\(s.phase.label), paused, \(TimeFormat.spoken(remaining))")
-                : "\(s.phase.label), \(TimeFormat.spoken(remaining))"
+        case .idle: String(localized: "Timer")
+        case .active(let s): s.isLongBreak == true ? Copy.longBreak : s.phase.label
         case .focusComplete(let focus): focus.outcome == .endedEarly ? Copy.endedEarly : Copy.focusComplete
+        }
+    }
+
+    /// "24 minutes left", "Paused, 24 minutes left", "Ready, 25 minutes".
+    private func accessibilityValue(session: ActiveSession?, at date: Date) -> String {
+        switch stage {
+        case .idle:
+            return String(localized: "Ready, \(TimeFormat.spokenDuration(services.plan.focus))")
+        case .active(let s):
+            let left = TimeFormat.spokenTimeLeft(s.remaining(at: date))
+            return s.isPaused ? String(localized: "Paused, \(left)") : left
+        case .focusComplete:
+            return ""
         }
     }
 }
@@ -364,6 +393,7 @@ struct SessionChip: View {
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(Retro.tint(for: session.phase))
                         .contentTransition(.symbolEffect(.replace))
+                        .accessibilityHidden(true)
                     Text(session.phase == .focus ? Copy.displayName(session.name) : Copy.breakAfter(session.name))
                         .font(.retro(.headline))
                         .foregroundStyle(Retro.ink)
@@ -379,7 +409,9 @@ struct SessionChip: View {
                             .contentShape(.rect)
                     }
                     .buttonStyle(.borderless)
-                    .accessibilityLabel(String(localized: "Add 5 minutes"))
+                    .accessibilityLabel(Copy.extendSpoken(seconds: SessionEngine.extensionStep))
+                    .accessibilityInputLabels([Copy.extendSpoken(seconds: SessionEngine.extensionStep),
+                                               Copy.extend(seconds: SessionEngine.extensionStep)])
                     .transition(.opacity.combined(with: .scale(scale: 0.8)))
                 }
             }
@@ -410,6 +442,8 @@ struct AlertHint: View {
                 if let settings {
                     Button(message) { openURL(settings) }
                         .accessibilityHint("Opens Settings")
+                        // Voice Control: "Tap Turn on", not the whole sentence.
+                        .accessibilityInputLabels([String(localized: "Turn on"), message])
                     Button { dismissed = key } label: {
                         // A full 44 pt target, so aiming for the X can't land in Settings.
                         Image(systemName: "xmark")
@@ -550,7 +584,11 @@ struct CompletionSummary: View {
             stat(TimeFormat.duration(total), "Today", index: 2)
         }
         .padding(.vertical, 12)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(String(localized: """
+            Focused \(TimeFormat.spokenDuration(focus.focusSeconds)), \(Copy.displayName(focus.name)), \
+            today \(TimeFormat.spokenDuration(total))
+            """))
     }
 
     private var divider: some View {

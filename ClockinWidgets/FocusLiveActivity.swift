@@ -46,6 +46,7 @@ struct FocusLiveActivity: Widget {
             } compactLeading: {
                 Image(systemName: state.phase.symbol)
                     .foregroundStyle(tint)
+                    .accessibilityLabel(cardStatus(state, done: done))
             } compactTrailing: {
                 FocusCountdown(reading: TimerReading(state: state, done: done))
                     .font(.system(.body, design: .serif).weight(.black))
@@ -62,8 +63,11 @@ struct FocusLiveActivity: Widget {
                     .progressViewStyle(.circular)
                     .tint(tint)
                     .id(end)
+                    .accessibilityLabel(state.phase.label)
                 } else {
+                    // Says what the glyph means, so "pause.fill" isn't read as a Pause button.
                     Image(systemName: done ? "checkmark" : "pause.fill").foregroundStyle(tint)
+                        .accessibilityLabel(cardStatus(state, done: done))
                 }
             }
             .keylineTint(tint)

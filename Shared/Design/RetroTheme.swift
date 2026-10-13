@@ -130,7 +130,7 @@ enum TimeFormat {
         return String(format: "%02d:%02d", total / 60, total % 60)
     }
 
-    /// "12 minutes 30 seconds remaining"
+    /// "12 minutes 30 seconds remaining", to the second (bedside's countdown).
     static func spoken(_ interval: TimeInterval) -> String {
         let total = Int(interval.rounded(.up))
         let formatter = DateComponentsFormatter()
@@ -138,6 +138,37 @@ enum TimeFormat {
         formatter.allowedUnits = total >= 60 ? [.minute, .second] : [.second]
         let amount = formatter.string(from: TimeInterval(total)) ?? ""
         return String(localized: "\(amount) remaining")
+    }
+
+    /// A duration in words, for VoiceOver: "25 minutes", "1 hour, 15 minutes",
+    /// "10 seconds". `duration` abbreviates, which reads badly aloud.
+    static func spokenDuration(_ seconds: TimeInterval) -> String {
+        let total = Int(seconds.rounded())
+        let formatter = DateComponentsFormatter()
+        formatter.unitsStyle = .full
+        formatter.allowedUnits = total > 0 && total < 60 ? [.second] : [.hour, .minute]
+        formatter.zeroFormattingBehavior = .dropAll
+        return formatter.string(from: TimeInterval(total)).flatMap { $0.isEmpty ? nil : $0 }
+            ?? spokenZeroMinutes
+    }
+
+    private static var spokenZeroMinutes: String {
+        let formatter = DateComponentsFormatter()
+        formatter.unitsStyle = .full
+        formatter.allowedUnits = [.minute]
+        formatter.zeroFormattingBehavior = .pad
+        return formatter.string(from: 0) ?? "0 minutes"
+    }
+
+    /// Time left in words, changing about once a minute so VoiceOver isn't
+    /// flooded: whole minutes, rounded up like the clock ("24:30" is "25
+    /// minutes left"), then ten-second steps in the last minute.
+    static func spokenTimeLeft(_ interval: TimeInterval) -> String {
+        let total = Int(interval.rounded(.up))
+        let rounded = total >= 60
+            ? Int((Double(total) / 60).rounded(.up)) * 60
+            : min(60, Int((Double(total) / 10).rounded(.up)) * 10)
+        return String(localized: "\(spokenDuration(TimeInterval(rounded))) left")
     }
 
     /// Wall-clock time in the user's format: "14:30" or "2:30 PM".

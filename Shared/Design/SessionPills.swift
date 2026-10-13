@@ -62,7 +62,7 @@ struct SessionPills: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Copy.sessionsToday(completed))
+        .accessibilityLabel(Copy.pillsSpoken(completed: completed, setSize: Self.setSize, inProgress: inProgress))
     }
 
     private func pillView(_ index: Int) -> some View {

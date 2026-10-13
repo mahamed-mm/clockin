@@ -11,10 +11,29 @@
         }
       }
     },
+    "%@ left" : {
+
+    },
+    "%@ of focus today" : {
+
+    },
     "%@ remaining" : {
 
     },
     "%@ session" : {
+
+    },
+    "%@, %@, finished at %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@, finished at %3$@"
+          }
+        }
+      }
+    },
+    "%@, one in progress" : {
 
     },
     "%@, paused, %@" : {
@@ -23,6 +42,29 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@, paused, %2$@"
+          }
+        }
+      }
+    },
+    "%@, today: %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, today: %2$@, %3$@"
+          }
+        }
+      }
+    },
+    "%@, upcoming" : {
+
+    },
+    "%@: %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@, %3$@"
           }
         }
       }
@@ -164,6 +206,9 @@
 
     },
     "About" : {
+
+    },
+    "Add %@" : {
 
     },
     "Add 5 minutes" : {
@@ -308,6 +353,16 @@
     "Focus session" : {
 
     },
+    "Focused %@, %@, today %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Focused %1$@, %2$@, today %3$@"
+          }
+        }
+      }
+    },
     "Haptics lab" : {
 
     },
@@ -380,6 +435,9 @@
     "Paused · tap play to resume" : {
 
     },
+    "Paused, %@" : {
+
+    },
     "Previous week" : {
 
     },
@@ -390,6 +448,9 @@
 
     },
     "Ready when you are." : {
+
+    },
+    "Ready, %@" : {
 
     },
     "Ready, %@ session" : {
@@ -506,6 +567,9 @@
     "Today: %@ of focus" : {
 
     },
+    "Turn on" : {
+
+    },
     "Undo" : {
 
     },
@@ -516,6 +580,9 @@
 
     },
     "Version" : {
+
+    },
+    "What are you focusing on" : {
 
     },
     "What are you focusing on?" : {
