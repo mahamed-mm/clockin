@@ -77,3 +77,16 @@ struct FocusLayoutTests {
         #expect(FocusLayout.dialSide(viewportHeight: 0, chrome: 0, minimum: 160, width: 0) == 0)
     }
 }
+
+/// With Differentiate Without Color, the session in progress is dashed.
+struct PillStrokeTests {
+    @Test func theInProgressPillIsDashedOnlyWhenAsked() {
+        let plain = SessionPills.currentStroke(pillHeight: 6, differentiateWithoutColor: false)
+        #expect(plain.dash.isEmpty)
+        #expect(plain.lineWidth == 1.5)
+
+        let dashed = SessionPills.currentStroke(pillHeight: 6, differentiateWithoutColor: true)
+        #expect(dashed.dash.count == 2)
+        #expect(dashed.lineWidth == plain.lineWidth)
+    }
+}

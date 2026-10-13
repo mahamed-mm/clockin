@@ -27,12 +27,22 @@ struct SessionPills: View {
     var showsCaption = false
     var tint: Color = Retro.orange
     @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
 
     /// Pure state for pill `index`; kept separate so it can be unit tested.
     static func state(index: Int, completed: Int, inProgress: Bool) -> PillState {
         if index < completed { return .filled(colorIndex: index % setSize) }
         if index == completed && inProgress { return .current }
         return .empty
+    }
+
+    /// The in-progress pill's outline. Already a different shape from a
+    /// filled one; with Differentiate Without Color it's also dashed, so it
+    /// can't be mistaken for an empty one.
+    static func currentStroke(pillHeight: CGFloat, differentiateWithoutColor: Bool) -> StrokeStyle {
+        let width = max(1.5, pillHeight * 0.25)
+        guard differentiateWithoutColor else { return StrokeStyle(lineWidth: width) }
+        return StrokeStyle(lineWidth: width, lineCap: .round, dash: [pillHeight * 0.5, pillHeight * 0.6])
     }
 
     /// Sessions beyond the set of four, shown as "+N".
@@ -101,7 +111,8 @@ struct SessionPills: View {
                 .widgetAccentable()
         case .current:
             Capsule()
-                .strokeBorder(tint, lineWidth: max(1.5, pillHeight * 0.25))
+                .strokeBorder(tint, style: Self.currentStroke(pillHeight: pillHeight,
+                                                              differentiateWithoutColor: differentiateWithoutColor))
                 .widgetAccentable()
         case .empty:
             // Faint by design, but outlined clearly when Increase Contrast is on.

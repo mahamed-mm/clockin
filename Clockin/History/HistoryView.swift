@@ -69,7 +69,7 @@ struct HistoryView: View {
                         .padding(.horizontal, 20)
                         .glassEffect(.regular, in: .capsule)
                         .padding(.bottom, 8)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                 }
             }
             .animation(Motion.calm(reduceMotion), value: services.undoableDeletion.isEmpty)

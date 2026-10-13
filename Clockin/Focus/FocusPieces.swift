@@ -157,6 +157,7 @@ struct TodaySessionPills: View {
     var scale: CGFloat = 1
     @Query private var records: [FocusRecord]
     @Environment(SessionEngine.self) private var engine
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(inProgress: Bool, day: Date, tint: Color = Retro.orange, scale: CGFloat = 1) {
         self.inProgress = inProgress
@@ -170,7 +171,7 @@ struct TodaySessionPills: View {
         let count = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: day)).fullCount
         SessionPills(completed: count, inProgress: inProgress,
                      pillWidth: 20 * scale, pillHeight: 5.5 * scale, spacing: 4 * scale, tint: tint)
-            .animation(.smooth, value: count)
+            .animation(reduceMotion ? nil : .smooth, value: count)
     }
 }
 
@@ -264,8 +265,9 @@ struct DialFace: View {
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: size * 0.2))
                     .foregroundStyle(Retro.orange, Retro.mustard)
-                    .symbolEffect(.bounce.up.byLayer, options: .nonRepeating, value: celebration)
-                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    // A constant value never bounces: still with Reduce Motion.
+                    .symbolEffect(.bounce.up.byLayer, options: .nonRepeating, value: reduceMotion ? 0 : celebration)
+                    .transition(reduceMotion ? .opacity : .scale(scale: 0.6).combined(with: .opacity))
             } else {
                 TimelineView(TickSchedule(countdownEnd: session?.endDate)) { context in
                     let clock = TimeFormat.clock(session?.remaining(at: context.date) ?? services.plan.focus)
@@ -435,7 +437,7 @@ struct SessionChip: View {
                     .accessibilityLabel(Copy.extendSpoken(seconds: SessionEngine.extensionStep))
                     .accessibilityInputLabels([Copy.extendSpoken(seconds: SessionEngine.extensionStep),
                                                Copy.extend(seconds: SessionEngine.extensionStep)])
-                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.8)))
                 }
             }
             .padding(.leading, 22)
