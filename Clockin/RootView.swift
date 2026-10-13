@@ -55,7 +55,7 @@ private struct RunningSessionChip: View {
     var body: some View {
         if let session = engine.active {
             Button(action: open) {
-                HStack(spacing: 10) {
+                HStack(spacing: Space.s) {
                     Image(systemName: session.phase.symbol)
                         .foregroundStyle(Retro.text(for: session.phase))
                         .accessibilityHidden(true)
@@ -75,7 +75,7 @@ private struct RunningSessionChip: View {
                     .foregroundStyle(Retro.inkSoft)
                 }
                 .font(.retro(.body))
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Space.m)
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)

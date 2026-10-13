@@ -13,7 +13,7 @@ struct FocusHeader: View {
 
     var body: some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 Text(title)
                     .retroFont(.title)
                     .foregroundStyle(Retro.ink)
@@ -28,22 +28,22 @@ struct FocusHeader: View {
                         .contentTransition(.numericText())
                     // One line when it fits, today's total under it when not.
                     ViewThatFits(in: .horizontal) {
-                        HStack(spacing: 10) {
+                        HStack(spacing: Space.xs) {
                             meta
                             Text(verbatim: "·").foregroundStyle(Retro.inkSoft.opacity(0.6))
                             TodayChip(day: services.today)
                         }
                         .lineLimit(1)
                         // Stacked, each may wrap: at large text sizes nothing is cut off.
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: Space.xxs) {
                             meta
                             TodayChip(day: services.today)
                         }
                     }
                 }
             }
-            Spacer(minLength: 8)
-            HStack(spacing: 2) {
+            Spacer(minLength: Space.xs)
+            HStack(spacing: 0) {
                 #if DEBUG
                 // Demo data is for screenshots, so keep developer chrome out of them.
                 if !DemoData.isRequested {
@@ -393,8 +393,8 @@ struct SessionChip: View {
         let schedule = TickSchedule(wakeDates: engine.controlChanges(after: .now))
         TimelineView(schedule) { context in
             let canExtend = engine.canExtend(at: context.date)
-            HStack(spacing: 10) {
-                HStack(spacing: 10) {
+            HStack(spacing: Space.s) {
+                HStack(spacing: Space.s) {
                     Image(systemName: session.phase == .focus ? "book.closed.fill" : "cup.and.saucer.fill")
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(Retro.tint(for: session.phase))
@@ -421,9 +421,9 @@ struct SessionChip: View {
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.8)))
                 }
             }
-            .padding(.leading, 22)
-            .padding(.trailing, canExtend ? 16 : 22)
-            .padding(.vertical, canExtend ? 2 : 14)
+            .padding(.leading, Space.l)
+            .padding(.trailing, canExtend ? Space.m : Space.l)
+            .padding(.vertical, canExtend ? Space.xxs : Space.s)
             .frame(maxWidth: .infinity, minHeight: 50)
             .glassEffect(.regular, in: .capsule)
             .animation(Motion.calm(reduceMotion), value: canExtend)
@@ -444,7 +444,7 @@ struct AlertHint: View {
 
     var body: some View {
         if let message, dismissed != key {
-            HStack(spacing: 4) {
+            HStack(spacing: Space.xxs) {
                 if let settings {
                     Button(message) { openURL(settings) }
                         .accessibilityHint("Opens Settings")
@@ -501,7 +501,7 @@ struct UndoBar: View {
     let undo: () -> Void
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Space.xs) {
             Text(message)
                 .foregroundStyle(Retro.inkSoft)
             Text(verbatim: "·")
@@ -539,23 +539,20 @@ struct RecentNames: View {
         let names = HistoryService.recentNames(records.map(\.name), excluding: typed, limit: 4)
         if !names.isEmpty {
             ScrollView(.horizontal) {
-                HStack(spacing: 8) {
+                HStack(spacing: Space.xs) {
                     ForEach(names, id: \.self) { name in
                         Button { pick(name) } label: {
                             Text(name)
                                 .font(.retro(.meta))
                                 .foregroundStyle(Retro.ink)
                                 .lineLimit(1)
-                                .padding(.horizontal, 14)
-                                .frame(minHeight: 36)
+                                .retroChip()
                         }
                         .buttonStyle(.plain)
-                        .glassEffect(.regular.interactive(), in: .capsule)
                         .accessibilityHint(String(localized: "Uses this name"))
                     }
                 }
-                .padding(.horizontal, 4)
-                .padding(.vertical, 4)
+                .padding(Space.xxs)
             }
             .scrollIndicators(.hidden)
             .accessibilityElement(children: .contain)
@@ -586,7 +583,7 @@ struct CompletionSummary: View {
         let total = TodayStats.rows(saved: today.map(\.row), pending: engine.pendingRecords(on: day)).totalSeconds
         // Three across, or a column when large text wouldn't fit them.
         let stacked = dynamicTypeSize.isAccessibilitySize
-        let layout = stacked ? AnyLayout(VStackLayout(spacing: 14)) : AnyLayout(HStackLayout(spacing: 0))
+        let layout = stacked ? AnyLayout(VStackLayout(spacing: Space.s)) : AnyLayout(HStackLayout(spacing: 0))
         layout {
             stat(TimeFormat.duration(focus.focusSeconds), "Focused", index: 0)
             if !stacked { divider }
@@ -594,7 +591,7 @@ struct CompletionSummary: View {
             if !stacked { divider }
             stat(TimeFormat.duration(total), "Today", index: 2)
         }
-        .padding(.vertical, 12)
+        .padding(.vertical, Space.s)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: """
             Focused \(TimeFormat.spokenDuration(focus.focusSeconds)), \(Copy.displayName(focus.name)), \
@@ -607,7 +604,7 @@ struct CompletionSummary: View {
     }
 
     private func stat(_ value: String, _ caption: String, index: Int) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: Space.xxs) {
             Text(value)
                 .retroFont(.headline)
                 .foregroundStyle(Retro.ink)

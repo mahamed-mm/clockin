@@ -16,7 +16,7 @@ struct WeekStrip: View {
             ForEach(Array(totals.enumerated()), id: \.offset) { index, entry in
                 let isToday = calendar.isDate(entry.day, inSameDayAs: today)
                 let isFuture = entry.day > today && !isToday
-                VStack(spacing: 8) {
+                VStack(spacing: Space.xs) {
                     Text(entry.day.formatted(.dateTime.weekday(.narrow)))
                         .font(.retro(.label))
                         .foregroundStyle(isToday ? Retro.ink : Retro.inkSoft)

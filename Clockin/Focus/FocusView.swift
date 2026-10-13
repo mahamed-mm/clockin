@@ -18,8 +18,9 @@ struct FocusView: View {
     @State private var controlsHeight: CGFloat = 0
     /// The smallest the dial gets before the page scrolls instead; grows with text size.
     @ScaledMetric(relativeTo: .body) private var dialMinimum: CGFloat = 160
-    private static let spacing: CGFloat = 24
-    private static let margins = EdgeInsets(top: 8, leading: 28, bottom: 20, trailing: 28)
+    private static let spacing = Space.l
+    private static let margins = EdgeInsets(top: Space.xs, leading: Space.gutter,
+                                            bottom: Space.l, trailing: Space.gutter)
 
     private var bedside: BedsideController { services.bedside }
 
@@ -68,11 +69,11 @@ struct FocusView: View {
                     .animation(Motion.tint(reduceMotion), value: engine.stage)
                     .onTapGesture { nameFocused = false }
                 if wide {
-                    HStack(spacing: 48) {
+                    HStack(spacing: Space.xxl) {
                         flexibleDial
-                            .padding(.vertical, 24)
+                            .padding(.vertical, Space.l)
                         ScrollView {
-                            VStack(alignment: .leading, spacing: 28) {
+                            VStack(alignment: .leading, spacing: Space.l) {
                                 FocusHeader(stage: engine.stage)
                                 sessionSlot
                                 controls
@@ -82,7 +83,7 @@ struct FocusView: View {
                         .scrollBounceBehavior(.basedOnSize)
                         .frame(maxWidth: 380)
                     }
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, Space.xl)
                 } else {
                     compactLayout
                 }
@@ -151,7 +152,7 @@ struct FocusView: View {
         GlassEffectContainer {
             switch engine.stage {
             case .idle:
-                VStack(spacing: 10) {
+                VStack(spacing: Space.s) {
                     nameField
                         .glassEffectID("session", in: glass)
                         .glassEffectTransition(.matchedGeometry)
@@ -180,8 +181,8 @@ struct FocusView: View {
                     sessionName = String(name.prefix(ActiveSession.maxNameLength))
                 }
             }
-            .padding(.horizontal, 22)
-            .padding(.vertical, 16)
+            .padding(.horizontal, Space.l)
+            .padding(.vertical, Space.m)
             .glassEffect(.regular.interactive(), in: .capsule)
             .accessibilityLabel("Session name")
             .accessibilityInputLabels(["What are you focusing on", "Session name"])
@@ -192,7 +193,7 @@ struct FocusView: View {
     private var controls: some View {
         let idle = engine.stage == .idle
         let undoable = idle && engine.undoableCancel != nil
-        return VStack(spacing: 10) {
+        return VStack(spacing: Space.s) {
             primaryButton
             ZStack {
                 secondaryRow
@@ -227,7 +228,7 @@ struct FocusView: View {
             }
             .font(.retro(.button))
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            .padding(.vertical, Space.xs)
         }
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.capsule)
@@ -268,7 +269,7 @@ struct FocusView: View {
                 let canFinish = engine.canFinishEarly(at: context.date)
                 // Side by side, or stacked when large text won't fit them.
                 let layout = dynamicTypeSize.isAccessibilitySize
-                    ? AnyLayout(VStackLayout(spacing: 0)) : AnyLayout(HStackLayout(spacing: 28))
+                    ? AnyLayout(VStackLayout(spacing: 0)) : AnyLayout(HStackLayout(spacing: Space.l))
                 layout {
                     quietButton(String(localized: "Cancel session"), role: .destructive, action: engine.cancel)
                     quietButton(Copy.finishNow, action: engine.finishEarly)

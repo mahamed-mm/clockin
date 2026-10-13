@@ -23,6 +23,7 @@ struct SettingsSheet: View {
                 about
             }
             .scrollContentBackground(.hidden)
+            .contentMargins(.horizontal, Space.gutter, for: .scrollContent)
             .background(PaperBackground())
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
@@ -44,7 +45,7 @@ struct SettingsSheet: View {
                     services.settings.preset = preset
                 } label: {
                     HStack {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: Space.xxs) {
                             Text(preset.title)
                                 .retroFont(.headline)
                                 .foregroundStyle(Retro.ink)

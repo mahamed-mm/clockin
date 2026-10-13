@@ -27,7 +27,7 @@ struct HistoryView: View {
                     HistoryHeader(day: services.today, calendar: services.calendar,
                                   showsTotals: !services.historyUnavailable)
                         .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 4, bottom: 4, trailing: 4))
+                        .listRowInsets(EdgeInsets(top: Space.xs, leading: 0, bottom: Space.xxs, trailing: 0))
                 }
                 .listRowSeparator(.hidden)
 
@@ -60,15 +60,17 @@ struct HistoryView: View {
                 }
             }
             .scrollContentBackground(.hidden)
+            // The same edge as the Focus screen, so the titles line up.
+            .contentMargins(.horizontal, Space.gutter, for: .scrollContent)
             .background(PaperBackground())
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .bottom) {
                 if !services.undoableDeletion.isEmpty {
                     UndoBar(message: String(localized: "Session deleted"),
                             hint: String(localized: "Puts the session back"), undo: services.undoDelete)
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, Space.l)
                         .glassEffect(.regular, in: .capsule)
-                        .padding(.bottom, 8)
+                        .padding(.bottom, Space.xs)
                         .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                 }
             }
@@ -119,7 +121,7 @@ private struct HistoryHeader: View {
         let total = Text(TimeFormat.duration(today.totalSeconds))
             .font(.retro(.headline, bold: legibilityWeight == .bold))
             .foregroundStyle(Retro.orangeText)
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Space.xs) {
             Text("History")
                 .retroFont(.title)
                 .foregroundStyle(Retro.ink)
@@ -132,7 +134,7 @@ private struct HistoryHeader: View {
                     .accessibilityLabel("You focused \(TimeFormat.spokenDuration(today.totalSeconds)) today.")
                 SessionPills(completed: today.fullCount, pillWidth: 26, pillHeight: 7,
                              showsCaption: true)
-                    .padding(.top, 6)
+                    .padding(.top, Space.xs)
             }
         }
     }
@@ -169,14 +171,14 @@ private struct HistoryWeek: View {
 
     var body: some View {
         Section {
-            VStack(spacing: 12) {
+            VStack(spacing: Space.s) {
                 pager
                 WeekStrip(totals: totals, today: today, calendar: calendar)
                     // A new week fills in afresh.
                     .id(week.start)
             }
             .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 12, trailing: 0))
+            .listRowInsets(EdgeInsets(top: Space.xs, leading: 0, bottom: Space.s, trailing: 0))
             .onAppear { appeared = true }
         }
         .listRowSeparator(.hidden)
@@ -311,8 +313,8 @@ private struct SessionRow: View {
         // so the name isn't squeezed to nothing.
         let stacked = dynamicTypeSize.isAccessibilitySize
         let layout = stacked
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
-            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 14))
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Space.xxs))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: Space.s))
         layout {
             Text(TimeFormat.time(record.completedAt))
                 .font(.retro(.meta))
@@ -328,7 +330,7 @@ private struct SessionRow: View {
                 .foregroundStyle(Retro.orangeText)
                 .retroNumber()
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, Space.xs)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: """
             \(Copy.displayName(record.name)), \(TimeFormat.spokenDuration(record.focusSeconds)), \
