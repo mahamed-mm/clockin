@@ -625,6 +625,8 @@ struct CompletionSummary: View {
                 .multilineTextAlignment(.center)
             Text(caption).retroLabel()
         }
+        // Clear of the dividers, so a long name shrinks before it touches them.
+        .padding(.horizontal, Space.xs)
         .frame(maxWidth: .infinity)
         .transition(.rise(reduceMotion, delay: Motion.stagger(index, after: Motion.afterCelebration, reduceMotion)))
     }

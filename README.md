@@ -9,10 +9,10 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 ## Features
 
 - **One session at a time:** focus, pause and resume, or cancel without recording (and undo the cancel for a few seconds). The break starts manually and never counts as focus time.
-- **Your rhythm:** Classic 25/5, Deep 50/10 or Short 15/3, and a 15-minute long break after every fourth full session of the day. "+5 min" in the last five minutes, and "Finish now" to stop early and keep the minutes. Changes in Settings apply from the next session.
+- **Your rhythm:** Classic 25/5, Deep 50/10 or Short 15/3, and a 15-minute long break after every fourth full session of the day. "+5 min" in the last five minutes, and "Finish now" to stop early and keep the minutes. Pick the length from chips under the dial, or in Settings; it applies from the next session.
 - **Survives relaunch:** the timer is date-based, so a running session is restored exactly after the app is closed or the phone restarts. A session that finished while the app was closed opens quietly, saying when it finished.
 - **Keeps up with the clock:** "today" moves on at midnight, and on time zone and clock changes, everywhere at once. Setting the clock back can't add time to a session.
-- **History:** today's focused minutes, then a week at a time as session columns and sessions by day, paging back to the first one. Swipe to delete (with undo), tap to rename.
+- **History:** today's focused minutes, then a week at a time as session columns and sessions by day, paging back to the first one. Tap a session for its card: when it ran, focused and planned minutes, how it ended and whether it counts toward the set, with Rename and Delete. Swipe to delete too; both offer Undo.
 - **Appearance:** System, Light or Dark in Settings, following the phone by default.
 - **Your data:** export History as CSV, back it up as JSON and restore it, or erase it, all from Settings. Nothing leaves the phone unless you export it.
 - **Live Activity:** a Lock Screen card and Dynamic Island with a live countdown and a pause/resume button that works without opening the app.
@@ -47,8 +47,13 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 
 - **Warm 70s palette:** paper, ink, rust, burnt orange, mustard and avocado, with full light and dark modes.
 - **One progress language:** every ring and bar shows time left and drains as it runs, in the app, the widget, the Lock Screen, StandBy and the Dynamic Island; a finished phase is a full mustard ring. Pills show focus sessions (four per set, filling rust → orange → mustard → avocado), the same everywhere.
-- **Typography:** serif display numerals for the countdown, small tracked labels and rounded text for details.
-- **Liquid Glass:** a prominent glass primary button and a session field that morphs into the session chip.
+- **Typography:** [Fraunces](https://github.com/undercasetype/Fraunces), a soft 70s serif, for titles, session names and every countdown, including the widget and Live Activity; SF Pro Rounded for everything you read in passing. `scripts/make-fonts.sh` builds three static cuts from the variable font and gives them tabular digits, which Fraunces doesn't ship, so the countdown never shifts sideways. Small tracked labels carry the appliance feel.
+- **One system:** a spacing scale with one screen edge, a type scale that follows Dynamic Type and Bold Text, motion tokens with Reduce Motion fallbacks, and one recipe for small modals (a close button, a centred header, grouped rows, then the actions). Destructive actions read in rust.
+- **Liquid Glass:** a prominent glass primary button, a session field that morphs into the session chip, glass chips, and card sheets that float at the height of their content.
+
+## Credits
+
+Fraunces by Undercase Type, under the SIL Open Font License 1.1 (`Shared/Fonts/OFL.txt`). Clockin bundles modified cuts named Fraunces Clockin.
 
 ## Requirements
 

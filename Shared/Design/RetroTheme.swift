@@ -78,8 +78,6 @@ enum RetroText {
     case meta
     /// Fields and rows.
     case body
-    /// Large numbers outside the dial (stats, History total, widget minutes).
-    case number
     /// The main action's title.
     case button
 }
@@ -94,7 +92,6 @@ extension Font {
         case .label: .system(.caption, design: .rounded).weight(.bold)
         case .meta: .system(.subheadline, design: .rounded).weight(.medium).monospacedDigit()
         case .body: .system(.body, design: .rounded).weight(.medium)
-        case .number: .custom(Fraunces.display.rawValue, size: 34, relativeTo: .largeTitle)
         case .button: .system(.title3, design: .rounded).weight(.semibold)
         }
     }
