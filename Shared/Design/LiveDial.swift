@@ -123,16 +123,23 @@ struct FocusCountdown: View {
     let reading: TimerReading
 
     var body: some View {
-        Group {
-            switch reading {
-            case .done: Text(verbatim: "00:00")
-            case .paused(_, let remaining): Text(TimeFormat.clock(remaining))
-            case .running(let range): Text(timerInterval: range, countsDown: true)
-            }
+        switch reading {
+        case .done: fitted(Text(verbatim: "00:00"))
+        case .paused(_, let remaining): fitted(Text(TimeFormat.clock(remaining)))
+        case .running(let range):
+            // The system lays out live timer text itself; with a scale factor
+            // it shrinks Fraunces to half whatever the room, so callers size
+            // the font to fit instead.
+            Text(timerInterval: range, countsDown: true)
+                .monospacedDigit()
+                .lineLimit(1)
         }
-        .monospacedDigit()
-        .lineLimit(1)
-        .minimumScaleFactor(0.5)
+    }
+
+    private func fitted(_ text: Text) -> some View {
+        text.monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
     }
 }
 

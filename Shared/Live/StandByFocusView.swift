@@ -43,7 +43,8 @@ struct StandByFocusView: View {
                 } else {
                     HStack(alignment: .center, spacing: 12) {
                         FocusCountdown(reading: reading)
-                            .font(.retroDisplay(size: 50))
+                            // Fits beside the pause button: live timer text can't shrink.
+                            .font(.retroDisplay(size: 44))
                             .foregroundStyle(Retro.ink)
                         Spacer(minLength: 0)
                         PauseResumeButton(isPaused: state.isPaused, sessionID: sessionID, tint: tint, size: 38)
