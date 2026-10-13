@@ -81,6 +81,8 @@ final class AppServices: SessionEffects {
     @ObservationIgnored private let haptics: CompletionFeedback
     @ObservationIgnored private let announce: @MainActor (String) -> Void
     @ObservationIgnored private let settingsStore: SettingsStoring
+    /// Low Power Mode and heat: when set, decoration stops.
+    let power: PowerState
     /// Nil when the store couldn't be opened: History can't be changed then.
     @ObservationIgnored let history: HistoryService?
     @ObservationIgnored private let schedulesTimers: Bool
@@ -91,6 +93,7 @@ final class AppServices: SessionEffects {
          historyUnavailable: Bool = false,
          stateStore: SessionStateStoring,
          settingsStore: SettingsStoring = InMemorySettingsStore(),
+         power: PowerState? = nil,
          now: @escaping () -> Date = Date.init,
          calendar: Calendar = .autoupdatingCurrent,
          schedulesCompletion: Bool = true,
@@ -108,6 +111,7 @@ final class AppServices: SessionEffects {
         self.announce = announce
         self.calendar = calendar
         self.settingsStore = settingsStore
+        self.power = power ?? PowerState(read: { false })
         self.schedulesTimers = schedulesCompletion
         history = historyUnavailable ? nil : HistoryService(container: container)
         settings = settingsStore.load()
@@ -132,6 +136,7 @@ final class AppServices: SessionEffects {
         }
         let services = AppServices(container: container, historyUnavailable: historyUnavailable,
                                    stateStore: DefaultsSessionStateStore(), settingsStore: DefaultsSettingsStore(),
+                                   power: PowerState(),
                                    liveActivity: LiveActivityController(), notifications: EndNotifier(),
                                    widgets: SystemWidgets(), haptics: CompletionHaptics(),
                                    announce: { AccessibilityNotification.Announcement($0).post() })
@@ -144,6 +149,7 @@ final class AppServices: SessionEffects {
                 ? 30 : SessionEngine.standardUndoWindow
         }
         services.observeTimeChanges()
+        services.power.observe()
         return services
     }
 

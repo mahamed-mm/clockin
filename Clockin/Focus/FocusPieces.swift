@@ -18,7 +18,9 @@ struct FocusHeader: View {
                     .foregroundStyle(Retro.ink)
                     .contentTransition(.numericText())
                     .accessibilityAddTraits(.isHeader)
-                TimelineView(.periodic(from: .now, by: 1)) { context in
+                // The line only changes on its own when a completion stops
+                // being recent; everything else is a stage change.
+                TimelineView(TickSchedule(wakeDates: metaChanges)) { context in
                     let meta = Text(meta(at: context.date))
                         .font(.retro(.meta))
                         .foregroundStyle(Retro.inkSoft)
@@ -71,6 +73,14 @@ struct FocusHeader: View {
         case .active(let session): session.isLongBreak == true ? Copy.longBreak : session.phase.label
         case .focusComplete(let focus): focus.outcome == .endedEarly ? Copy.endedEarly : Copy.focusComplete
         }
+    }
+
+    /// When an unchanged stage's meta line reads differently: a completion
+    /// turns old once its break would be over, or at midnight.
+    private var metaChanges: [Date] {
+        guard case .focusComplete(let focus) = stage else { return [] }
+        let breakOver = focus.completedAt.addingTimeInterval(engine.breakLength(after: focus))
+        return [breakOver, services.calendar.dayRange(containing: focus.completedAt).upperBound]
     }
 
     private func meta(at now: Date) -> String {
@@ -161,46 +171,47 @@ struct DialFace: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
-            let now = context.date
-            let session = activeSession
-            let remaining = session?.remaining(at: now) ?? services.plan.focus
-            let value = arcValue(session: session, now: now)
-
-            ZStack {
+        let session = activeSession
+        let constrained = services.power.isConstrained
+        ZStack {
+            if !constrained {
                 Sunburst(trigger: celebration)
                     .frame(width: size, height: size)
-
-                RetroDial(value: value, tint: tint, glowTint: glowTint)
-                    .saturation(session?.isPaused == true ? 0.45 : 1)
-                    // Inner modifier wins when the stage changes: spring the arc.
-                    .animation(Motion.wind(reduceMotion), value: stageKey)
-                    // Otherwise creep linearly between one-second ticks.
-                    .animation(.linear(duration: 1), value: value)
-                    .keyframeAnimator(initialValue: 1.0, trigger: celebration) { content, scale in
-                        content.scaleEffect(scale)
-                    } keyframes: { [speed = Motion.speed, reduceMotion] _ in
-                        CubicKeyframe(1.0, duration: 0.05 * speed)
-                        CubicKeyframe(reduceMotion ? 1.0 : 1.035, duration: 0.18 * speed)
-                        SpringKeyframe(1.0, duration: 0.6 * speed)
-                    }
-
-                if case .idle = stage {
-                    IdleKnobGlow(size: size)
-                        .transition(.opacity)
-                }
-
-                center(remaining: remaining, session: session)
-                    .padding(size * 0.25)
             }
-            .frame(width: size, height: size)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(accessibilityText(remaining: remaining, session: session))
+
+            // Only the arc and the digits follow the clock, and only while
+            // the timer runs. The arc moves under half a point a second, so
+            // when the phone asks to save power it moves once a minute.
+            TimelineView(TickSchedule(countdownEnd: session?.endDate, interval: constrained ? 60 : 1)) { context in
+                RetroDial(value: arcValue(session: session, now: context.date), tint: tint, glowTint: glowTint)
+                    .saturation(session?.isPaused == true ? 0.45 : 1)
+                    // Spring the arc when the stage changes; between ticks it just steps.
+                    .animation(Motion.wind(reduceMotion), value: stageKey)
+            }
+            .keyframeAnimator(initialValue: 1.0, trigger: celebration) { content, scale in
+                content.scaleEffect(scale)
+            } keyframes: { [speed = Motion.speed, reduceMotion] _ in
+                CubicKeyframe(1.0, duration: 0.05 * speed)
+                CubicKeyframe(reduceMotion ? 1.0 : 1.035, duration: 0.18 * speed)
+                SpringKeyframe(1.0, duration: 0.6 * speed)
+            }
+
+            if case .idle = stage {
+                IdleKnobGlow(size: size)
+                    .transition(.opacity)
+            }
+
+            center(session: session)
+                .padding(size * 0.25)
         }
+        .frame(width: size, height: size)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText(remaining: session?.remaining(at: .now) ?? services.plan.focus,
+                                              session: session))
     }
 
     @ViewBuilder
-    private func center(remaining: TimeInterval, session: ActiveSession?) -> some View {
+    private func center(session: ActiveSession?) -> some View {
         VStack(spacing: size * 0.025) {
             Text(status(session)).retroLabel()
                 .contentTransition(.opacity)
@@ -216,17 +227,19 @@ struct DialFace: View {
                     .symbolEffect(.bounce.up.byLayer, options: .nonRepeating, value: celebration)
                     .transition(.scale(scale: 0.6).combined(with: .opacity))
             } else {
-                let clock = TimeFormat.clock(remaining)
-                Text(clock)
-                    .font(.retroDisplay(size: size * 0.18))
-                    .tracking(-1)
-                    .foregroundStyle(Retro.ink)
-                    .retroNumber(countsDown: true)
-                    .animation(Motion.snappy(reduceMotion), value: clock)
-                    .modifier(BlinkWhilePaused(active: session?.isPaused == true))
-                    .minimumScaleFactor(0.5)
-                    .lineLimit(1)
-                    .transition(.opacity)
+                TimelineView(TickSchedule(countdownEnd: session?.endDate)) { context in
+                    let clock = TimeFormat.clock(session?.remaining(at: context.date) ?? services.plan.focus)
+                    Text(clock)
+                        .font(.retroDisplay(size: size * 0.18))
+                        .tracking(-1)
+                        .foregroundStyle(Retro.ink)
+                        .retroNumber(countsDown: true)
+                        .animation(services.power.isConstrained ? nil : Motion.snappy(reduceMotion), value: clock)
+                        .modifier(BlinkWhilePaused(active: session?.isPaused == true))
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
+                }
+                .transition(.opacity)
             }
             if showsPills {
                 TodaySessionPills(inProgress: session?.phase == .focus, day: services.today,
@@ -294,10 +307,14 @@ struct DialFace: View {
     }
 }
 
-/// A slow "breathing" halo on the knob while the timer waits to start.
+/// A slow "breathing" halo on the knob when the timer starts waiting: three
+/// breaths, then it rests, so an idle screen draws nothing.
 private struct IdleKnobGlow: View {
     let size: CGFloat
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppServices.self) private var services
+    @State private var breathe = false
+    private static let resting = 0.2
 
     var body: some View {
         let line = size * 0.075
@@ -308,12 +325,21 @@ private struct IdleKnobGlow: View {
             .offset(y: -size / 2 * RetroDial.arcRadiusRatio(showsTicks: true))
             .allowsHitTesting(false)
             .accessibilityHidden(true)
-        if reduceMotion {
-            halo.opacity(0.2)
+        if reduceMotion || services.power.isConstrained {
+            halo.opacity(Self.resting)
         } else {
-            halo.phaseAnimator([0.08, 0.38]) { view, opacity in
+            halo.keyframeAnimator(initialValue: Self.resting, trigger: breathe) { view, opacity in
                 view.opacity(opacity)
-            } animation: { _ in .easeInOut(duration: 3) }
+            } keyframes: { [speed = Motion.speed] _ in
+                CubicKeyframe(0.08, duration: 1.5 * speed)
+                CubicKeyframe(0.38, duration: 3 * speed)
+                CubicKeyframe(0.08, duration: 3 * speed)
+                CubicKeyframe(0.38, duration: 3 * speed)
+                CubicKeyframe(0.08, duration: 3 * speed)
+                CubicKeyframe(0.38, duration: 3 * speed)
+                CubicKeyframe(Self.resting, duration: 1.5 * speed)
+            }
+            .onAppear { breathe.toggle() }
         }
     }
 }
@@ -328,7 +354,9 @@ struct SessionChip: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { context in
+        // Redraws only when "+5 min" appears or goes away.
+        let schedule = TickSchedule(wakeDates: engine.controlChanges(after: .now))
+        TimelineView(schedule) { context in
             let canExtend = engine.canExtend(at: context.date)
             HStack(spacing: 10) {
                 HStack(spacing: 10) {
@@ -362,6 +390,7 @@ struct SessionChip: View {
             .glassEffect(.regular, in: .capsule)
             .animation(Motion.calm(reduceMotion), value: canExtend)
         }
+        .id(schedule)
     }
 }
 

@@ -45,18 +45,31 @@ extension AnyTransition {
     }
 }
 
-/// Slow retro-clock blink used while paused.
+/// Slow retro-clock blink when a timer pauses: three blinks, then it stays
+/// dimmed, so a paused screen draws nothing.
 struct BlinkWhilePaused: ViewModifier {
     var active: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppServices.self) private var services
+    @State private var blink = false
+    private static let dimmed = 0.55
 
     func body(content: Content) -> some View {
-        if active && !reduceMotion {
-            content.phaseAnimator([1.0, 0.4]) { view, opacity in
+        if active && !reduceMotion && !services.power.isConstrained {
+            content.keyframeAnimator(initialValue: Self.dimmed, trigger: blink) { view, opacity in
                 view.opacity(opacity)
-            } animation: { [speed = Motion.speed] _ in .easeInOut(duration: 1.2 * speed) }
+            } keyframes: { [speed = Motion.speed] _ in
+                CubicKeyframe(1.0, duration: 0.6 * speed)
+                CubicKeyframe(0.4, duration: 1.2 * speed)
+                CubicKeyframe(1.0, duration: 1.2 * speed)
+                CubicKeyframe(0.4, duration: 1.2 * speed)
+                CubicKeyframe(1.0, duration: 1.2 * speed)
+                CubicKeyframe(0.4, duration: 1.2 * speed)
+                CubicKeyframe(Self.dimmed, duration: 0.6 * speed)
+            }
+            .onAppear { blink.toggle() }
         } else {
-            content.opacity(active ? 0.55 : 1)
+            content.opacity(active ? Self.dimmed : 1)
         }
     }
 }

@@ -153,6 +153,16 @@ final class SessionEngine {
         return session.plannedDuration - session.remaining(at: date) >= minimum
     }
 
+    /// The moments after `date` when "+5 min" or "Finish now" appear or
+    /// go away, so the screen can redraw just then. None while paused.
+    func controlChanges(after date: Date) -> [Date] {
+        guard let session = active, session.phase == .focus, let end = session.endDate else { return [] }
+        let unlocksFinish = end.addingTimeInterval(
+            -(session.plannedDuration - min(Self.minimumToFinishEarly, session.originalPlan / 10)))
+        let opensExtend = end.addingTimeInterval(-Self.extensionStep)
+        return [unlocksFinish, opensExtend, end].filter { $0 > date }.sorted()
+    }
+
     // MARK: - Actions
 
     /// Starts a focus phase. Returns false if a session is already active.

@@ -206,8 +206,9 @@ struct FocusView: View {
     @ViewBuilder
     private var secondaryRow: some View {
         if case .active(let session) = engine.stage, session.phase == .focus {
-            // Finish now opens after the first minute, so check every second.
-            TimelineView(.periodic(from: .now, by: 1)) { context in
+            // Redraws only when Finish now unlocks.
+            let schedule = TickSchedule(wakeDates: engine.controlChanges(after: .now))
+            TimelineView(schedule) { context in
                 let canFinish = engine.canFinishEarly(at: context.date)
                 HStack(spacing: 28) {
                     quietButton(String(localized: "Cancel session"), role: .destructive, action: engine.cancel)
@@ -217,6 +218,7 @@ struct FocusView: View {
                         .accessibilityHint(String(localized: "Ends the session and keeps the minutes"))
                 }
             }
+            .id(schedule)
         } else {
             let action = secondaryAction
             quietButton(action.title ?? " ", role: action.role) { action.run?() }
