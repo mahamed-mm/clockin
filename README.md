@@ -9,12 +9,13 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 ## Features
 
 - **One session at a time:** focus, pause and resume, or cancel without recording (and undo the cancel for a few seconds). The break starts manually and never counts as focus time.
-- **Your rhythm:** Classic 25/5, Deep 50/10 or Short 15/3, and a 15-minute long break after every fourth full session of the day. "+5 min" in the last five minutes, and "Finish now" to stop early and keep the minutes. Pick the length from chips under the dial, or in Settings; it applies from the next session.
+- **Your rhythm:** Classic 25/5, Deep 50/10 or Short 15/3, and a 15-minute long break after every fourth full session of the day. "+5 min" in the last five minutes, and "Finish now" to stop early and keep the minutes. Pick the length from chips under the dial or in Settings, or drag the dial's knob like a kitchen timer to any length from 5 to 60 minutes, one detent per five minutes (its break is a fifth of it, 3 to 15 minutes). It applies from the next session.
+- **Calm while it runs:** eight seconds after your last touch, everything round a running dial fades back to the countdown and Pause; a tap brings it back. It stays put while paused, in the last five minutes and with VoiceOver or Switch Control. A paused dial goes still and sepia, and the header says when you paused.
 - **Survives relaunch:** the timer is date-based, so a running session is restored exactly after the app is closed or the phone restarts. A session that finished while the app was closed opens quietly, saying when it finished.
 - **Keeps up with the clock:** "today" moves on at midnight, and on time zone and clock changes, everywhere at once. Setting the clock back can't add time to a session.
-- **History:** today's focused minutes, then a week at a time as session columns and sessions by day, paging back to the first one. Tap a session for its card: when it ran, focused and planned minutes, how it ended and whether it counts toward the set, with Rename and Delete. Swipe to delete too; both offer Undo.
+- **History:** today's focused minutes, then a week at a time as session columns and sessions by day, paging back to the first one. Tap a session for its card: when it ran, focused and planned minutes, how it ended and whether it counts toward the set, with Rename and Delete. Swipe to delete too; both offer Undo. Under the week, one line sums it up ("Mostly mornings this week; Tuesday was your longest day."). On iPhones with Apple Intelligence the on-device model writes it, from session times and lengths only, never names; everywhere else it's a fixed sentence.
 - **Appearance:** System, Light or Dark in Settings, following the phone by default.
-- **Your data:** export History as CSV, back it up as JSON and restore it, or erase it, all from Settings. Nothing leaves the phone unless you export it.
+- **Your data:** export History as CSV, back it up as JSON and restore it, or erase it, all from Settings. Nothing leaves the phone unless you export it; week summaries use Apple's on-device model, and can be turned off.
 - **Live Activity:** a Lock Screen card and Dynamic Island with a live countdown and a pause/resume button that works without opening the app.
 - **StandBy and bedside mode:** a full-screen bedside clock when the phone is charging on its side, and a bedside clock inside the app: open it from Settings during a session (it turns the screen even with orientation lock on) or turn the phone on its side. It uses a night palette, and the screen stays on only while the clock runs.
 - **Home Screen widget:** today's progress in small and medium sizes, including tinted and clear Home Screens; tapping it opens the Focus screen. Away from Focus, a running session also sits above the tab bar.
@@ -24,7 +25,7 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 ## Accessibility
 
 - **Contrast:** every colour that carries words reaches WCAG AA (4.5:1) on both paper tones, in light and dark, and AAA (7:1) with Increase Contrast. A test reads the colours from the asset catalog and checks every pair.
-- **VoiceOver:** the dial says "24 minutes left", updating about once a minute, with Pause/Resume as an action and on the magic tap. Durations are read in words, the week strip names each date and says "today", and every widget and Lock Screen surface has its own labels.
+- **VoiceOver:** the dial says "24 minutes left", updating about once a minute, with Pause/Resume as an action and on the magic tap. While waiting, swipe up or down on it to change the length by five minutes. Durations are read in words, the week strip names each date and says "today", and every widget and Lock Screen surface has its own labels.
 - **Voice Control:** every control answers to what's on screen, e.g. "Tap What are you focusing on" or "Tap Add 5 minutes".
 - **Large text:** the Focus screen scrolls rather than pushing controls off-screen, even at the largest sizes on an iPhone SE. Rows and the completion summary stack, and icon-only buttons offer the Large Content Viewer.
 - **Reduce Motion and Differentiate Without Color:** every animation has a calm fallback, and the session in progress is a dashed pill, not just a different colour.
@@ -33,11 +34,11 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 
 | Focus | Running | Complete |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/focus-idle.png" width="250" alt="Focus screen with the length chips, ready to start"> | <img src="docs/screenshots/focus-running.png" width="250" alt="A focus session running"> | <img src="docs/screenshots/focus-complete.png" width="250" alt="Session complete with the sunburst"> |
+| <img src="docs/screenshots/focus-idle.png" width="250" alt="Focus screen with the dial set to 35 minutes and the length chips"> | <img src="docs/screenshots/focus-running.png" width="250" alt="A focus session running"> | <img src="docs/screenshots/focus-complete.png" width="250" alt="Session complete with the sunburst"> |
 
 | History | Session card | Settings |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/history.png" width="250" alt="History with the week's session columns"> | <img src="docs/screenshots/session-card.png" width="250" alt="A session's card, with Rename and Delete"> | <img src="docs/screenshots/settings.png" width="250" alt="Settings with lengths, appearance and the bedside clock"> |
+| <img src="docs/screenshots/history.png" width="250" alt="History with the week's session columns and a line about the week"> | <img src="docs/screenshots/session-card.png" width="250" alt="A session's card, with Rename and Delete"> | <img src="docs/screenshots/settings.png" width="250" alt="Settings with lengths, appearance and the bedside clock"> |
 
 | Lock Screen | Home Screen widget |
 |:---:|:---:|
