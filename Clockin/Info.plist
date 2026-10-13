@@ -37,6 +37,12 @@
 	<false/>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>FrauncesClockin-Display.ttf</string>
+		<string>FrauncesClockin-Title.ttf</string>
+		<string>FrauncesClockin-Text.ttf</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

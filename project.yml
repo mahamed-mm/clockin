@@ -52,6 +52,11 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         NSSupportsLiveActivities: true
+        # Fraunces cuts built by scripts/make-fonts.sh (SIL OFL, Shared/Fonts/OFL.txt).
+        UIAppFonts: &fonts
+          - FrauncesClockin-Display.ttf
+          - FrauncesClockin-Title.ttf
+          - FrauncesClockin-Text.ttf
         CFBundleURLTypes:
           - CFBundleURLName: com.moha.clockin
             CFBundleURLSchemes: [clockin]
@@ -83,6 +88,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ClockinAppGroup: $(APP_GROUP_ID)
+        UIAppFonts: *fonts
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:

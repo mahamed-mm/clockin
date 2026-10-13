@@ -27,5 +27,11 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.widgetkit-extension</string>
 	</dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>FrauncesClockin-Display.ttf</string>
+		<string>FrauncesClockin-Title.ttf</string>
+		<string>FrauncesClockin-Text.ttf</string>
+	</array>
 </dict>
 </plist>
