@@ -53,7 +53,7 @@ struct SettingsSheet: View {
                         Spacer()
                         Image(systemName: "checkmark")
                             .fontWeight(.semibold)
-                            .foregroundStyle(Retro.orange)
+                            .foregroundStyle(Retro.orangeText)
                             .opacity(selected ? 1 : 0)
                     }
                     .contentShape(.rect)
@@ -93,7 +93,7 @@ struct SettingsSheet: View {
             .listRowBackground(rowBackground)
             if let settingsURL {
                 Button("Open Settings") { openURL(settingsURL) }
-                    .foregroundStyle(Retro.orange)
+                    .foregroundStyle(Retro.orangeText)
                     .listRowBackground(rowBackground)
             }
         } header: {

@@ -1,22 +1,45 @@
 import SwiftUI
 
-/// Warm 70s analog palette and type. Colors come from the asset catalog
-/// and each has a dark-mode variant.
+/// Warm 70s analog palette and type. Colors come from the asset catalog;
+/// each has a dark variant, and the ones used for text also have
+/// Increase Contrast variants.
 enum Retro {
-    static let paper = Color("Paper")
-    static let paperDeep = Color("PaperDeep")
-    static let ink = Color("Ink")
-    static let inkSoft = Color("InkSoft")
+    /// Asset names, shared with the contrast tests.
+    enum Asset {
+        static let paper = "Paper"
+        static let paperDeep = "PaperDeep"
+        static let ink = "Ink"
+        static let inkSoft = "InkSoft"
+        static let orangeText = "OrangeText"
+        static let avocadoText = "AvocadoText"
+        /// Colours that carry words, checked against both paper tones.
+        static let text = [ink, inkSoft, orangeText, avocadoText]
+    }
+
+    static let paper = Color(Asset.paper)
+    static let paperDeep = Color(Asset.paperDeep)
+    static let ink = Color(Asset.ink)
+    static let inkSoft = Color(Asset.inkSoft)
+    /// Fills, arcs and pills. Too light for small text on paper: use `orangeText`.
     static let orange = Color("BurntOrange")
     static let mustard = Color("Mustard")
     static let avocado = Color("Avocado")
     static let rust = Color("Rust")
+    /// The orange for words: at least 4.5:1 on either paper tone.
+    static let orangeText = Color(Asset.orangeText)
+    /// The avocado for words.
+    static let avocadoText = Color(Asset.avocadoText)
 
     /// The four stripe colors, warmest last.
     static let stripes: [Color] = [avocado, mustard, orange, rust]
 
     static func tint(for phase: SessionPhase) -> Color {
         phase == .focus ? orange : avocado
+    }
+
+    /// The phase colour for text.
+    static func text(for phase: SessionPhase) -> Color {
+        phase == .focus ? orangeText : avocadoText
     }
 
     /// Second gradient stop for a phase's arc.

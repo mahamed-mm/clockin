@@ -17,7 +17,7 @@ struct RootView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
-        .tint(Retro.orange)
+        .tint(Retro.orangeText)
         .onOpenURL { url in
             if url.scheme == "clockin" { tab = url.host() == "history" ? .history : .focus }
         }

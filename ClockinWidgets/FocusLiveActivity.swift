@@ -128,7 +128,7 @@ private struct LockScreenFocusView: View {
                              ? Copy.breakLine(seconds: state.breakDuration ?? Preset.classic.shortBreak)
                              : Copy.readyWhenYouAre)
                             .font(.retro(.meta))
-                            .foregroundStyle(tint)
+                            .foregroundStyle(Retro.text(for: state.phase))
                             .lineLimit(2)
                     } else {
                         FocusCountdown(reading: TimerReading(state: state, done: done))

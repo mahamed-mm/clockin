@@ -26,6 +26,7 @@ struct SessionPills: View {
     /// Shows "2 of 4 today" after the pills.
     var showsCaption = false
     var tint: Color = Retro.orange
+    @Environment(\.colorSchemeContrast) private var contrast
 
     /// Pure state for pill `index`; kept separate so it can be unit tested.
     static func state(index: Int, completed: Int, inProgress: Bool) -> PillState {
@@ -103,8 +104,10 @@ struct SessionPills: View {
                 .strokeBorder(tint, lineWidth: max(1.5, pillHeight * 0.25))
                 .widgetAccentable()
         case .empty:
+            // Faint by design, but outlined clearly when Increase Contrast is on.
             Capsule()
-                .strokeBorder(Retro.ink.opacity(0.3), lineWidth: 1)
+                .strokeBorder(Retro.ink.opacity(contrast == .increased ? 0.65 : 0.3),
+                              lineWidth: contrast == .increased ? 1.5 : 1)
         }
     }
 }

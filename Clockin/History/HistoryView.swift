@@ -117,7 +117,7 @@ private struct HistoryHeader: View {
         let today = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: day))
         let total = Text(TimeFormat.duration(today.totalSeconds))
             .font(.retro(.headline))
-            .foregroundStyle(Retro.orange)
+            .foregroundStyle(Retro.orangeText)
         VStack(alignment: .leading, spacing: 8) {
             Text("History")
                 .font(.retro(.title))
@@ -312,7 +312,7 @@ private struct SessionRow: View {
             Spacer(minLength: 8)
             Text(TimeFormat.duration(record.focusSeconds))
                 .font(.system(.body, design: .serif).weight(.bold))
-                .foregroundStyle(Retro.orange)
+                .foregroundStyle(Retro.orangeText)
                 .retroNumber()
         }
         .padding(.vertical, 6)

@@ -346,7 +346,7 @@ struct SessionChip: View {
                     Button(action: engine.extend) {
                         Text(Copy.extend(seconds: SessionEngine.extensionStep))
                             .font(.retro(.body).weight(.semibold))
-                            .foregroundStyle(Retro.orange)
+                            .foregroundStyle(Retro.orangeText)
                             .frame(minHeight: 44)
                             .contentShape(.rect)
                     }
@@ -443,7 +443,7 @@ struct UndoBar: View {
                     .contentShape(.rect)
             }
             .fontWeight(.semibold)
-            .foregroundStyle(Retro.orange)
+            .foregroundStyle(Retro.orangeText)
             .accessibilityHint(hint)
         }
         .font(.retro(.body))
