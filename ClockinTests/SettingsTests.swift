@@ -128,5 +128,118 @@ struct SettingsTests {
     @Test func chipsReadTheirLengths() {
         #expect(Preset.classic.chipTitle == "25 min")
         #expect(Preset.deep.spokenSummary == "Deep, 50 minutes focus, 10 minutes break")
+        #expect(SessionLength.custom(minutes: 35).chipTitle == "35 min")
+        #expect(SessionLength.custom(minutes: 35).spokenSummary == "Custom, 35 minutes focus, 7 minutes break")
+        #expect(SessionLength.custom(minutes: 35).detail == "35 min focus · 7 min break")
+    }
+
+    // MARK: Lengths set on the dial
+
+    @Test func dialLengthsSnapToFiveAndToThePresets() {
+        #expect(SessionLength(minutes: 35) == .custom(minutes: 35))
+        #expect(SessionLength(minutes: 33) == .custom(minutes: 35))
+        #expect(SessionLength(minutes: 2) == .custom(minutes: 5))
+        #expect(SessionLength(minutes: 90) == .custom(minutes: 60))
+        #expect(SessionLength(minutes: 15) == .preset(.short))
+        #expect(SessionLength(minutes: 25) == .preset(.classic))
+        #expect(SessionLength(minutes: 50) == .preset(.deep))
+    }
+
+    @Test func customBreaksAreAFifthAndTheyAgreeWithThePresets() {
+        for preset in Preset.allCases {
+            #expect(SessionLength.shortBreak(forFocusMinutes: Int(preset.focus / 60)) == preset.shortBreak)
+        }
+        #expect(SessionLength.custom(minutes: 5).shortBreak == 180)
+        #expect(SessionLength.custom(minutes: 35).shortBreak == 420)
+        #expect(SessionLength.custom(minutes: 60).shortBreak == 720)
+    }
+
+    @Test func aCustomLengthIsSavedAndAPresetReplacesIt() throws {
+        let store = DefaultsSettingsStore(defaults: UserDefaults(suiteName: "clockin.tests.\(UUID())")!)
+        var settings = TimerSettings(preset: .deep)
+        settings.length = .custom(minutes: 35)
+        store.save(settings)
+        #expect(store.load().length == .custom(minutes: 35))
+        #expect(store.load().plan == TimerPlan(focus: 2_100, shortBreak: 420, longBreak: 900))
+
+        // The preset underneath is kept, and choosing one clears the custom length.
+        #expect(store.load().preset == .deep)
+        settings.length = .preset(.short)
+        #expect(settings.customMinutes == nil)
+        #expect(settings.plan.focus == 900)
+
+        // Dragging onto a preset's length is that preset.
+        settings.length = .custom(minutes: 25)
+        #expect(settings.length == .preset(.classic))
+        #expect(settings.customMinutes == nil)
+    }
+
+    @Test func customLengthsTheDialCouldNotSetAreIgnored() throws {
+        #expect(try decode(#"{"preset":"deep"}"#).length == .preset(.deep))
+        #expect(try decode(#"{"preset":"deep","customMinutes":35}"#).length == .custom(minutes: 35))
+        #expect(try decode(#"{"preset":"deep","customMinutes":37}"#).length == .preset(.deep))
+        #expect(try decode(#"{"preset":"deep","customMinutes":25}"#).length == .preset(.deep))
+        #expect(try decode(#"{"preset":"deep","customMinutes":240}"#).length == .preset(.deep))
+        #expect(try decode(#"{"preset":"deep","customMinutes":"long"}"#).length == .preset(.deep))
+    }
+
+    @Test func aDialLengthIsUsedFromTheNextSession() {
+        let services = AppServices(container: AppServices.makeEmptyContainer(), stateStore: InMemorySessionStateStore(),
+                                   settingsStore: InMemorySettingsStore(), now: { [clock] in clock.now },
+                                   calendar: osloCalendar, schedulesCompletion: false, liveActivity: SpyLiveActivity(),
+                                   notifications: SpyNotifier(), widgets: SpyWidgets(), haptics: SpyHaptics(),
+                                   announce: { _ in })
+        services.engine.start(name: "Essay")
+        services.settings.length = .custom(minutes: 40)
+        #expect(services.engine.active?.plannedDuration == 1_500)
+
+        services.engine.cancel()
+        services.engine.start(name: "Essay")
+        #expect(services.engine.active?.plannedDuration == 2_400)
+        #expect(services.engine.active?.nextBreakSeconds == 480)
+    }
+}
+
+/// Dragging the knob round the 60-minute face.
+struct DialLengthTests {
+    private let center = CGPoint(x: 100, y: 100)
+
+    @Test func touchesMapToAnglesClockwiseFromTwelve() {
+        #expect(DialLength.angle(of: CGPoint(x: 100, y: 0), around: center) == 0)
+        #expect(abs(DialLength.angle(of: CGPoint(x: 200, y: 100), around: center) - .pi / 2) < 1e-9)
+        #expect(abs(DialLength.angle(of: CGPoint(x: 100, y: 200), around: center) - .pi) < 1e-9)
+        #expect(abs(DialLength.angle(of: CGPoint(x: 0, y: 100), around: center) - 3 * .pi / 2) < 1e-9)
+    }
+
+    @Test func anglesSnapToFiveMinutesWithinTheDial() {
+        let quarter = Double.pi / 2
+        #expect(DialLength.minutes(atAngle: quarter, previous: nil) == 15)
+        #expect(DialLength.minutes(atAngle: quarter * 1.1, previous: nil) == 15)
+        #expect(DialLength.minutes(atAngle: quarter * 2, previous: nil) == 30)
+        #expect(DialLength.minutes(atAngle: 0.01, previous: nil) == 5)
+        #expect(DialLength.minutes(atAngle: 2 * .pi - 0.01, previous: nil) == 60)
+        #expect(DialLength.angle(forMinutes: 15) == quarter)
+    }
+
+    @Test func draggingPastTwelveHoldsAtTheEnd() {
+        // Clockwise past 60 stays at 60; anticlockwise past 5 stays at 5.
+        #expect(DialLength.minutes(atAngle: 0.2, previous: 60) == 60)
+        #expect(DialLength.minutes(atAngle: 2 * .pi - 0.2, previous: 5) == 5)
+        // A first touch can land anywhere.
+        #expect(DialLength.minutes(atAngle: 2 * .pi - 0.2, previous: nil) == 60)
+        // Ordinary steps follow the finger.
+        #expect(DialLength.minutes(atAngle: DialLength.angle(forMinutes: 40), previous: 35) == 40)
+    }
+
+    @Test func theKnobSitsOnTheArcAtItsMinutes() {
+        let top = DialLength.knobPoint(minutes: 60, side: 200)
+        #expect(abs(top.x - 100) < 1e-9)
+        #expect(abs(top.y - (100 - 66)) < 1e-9)
+        let quarter = DialLength.knobPoint(minutes: 15, side: 200)
+        #expect(abs(quarter.x - 166) < 1e-9)
+        #expect(abs(quarter.y - 100) < 1e-9)
+        // A finger-sized target on small dials, the knob's own size on big ones.
+        #expect(DialLength.grabSize(side: 160) == 44)
+        #expect(DialLength.grabSize(side: 400) == 64)
     }
 }

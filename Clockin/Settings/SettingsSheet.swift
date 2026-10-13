@@ -43,35 +43,46 @@ struct SettingsSheet: View {
     private var timer: some View {
         Section {
             ForEach(Preset.allCases) { preset in
-                let selected = services.settings.preset == preset
+                let selected = services.settings.length == .preset(preset)
                 Button {
-                    services.settings.preset = preset
+                    services.settings.length = .preset(preset)
                 } label: {
-                    HStack {
-                        VStack(alignment: .leading, spacing: Space.xxs) {
-                            Text(preset.title)
-                                .retroFont(.headline)
-                                .foregroundStyle(Retro.ink)
-                            Text(preset.detail)
-                                .font(.retro(.meta))
-                                .foregroundStyle(Retro.inkSoft)
-                        }
-                        Spacer()
-                        Image(systemName: "checkmark")
-                            .fontWeight(.semibold)
-                            .foregroundStyle(Retro.orangeText)
-                            .opacity(selected ? 1 : 0)
-                    }
-                    .contentShape(.rect)
+                    lengthRow(.preset(preset), selected: selected)
                 }
                 .accessibilityAddTraits(selected ? .isSelected : [])
                 .listRowBackground(rowBackground)
             }
+            // A length dragged on the dial; choosing a preset replaces it.
+            if case .custom = services.settings.length {
+                lengthRow(services.settings.length, selected: true)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(.isSelected)
+                    .listRowBackground(rowBackground)
+            }
         } header: {
             Text("Timer").retroLabel()
         } footer: {
-            Text("Applies from the next session.")
+            Text("Applies from the next session. Or drag the dial on the Focus screen.")
         }
+    }
+
+    private func lengthRow(_ length: SessionLength, selected: Bool) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: Space.xxs) {
+                Text(length.title)
+                    .retroFont(.headline)
+                    .foregroundStyle(Retro.ink)
+                Text(length.detail)
+                    .font(.retro(.meta))
+                    .foregroundStyle(Retro.inkSoft)
+            }
+            Spacer()
+            Image(systemName: "checkmark")
+                .fontWeight(.semibold)
+                .foregroundStyle(Retro.orangeText)
+                .opacity(selected ? 1 : 0)
+        }
+        .contentShape(.rect)
     }
 
     // MARK: Appearance

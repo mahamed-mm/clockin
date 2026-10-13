@@ -236,7 +236,7 @@
     "Appearance" : {
 
     },
-    "Applies from the next session." : {
+    "Applies from the next session. Or drag the dial on the Focus screen." : {
 
     },
     "Asked on your first start" : {
@@ -288,6 +288,9 @@
 
     },
     "Counts" : {
+
+    },
+    "Custom" : {
 
     },
     "Dark" : {
@@ -511,6 +514,9 @@
     "Resume" : {
 
     },
+    "Ring in 1 minute (AlarmKit)" : {
+
+    },
     "Running" : {
 
     },
@@ -571,7 +577,13 @@
     "Start focus" : {
 
     },
+    "Stop" : {
+
+    },
     "System" : {
+
+    },
+    "Test alarm from Clockin" : {
 
     },
     "Test timers" : {

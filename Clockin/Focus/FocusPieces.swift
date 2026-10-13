@@ -173,6 +173,8 @@ struct DialFace: View {
     var showsPills = true
     @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The length under the finger while the knob is dragged; saved on release.
+    @State private var draftMinutes: Int?
 
     var body: some View {
         let session = activeSession
@@ -191,6 +193,7 @@ struct DialFace: View {
                         }
                     }
                 }
+                .modifier(AdjustableLength(enabled: setsLength))
                 // Bedside prints the countdown beside the dial; read it there, once.
                 .accessibilityHidden(!showsCountdown)
         }
@@ -212,19 +215,41 @@ struct DialFace: View {
                     .saturation(session?.isPaused == true ? 0.45 : 1)
                     // Spring the arc when the stage changes; between ticks it just steps.
                     .animation(Motion.wind(reduceMotion), value: stageKey)
+                    // A new length winds the idle arc there, one detent at a time while dragging.
+                    .animation(Motion.snappy(reduceMotion), value: idleMinutes)
             }
             .modifier(CelebrationPulse(trigger: celebration))
 
             if case .idle = stage {
-                IdleKnobGlow(size: size)
+                if size >= 220 {
+                    DialNumbers(size: size)
+                        .transition(.opacity)
+                }
+                IdleKnobGlow(size: size, fraction: Double(idleMinutes) / 60)
+                    .animation(Motion.snappy(reduceMotion), value: idleMinutes)
                     .transition(.opacity)
+            }
+
+            // Only the knob takes the drag, so a swipe anywhere else on the
+            // dial still scrolls the page (the dial fills it at large text sizes).
+            if setsLength {
+                let grab = DialLength.grabSize(side: size)
+                Color.clear
+                    .frame(width: grab, height: grab)
+                    .contentShape(.circle)
+                    .position(DialLength.knobPoint(minutes: idleMinutes, side: size))
+                    .gesture(lengthDrag)
+                    .sensoryFeedback(.selection, trigger: draftMinutes)
             }
 
             center(session: session)
                 .padding(size * 0.25)
         }
         .frame(width: size, height: size)
+        .coordinateSpace(.named(Self.dialSpace))
     }
+
+    private static let dialSpace = "dial"
 
     @ViewBuilder
     private func center(session: ActiveSession?) -> some View {
@@ -245,7 +270,7 @@ struct DialFace: View {
                     .transition(.pop(reduceMotion))
             } else {
                 TimelineView(TickSchedule(countdownEnd: session?.endDate)) { context in
-                    let clock = TimeFormat.clock(session?.remaining(at: context.date) ?? services.plan.focus)
+                    let clock = TimeFormat.clock(session?.remaining(at: context.date) ?? idleFocus)
                     Text(clock)
                         .font(.retroDisplay(size: size * 0.18))
                         .tracking(-1)
@@ -295,9 +320,40 @@ struct DialFace: View {
         return Retro.mustard
     }
 
+    /// The dial sets the next session's length only while waiting to start,
+    /// and not in bedside mode.
+    private var setsLength: Bool {
+        guard case .idle = stage else { return false }
+        return showsCountdown
+    }
+
+    /// The length the idle dial shows: under the finger, or the saved one.
+    private var idleMinutes: Int { draftMinutes ?? services.settings.length.minutes }
+
+    /// What the idle countdown reads. Test timers show their seconds until
+    /// the knob is dragged.
+    private var idleFocus: TimeInterval {
+        draftMinutes.map { TimeInterval($0 * 60) } ?? services.plan.focus
+    }
+
+    private var lengthDrag: some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.dialSpace))
+            .onChanged { drag in
+                let center = CGPoint(x: size / 2, y: size / 2)
+                let angle = DialLength.angle(of: drag.location, around: center)
+                draftMinutes = DialLength.minutes(atAngle: angle, previous: draftMinutes)
+            }
+            .onEnded { _ in
+                if let draftMinutes {
+                    services.settings.length = SessionLength(minutes: draftMinutes)
+                }
+                draftMinutes = nil
+            }
+    }
+
     private func arcValue(session: ActiveSession?, now: Date) -> Double {
         switch stage {
-        case .idle: 0
+        case .idle: Double(idleMinutes) / 60
         case .active(let s): s.plannedDuration > 0 ? s.remaining(at: now) / s.plannedDuration : 0
         case .focusComplete: 1
         }
@@ -325,7 +381,7 @@ struct DialFace: View {
     private func accessibilityValue(session: ActiveSession?, at date: Date) -> String {
         switch stage {
         case .idle:
-            return String(localized: "Ready, \(TimeFormat.spokenDuration(services.plan.focus))")
+            return String(localized: "Ready, \(TimeFormat.spokenDuration(idleFocus))")
         case .active(let s):
             let left = TimeFormat.spokenTimeLeft(s.remaining(at: date))
             return s.isPaused ? String(localized: "Paused, \(left)") : left
@@ -336,9 +392,12 @@ struct DialFace: View {
 }
 
 /// A slow "breathing" halo on the knob when the timer starts waiting: three
-/// breaths, then it rests, so an idle screen draws nothing.
+/// breaths, then it rests, so an idle screen draws nothing. It follows the
+/// knob round the dial as the length changes.
 private struct IdleKnobGlow: View {
     let size: CGFloat
+    /// Where the knob is, 0...1 clockwise from 12 o'clock.
+    let fraction: Double
 
     var body: some View {
         let line = size * 0.075
@@ -347,9 +406,54 @@ private struct IdleKnobGlow: View {
             .frame(width: line * 2.4, height: line * 2.4)
             .blur(radius: line * 0.55)
             .offset(y: -size / 2 * RetroDial.arcRadiusRatio(showsTicks: true))
+            .frame(width: size, height: size)
+            .rotationEffect(.radians(fraction * 2 * .pi))
             .modifier(BreatheThrice(low: 0.08, high: 0.38, resting: 0.2))
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+    }
+}
+
+/// The kitchen-timer minutes round the idle dial, between the arc and the
+/// ticks. They go when the session starts.
+private struct DialNumbers: View {
+    let size: CGFloat
+
+    var body: some View {
+        let radius = size / 2 * 0.78
+        ZStack {
+            ForEach([15, 30, 45, 60], id: \.self) { minutes in
+                let angle = DialLength.angle(forMinutes: minutes)
+                Text(minutes, format: .number)
+                    .font(.retroDisplay(size: size * 0.032))
+                    .foregroundStyle(Retro.inkSoft)
+                    .offset(x: radius * sin(angle), y: -radius * cos(angle))
+            }
+        }
+        .frame(width: size, height: size)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// Swipe up or down with VoiceOver to change the waiting dial by five minutes.
+private struct AdjustableLength: ViewModifier {
+    let enabled: Bool
+    @Environment(AppServices.self) private var services
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content.accessibilityAdjustableAction { direction in
+                let minutes = services.settings.length.minutes
+                switch direction {
+                case .increment: services.settings.length = SessionLength(minutes: minutes + SessionLength.minuteStep)
+                case .decrement: services.settings.length = SessionLength(minutes: minutes - SessionLength.minuteStep)
+                @unknown default: break
+                }
+            }
+        } else {
+            content
+        }
     }
 }
 
@@ -499,37 +603,68 @@ struct UndoBar: View {
 // MARK: - Length chips
 
 /// The three lengths under the dial while waiting to start: the same
-/// choice as Settings › Timer, one tap away. The dial's digits roll to the
-/// new length.
+/// choice as Settings › Timer, one tap away. A length dragged on the dial
+/// shows as a fourth chip. The dial winds to the new length.
 struct LengthChips: View {
     @Environment(AppServices.self) private var services
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Counts taps, for the haptic; the dial ticks for itself while dragged.
+    @State private var taps = 0
 
     var body: some View {
-        // Side by side, or a column when large text wouldn't fit three.
-        let layout = dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(spacing: Space.xs)) : AnyLayout(HStackLayout(spacing: Space.xs))
-        GlassEffectContainer(spacing: Space.xs) {
-            layout {
-                ForEach(Preset.allCases) { preset in
-                    let selected = services.settings.preset == preset
-                    Button { services.settings.preset = preset } label: {
-                        Text(preset.chipTitle)
-                            .font(.retro(.meta))
-                            .fontWeight(selected ? .bold : .medium)
-                            .foregroundStyle(selected ? Retro.ink : Retro.inkSoft)
-                            .lineLimit(1)
-                            .retroChip(selected: selected)
+        let length = services.settings.length
+        var lengths = Preset.allCases.map(SessionLength.preset)
+        if case .custom = length { lengths.append(length) }
+        return GlassEffectContainer(spacing: Space.xs) {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(spacing: Space.xs) { chips(lengths) }
+            } else {
+                // One row, or two when a narrow phone can't fit four.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: Space.xs) { chips(lengths) }
+                    Grid(horizontalSpacing: Space.xs, verticalSpacing: Space.xs) {
+                        GridRow { chips(Array(lengths.prefix(2))) }
+                        GridRow { chips(Array(lengths.dropFirst(2))) }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(preset.spokenSummary)
-                    .accessibilityAddTraits(selected ? .isSelected : [])
                 }
             }
         }
-        .sensoryFeedback(.selection, trigger: services.settings.preset)
+        .animation(Motion.snappy(reduceMotion), value: length)
+        .sensoryFeedback(.selection, trigger: taps)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(String(localized: "Session length"))
+    }
+
+    /// A button per preset; a dragged length is shown, already chosen.
+    private func chips(_ lengths: [SessionLength]) -> some View {
+        ForEach(lengths, id: \.self) { length in
+            let selected = length == services.settings.length
+            switch length {
+            case .preset:
+                Button {
+                    services.settings.length = length
+                    taps += 1
+                } label: {
+                    chip(length, selected: selected)
+                }
+                .buttonStyle(.plain)
+            case .custom:
+                chip(length, selected: selected)
+                    .transition(.pop(reduceMotion))
+            }
+        }
+    }
+
+    private func chip(_ length: SessionLength, selected: Bool) -> some View {
+        Text(length.chipTitle)
+            .font(.retro(.meta))
+            .fontWeight(selected ? .bold : .medium)
+            .foregroundStyle(selected ? Retro.ink : Retro.inkSoft)
+            .lineLimit(1)
+            .retroChip(selected: selected)
+            .accessibilityLabel(length.spokenSummary)
+            .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
