@@ -23,7 +23,7 @@ struct WeekStrip: View {
                     SessionPills(completed: appeared ? entry.sessions : 0,
                                  pillWidth: 24, pillHeight: 7, axis: .vertical)
                         .opacity(isFuture ? 0.4 : 1)
-                        .animation(Motion.wind(reduceMotion).delay(reduceMotion ? 0 : 0.05 * Double(index)),
+                        .animation(Motion.wind(reduceMotion).delay(Motion.stagger(index, reduceMotion)),
                                    value: appeared)
                     Circle()
                         .fill(Retro.orange)

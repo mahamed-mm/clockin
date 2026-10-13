@@ -207,12 +207,13 @@ struct FocusView: View {
                         .allowsHitTesting(idle && !undoable)
                         .accessibilityHidden(!idle || undoable)
                 }
-                // Takes Cancel's place for a few seconds, right under the finger.
-                UndoBar(message: String(localized: "Session cancelled"),
-                        hint: String(localized: "Brings the session back"), undo: engine.undoCancel)
-                    .opacity(undoable ? 1 : 0)
-                    .allowsHitTesting(undoable)
-                    .accessibilityHidden(!undoable)
+                // Takes Cancel's place for a few seconds, right under the finger,
+                // arriving like the undo bar in History.
+                if undoable {
+                    UndoBar(message: String(localized: "Session cancelled"),
+                            hint: String(localized: "Brings the session back"), undo: engine.undoCancel)
+                        .transition(.bar(reduceMotion))
+                }
             }
             .animation(Motion.calm(reduceMotion), value: undoable)
         }

@@ -61,7 +61,7 @@ struct BedsideView: View {
                             // A little softer than full ink in a dark room.
                             .foregroundStyle(Retro.ink.opacity(0.85))
                             .retroNumber(countsDown: true)
-                            .animation(Motion.snappy(reduceMotion), value: clock)
+                            .animation(services.power.isConstrained ? nil : Motion.snappy(reduceMotion), value: clock)
                             .modifier(BlinkWhilePaused(active: session.isPaused))
                             .lineLimit(1)
                             .minimumScaleFactor(0.5)

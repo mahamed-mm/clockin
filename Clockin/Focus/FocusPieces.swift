@@ -152,7 +152,7 @@ struct TodaySessionPills: View {
         let count = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: day)).fullCount
         SessionPills(completed: count, inProgress: inProgress,
                      pillWidth: 20 * scale, pillHeight: 5.5 * scale, spacing: 4 * scale, tint: tint)
-            .animation(reduceMotion ? nil : .smooth, value: count)
+            .animation(Motion.calm(reduceMotion), value: count)
     }
 }
 
@@ -213,13 +213,7 @@ struct DialFace: View {
                     // Spring the arc when the stage changes; between ticks it just steps.
                     .animation(Motion.wind(reduceMotion), value: stageKey)
             }
-            .keyframeAnimator(initialValue: 1.0, trigger: celebration) { content, scale in
-                content.scaleEffect(scale)
-            } keyframes: { [speed = Motion.speed, reduceMotion] _ in
-                CubicKeyframe(1.0, duration: 0.05 * speed)
-                CubicKeyframe(reduceMotion ? 1.0 : 1.035, duration: 0.18 * speed)
-                SpringKeyframe(1.0, duration: 0.6 * speed)
-            }
+            .modifier(CelebrationPulse(trigger: celebration))
 
             if case .idle = stage {
                 IdleKnobGlow(size: size)
@@ -248,7 +242,7 @@ struct DialFace: View {
                     .foregroundStyle(Retro.orange, Retro.mustard)
                     // A constant value never bounces: still with Reduce Motion.
                     .symbolEffect(.bounce.up.byLayer, options: .nonRepeating, value: reduceMotion ? 0 : celebration)
-                    .transition(reduceMotion ? .opacity : .scale(scale: 0.6).combined(with: .opacity))
+                    .transition(.pop(reduceMotion))
             } else {
                 TimelineView(TickSchedule(countdownEnd: session?.endDate)) { context in
                     let clock = TimeFormat.clock(session?.remaining(at: context.date) ?? services.plan.focus)
@@ -345,36 +339,17 @@ struct DialFace: View {
 /// breaths, then it rests, so an idle screen draws nothing.
 private struct IdleKnobGlow: View {
     let size: CGFloat
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(AppServices.self) private var services
-    @State private var breathe = false
-    private static let resting = 0.2
 
     var body: some View {
         let line = size * 0.075
-        let halo = Circle()
+        Circle()
             .fill(Retro.orange)
             .frame(width: line * 2.4, height: line * 2.4)
             .blur(radius: line * 0.55)
             .offset(y: -size / 2 * RetroDial.arcRadiusRatio(showsTicks: true))
+            .modifier(BreatheThrice(low: 0.08, high: 0.38, resting: 0.2))
             .allowsHitTesting(false)
             .accessibilityHidden(true)
-        if reduceMotion || services.power.isConstrained {
-            halo.opacity(Self.resting)
-        } else {
-            halo.keyframeAnimator(initialValue: Self.resting, trigger: breathe) { view, opacity in
-                view.opacity(opacity)
-            } keyframes: { [speed = Motion.speed] _ in
-                CubicKeyframe(0.08, duration: 1.5 * speed)
-                CubicKeyframe(0.38, duration: 3 * speed)
-                CubicKeyframe(0.08, duration: 3 * speed)
-                CubicKeyframe(0.38, duration: 3 * speed)
-                CubicKeyframe(0.08, duration: 3 * speed)
-                CubicKeyframe(0.38, duration: 3 * speed)
-                CubicKeyframe(Self.resting, duration: 1.5 * speed)
-            }
-            .onAppear { breathe.toggle() }
-        }
     }
 }
 
@@ -418,7 +393,7 @@ struct SessionChip: View {
                     .accessibilityLabel(Copy.extendSpoken(seconds: SessionEngine.extensionStep))
                     .accessibilityInputLabels([Copy.extendSpoken(seconds: SessionEngine.extensionStep),
                                                Copy.extend(seconds: SessionEngine.extensionStep)])
-                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.8)))
+                    .transition(.pop(reduceMotion))
                 }
             }
             .padding(.leading, Space.l)
@@ -614,7 +589,7 @@ struct CompletionSummary: View {
             Text(caption).retroLabel()
         }
         .frame(maxWidth: .infinity)
-        .transition(.rise(reduceMotion, delay: 0.25 + 0.06 * Double(index)))
+        .transition(.rise(reduceMotion, delay: Motion.stagger(index, after: Motion.afterCelebration, reduceMotion)))
     }
 
 }

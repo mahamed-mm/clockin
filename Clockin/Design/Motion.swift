@@ -36,12 +36,83 @@ enum Motion {
     }
 }
 
+extension Motion {
+    /// Delay for the nth item of something that fills in: 40 ms apart,
+    /// capped at ten so a long list doesn't keep you waiting. `after` waits
+    /// first. No delay with Reduce Motion.
+    static func stagger(_ index: Int, after: Double = 0, _ reduceMotion: Bool) -> Double {
+        reduceMotion ? 0 : (after + 0.04 * Double(min(index, 10))) * speed
+    }
+
+    /// How long the completion celebration plays before the summary fills in.
+    static let afterCelebration = 0.25
+}
+
 @MainActor
 extension AnyTransition {
-    /// Fade and rise a few points; a plain fade with Reduce Motion.
+    /// Content arriving: fade and rise a few points; a plain fade with
+    /// Reduce Motion. `delay` comes from `Motion.stagger`.
     static func rise(_ reduceMotion: Bool, delay: Double = 0) -> AnyTransition {
         let base: AnyTransition = reduceMotion ? .opacity : .opacity.combined(with: .offset(y: 10))
-        return base.animation(Motion.calm(reduceMotion).delay(reduceMotion ? 0 : delay * Motion.speed))
+        return base.animation(Motion.calm(reduceMotion).delay(delay))
+    }
+
+    /// A small control or symbol appearing in place (+5 min, the seal).
+    static func pop(_ reduceMotion: Bool) -> AnyTransition {
+        reduceMotion ? .opacity : .scale(scale: 0.7).combined(with: .opacity)
+    }
+
+    /// A bar that comes and goes near the bottom (the undo bars).
+    static func bar(_ reduceMotion: Bool) -> AnyTransition {
+        reduceMotion ? .opacity : .offset(y: Space.m).combined(with: .opacity)
+    }
+}
+
+/// The dial's "ding" when focus completes: a 3.5% swell that springs back,
+/// timed to the completion haptic. Still with Reduce Motion.
+struct CelebrationPulse: ViewModifier {
+    let trigger: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content.keyframeAnimator(initialValue: 1.0, trigger: trigger) { view, scale in
+            view.scaleEffect(scale)
+        } keyframes: { [speed = Motion.speed, reduceMotion] _ in
+            CubicKeyframe(1.0, duration: 0.05 * speed)
+            CubicKeyframe(reduceMotion ? 1.0 : 1.035, duration: 0.18 * speed)
+            SpringKeyframe(1.0, duration: 0.6 * speed)
+        }
+    }
+}
+
+/// Three slow breaths of opacity, then rest, so a waiting screen soon draws
+/// nothing (the idle knob's halo). Resting only with Reduce Motion or Low
+/// Power Mode.
+struct BreatheThrice: ViewModifier {
+    var low: Double
+    var high: Double
+    var resting: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppServices.self) private var services
+    @State private var breathe = false
+
+    func body(content: Content) -> some View {
+        if reduceMotion || services.power.isConstrained {
+            content.opacity(resting)
+        } else {
+            content.keyframeAnimator(initialValue: resting, trigger: breathe) { view, opacity in
+                view.opacity(opacity)
+            } keyframes: { [speed = Motion.speed, low, high, resting] _ in
+                CubicKeyframe(low, duration: 1.5 * speed)
+                CubicKeyframe(high, duration: 3 * speed)
+                CubicKeyframe(low, duration: 3 * speed)
+                CubicKeyframe(high, duration: 3 * speed)
+                CubicKeyframe(low, duration: 3 * speed)
+                CubicKeyframe(high, duration: 3 * speed)
+                CubicKeyframe(resting, duration: 1.5 * speed)
+            }
+            .onAppear { breathe.toggle() }
+        }
     }
 }
 

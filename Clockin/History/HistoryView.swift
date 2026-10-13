@@ -71,7 +71,7 @@ struct HistoryView: View {
                         .padding(.horizontal, Space.l)
                         .glassEffect(.regular, in: .capsule)
                         .padding(.bottom, Space.xs)
-                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                        .transition(.bar(reduceMotion))
                 }
             }
             .animation(Motion.calm(reduceMotion), value: services.undoableDeletion.isEmpty)
@@ -214,8 +214,7 @@ private struct HistoryWeek: View {
                         .opacity(appeared ? 1 : 0)
                         .offset(y: appeared || reduceMotion ? 0 : 10)
                         .animation(Motion.calm(reduceMotion)
-                            .delay(reduceMotion ? 0 : 0.04 * Double(min(dayIndex * 3 + rowIndex, 10))),
-                                   value: appeared)
+                            .delay(Motion.stagger(dayIndex * 3 + rowIndex, reduceMotion)), value: appeared)
                 }
             } header: {
                 HStack {
