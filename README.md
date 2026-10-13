@@ -16,6 +16,7 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 - **History:** today's focused minutes, then a week at a time as session columns and sessions by day, paging back to the first one. Tap a session for its card: when it ran, focused and planned minutes, how it ended and whether it counts toward the set, with Rename and Delete. Swipe to delete too; both offer Undo. Under the week, one line sums it up ("Mostly mornings this week; Tuesday was your longest day."). On iPhones with Apple Intelligence the on-device model writes it, from session times and lengths only, never names; everywhere else it's a fixed sentence.
 - **Appearance:** System, Light or Dark in Settings, following the phone by default.
 - **Your data:** export History as CSV, back it up as JSON and restore it, or erase it, all from Settings. Nothing leaves the phone unless you export it; week summaries use Apple's on-device model, and can be turned off.
+- **Rings on time:** turn on "Ring when time's up" and the end of a session or break is an AlarmKit alarm: it sounds through Silent mode and a Focus, repeating Clockin's chime until you stop it, and after focus it offers Start break right on the alarm. Pause, +5 min and Finish now move or take it away. Without it, a notification plays the same chime. If alarms are turned off for Clockin, Settings and the Focus screen say so and link to the switch.
 - **Live Activity:** a Lock Screen card and Dynamic Island with a live countdown and a pause/resume button that works without opening the app.
 - **StandBy and bedside mode:** a full-screen bedside clock when the phone is charging on its side, and a bedside clock inside the app: open it from Settings during a session (it turns the screen even with orientation lock on) or turn the phone on its side. It uses a night palette, and the screen stays on only while the clock runs.
 - **Home Screen widget:** today's progress in small and medium sizes, including tinted and clear Home Screens; tapping it opens the Focus screen. Away from Focus, a running session also sits above the tab bar.
@@ -60,6 +61,8 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 
 Fraunces by Undercase Type, under the SIL Open Font License 1.1 (`Shared/Fonts/OFL.txt`). Clockin bundles modified cuts named Fraunces Clockin.
 
+The chime (`Clockin/Sounds/clockin-ding.caf`) is synthesised from scratch by `scripts/make-chime.sh`: a two-note bell, 24 seconds, so it fits the 30-second limit for notification sounds.
+
 ## Requirements
 
 - Xcode 26 or later (iOS 26 SDK)
@@ -88,7 +91,9 @@ To run on your own iPhone, change these in `project.yml`, then run `xcodegen gen
 - `bundleIdPrefix` and the `PRODUCT_BUNDLE_IDENTIFIER` values
 - `APP_GROUP_ID`: an App Group your team owns. Both targets' entitlements and the app's storage read it from there.
 
-A free Personal Team is enough. The end-of-timer alert is marked time-sensitive, but the entitlement that lets it break through Focus needs a paid Apple Developer Program team. If you have one, uncomment `com.apple.developer.usernotifications.time-sensitive` in `project.yml`.
+A free Personal Team is enough, alarms included: AlarmKit needs only the usage description in `project.yml`. The notification alert is marked time-sensitive, but the entitlement that lets a notification break through Focus needs a paid Apple Developer Program team; with "Ring when time's up" on, the alarm does that anyway. If you have a paid team, uncomment `com.apple.developer.usernotifications.time-sensitive` in `project.yml`.
+
+The simulator can't fully test alarms: on iOS 27 it denies AlarmKit without asking, and on iOS 26.5 SpringBoard crashes when an alarm starts to ring. Try them on a device.
 
 ## Development
 

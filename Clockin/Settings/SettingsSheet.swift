@@ -168,6 +168,12 @@ struct SettingsSheet: View {
 
     private var alerts: some View {
         Section {
+            Toggle(isOn: Binding(get: { services.settings.ringAtEnd },
+                                 set: { on in Task { await services.setRingAtEnd(on) } })) {
+                RowLabel("Ring when time's up", symbol: "alarm")
+            }
+            .tint(Retro.orange)
+            .listRowBackground(rowBackground)
             LabeledContent {
                 Text(alertSummary)
             } label: {
@@ -182,6 +188,12 @@ struct SettingsSheet: View {
             }
         } header: {
             Text("When time's up").retroLabel()
+        } footer: {
+            if services.settings.ringAtEnd {
+                Text("Rings like an alarm, even on silent and in a Focus, until you stop it.")
+            } else {
+                Text("Off, a notification plays the chime, and Silent mode or a Focus can hush it.")
+            }
         }
     }
 
@@ -191,6 +203,7 @@ struct SettingsSheet: View {
         case .notAsked: String(localized: "Asked on your first start")
         case .notificationsOff: String(localized: "Alerts off")
         case .liveActivitiesOff: String(localized: "Live Activities off")
+        case .alarmsOff: String(localized: "Alarms off")
         case .unknown: ""
         }
     }
@@ -198,7 +211,7 @@ struct SettingsSheet: View {
     private var settingsURL: URL? {
         switch services.alertStatus {
         case .notificationsOff: URL(string: UIApplication.openNotificationSettingsURLString)
-        case .liveActivitiesOff: URL(string: UIApplication.openSettingsURLString)
+        case .liveActivitiesOff, .alarmsOff: URL(string: UIApplication.openSettingsURLString)
         case .unknown, .notAsked, .ready: nil
         }
     }

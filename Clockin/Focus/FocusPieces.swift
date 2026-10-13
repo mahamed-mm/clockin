@@ -572,6 +572,7 @@ struct AlertHint: View {
         case .notAsked: String(localized: "Clockin will ask once to alert you when time's up.")
         case .notificationsOff: String(localized: "Alerts are off, so the timer can't ring. Turn on")
         case .liveActivitiesOff: String(localized: "Live Activities are off for Clockin. Turn on")
+        case .alarmsOff: String(localized: "Alarms are off, so Clockin can only notify you. Turn on")
         case .unknown, .ready: nil
         }
     }
@@ -579,7 +580,7 @@ struct AlertHint: View {
     private var settings: URL? {
         switch status {
         case .notificationsOff: URL(string: UIApplication.openNotificationSettingsURLString)
-        case .liveActivitiesOff: URL(string: UIApplication.openSettingsURLString)
+        case .liveActivitiesOff, .alarmsOff: URL(string: UIApplication.openSettingsURLString)
         case .unknown, .notAsked, .ready: nil
         }
     }

@@ -224,6 +224,12 @@
     "Add %@" : {
 
     },
+    "Alarms are off, so Clockin can only notify you. Turn on" : {
+
+    },
+    "Alarms off" : {
+
+    },
     "Alerts & Live Activities" : {
 
     },
@@ -472,6 +478,9 @@
     "OK" : {
 
     },
+    "Off, a notification plays the chime, and Silent mode or a Focus can hush it." : {
+
+    },
     "On" : {
 
     },
@@ -550,7 +559,13 @@
     "Resume" : {
 
     },
-    "Ring in 1 minute (AlarmKit)" : {
+    "Ring when time's up" : {
+
+    },
+    "Ringing" : {
+
+    },
+    "Rings like an alarm, even on silent and in a Focus, until you stop it." : {
 
     },
     "Running" : {
@@ -613,6 +628,12 @@
     "Start %lld-sec break" : {
 
     },
+    "Start Break" : {
+
+    },
+    "Start break" : {
+
+    },
     "Start focus" : {
 
     },
@@ -620,9 +641,6 @@
 
     },
     "System" : {
-
-    },
-    "Test alarm from Clockin" : {
 
     },
     "Test timers" : {

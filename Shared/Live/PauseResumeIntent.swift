@@ -8,6 +8,9 @@ enum IntentBridge {
     /// when the button didn't say. Returns once the alert and Live Activity
     /// updates are done, so the system can't suspend the app halfway.
     static var setPaused: (@MainActor (_ paused: Bool?, _ sessionID: UUID?) async -> Void)?
+    /// Starts the break after the focus session with this id, if that's
+    /// where things stand. Returns once the alerts and Live Activity are set.
+    static var startBreak: (@MainActor (_ sessionID: UUID?) async -> Void)?
 }
 
 /// Pause/resume button on the Lock Screen and in the Dynamic Island.

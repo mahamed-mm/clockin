@@ -144,6 +144,9 @@ struct TimerSettings: Codable, Equatable, Sendable {
     var bedsideWhenSideways = true
     /// History's week line written by the on-device model, where there is one.
     var weekSummaries = true
+    /// An alarm at the end of each phase, through Silent and Focus, instead of
+    /// a notification. Off until chosen, since it asks for permission.
+    var ringAtEnd = false
 
     init(preset: Preset = .classic, longBreak: Bool = true, appearance: Appearance = .system,
          bedsideWhenSideways: Bool = true) {
@@ -169,7 +172,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case preset, customMinutes, longBreak, appearance, bedsideWhenSideways, weekSummaries
+        case preset, customMinutes, longBreak, appearance, bedsideWhenSideways, weekSummaries, ringAtEnd
     }
 
     init(from decoder: Decoder) throws {
@@ -186,6 +189,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
         self.appearance = appearance.flatMap(Appearance.init(rawValue:)) ?? .system
         bedsideWhenSideways = (try? container.decodeIfPresent(Bool.self, forKey: .bedsideWhenSideways)) ?? true
         weekSummaries = (try? container.decodeIfPresent(Bool.self, forKey: .weekSummaries)) ?? true
+        ringAtEnd = (try? container.decodeIfPresent(Bool.self, forKey: .ringAtEnd)) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -196,6 +200,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
         try container.encode(appearance.rawValue, forKey: .appearance)
         try container.encode(bedsideWhenSideways, forKey: .bedsideWhenSideways)
         try container.encode(weekSummaries, forKey: .weekSummaries)
+        try container.encode(ringAtEnd, forKey: .ringAtEnd)
     }
 
     var plan: TimerPlan {

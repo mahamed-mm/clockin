@@ -78,6 +78,24 @@ final class SpyNotifier: EndNotifying {
 }
 
 @MainActor
+final class SpyAlarm: EndAlarming {
+    var calls: [String] = []
+    var permission: AlarmPermission = .authorized
+    /// What the permission prompt would answer.
+    var answer: AlarmPermission = .authorized
+    var flushes = 0
+
+    func requestPermission() async -> AlarmPermission {
+        calls.append("ask")
+        permission = answer
+        return answer
+    }
+    func schedule(for session: ActiveSession) { calls.append("schedule") }
+    func cancel() { calls.append("cancel") }
+    func flush() async { flushes += 1 }
+}
+
+@MainActor
 final class SpyWidgets: WidgetReloading {
     var reloads = 0
     var lastSnapshot: WidgetSnapshot?

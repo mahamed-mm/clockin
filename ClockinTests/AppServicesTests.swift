@@ -9,6 +9,7 @@ struct AppServicesTests {
     let state = InMemorySessionStateStore()
     let liveActivity = SpyLiveActivity()
     let notifier = SpyNotifier()
+    let alarm = SpyAlarm()
     let widgets = SpyWidgets()
     let haptics = SpyHaptics()
     let announcer = SpyAnnouncer()
@@ -17,7 +18,8 @@ struct AppServicesTests {
         AppServices(container: AppServices.makeEmptyContainer(), historyUnavailable: historyUnavailable,
                     stateStore: state, now: { [clock] in clock.now }, calendar: osloCalendar,
                     schedulesCompletion: false,
-                    liveActivity: liveActivity, notifications: notifier, widgets: widgets, haptics: haptics,
+                    liveActivity: liveActivity, notifications: notifier, alarm: alarm, widgets: widgets,
+                    haptics: haptics,
                     announce: { [announcer] in announcer.spoken.append($0) })
     }
 
@@ -266,5 +268,143 @@ struct AppServicesTests {
         #expect(state.state.pendingRecords?.map(\.name) == ["Essay"])
         // The waiting session still counts on the Lock Screen.
         #expect(liveActivity.lastCompletedToday == 1)
+    }
+
+    // MARK: The end alarm
+
+    func ringing() -> AppServices {
+        let services = makeServices()
+        services.settings.ringAtEnd = true
+        return services
+    }
+
+    @Test func withoutRingTheNotificationIsTheAlert() {
+        let services = makeServices()
+        services.engine.start(name: "Essay")
+        #expect(notifier.calls == ["schedule"])
+        #expect(alarm.calls == ["cancel"])
+    }
+
+    @Test func ringingSetsTheAlarmInsteadOfTheNotification() {
+        let services = ringing()
+        services.engine.start(name: "Essay")
+        #expect(alarm.calls == ["schedule"])
+        #expect(notifier.calls == ["cancel"])
+
+        services.engine.pause()
+        #expect(alarm.calls == ["schedule", "cancel"])
+        services.engine.resume()
+        #expect(alarm.calls == ["schedule", "cancel", "schedule"])
+        services.engine.cancel()
+        #expect(alarm.calls.last == "cancel")
+        services.engine.undoCancel()
+        #expect(alarm.calls.last == "schedule")
+    }
+
+    @Test func plusFiveMovesTheAlarm() {
+        let services = ringing()
+        services.engine.start(name: "Essay")
+        clock.advance(Preset.classic.focus - 60)
+        services.engine.extend()
+        #expect(alarm.calls == ["schedule", "schedule"])
+    }
+
+    @Test func aRingingAlarmStopsOnlyWhenSomeoneActs() {
+        let services = ringing()
+        finishFocus(services)
+        // Live, and noticed a little later: it keeps ringing.
+        #expect(alarm.calls == ["schedule"])
+
+        // Starting the break stops it and sets one for the break's end.
+        services.engine.startBreak()
+        #expect(alarm.calls == ["schedule", "schedule"])
+
+        // The break's alarm rings on into the idle screen; the next Start
+        // replaces it with one for the new session.
+        clock.advance(Preset.classic.shortBreak)
+        services.reconcile()
+        #expect(alarm.calls == ["schedule", "schedule"])
+        services.engine.start(name: "Essay")
+        #expect(alarm.calls == ["schedule", "schedule", "schedule"])
+    }
+
+    @Test func doneForNowSilencesIt() {
+        let services = ringing()
+        finishFocus(services)
+        services.engine.skipBreak()
+        #expect(alarm.calls == ["schedule", "cancel"])
+    }
+
+    @Test func aRecentCompletionKeepsRinging() {
+        let services = ringing()
+        services.engine.start(name: "Essay")
+        clock.advance(Preset.classic.focus + 60)
+        services.reconcile()
+        #expect(alarm.calls == ["schedule"])
+    }
+
+    @Test func aCompletionFromLongAgoGoesQuiet() {
+        let services = ringing()
+        services.engine.start(name: "Essay")
+        clock.advance(Preset.classic.focus + 3_600)
+        services.reconcile()
+        #expect(alarm.calls == ["schedule", "cancel"])
+    }
+
+    @Test func finishingEarlyNeverRings() {
+        let services = ringing()
+        services.engine.start(name: "Essay")
+        clock.advance(600)
+        services.engine.finishEarly()
+        #expect(alarm.calls == ["schedule", "cancel"])
+    }
+
+    @Test func turningRingOnAsksOnceAndMovesTheRunningAlert() async {
+        let services = makeServices()
+        services.engine.start(name: "Essay")
+        alarm.permission = .notDetermined
+        alarm.calls = []
+        notifier.calls = []
+
+        await services.setRingAtEnd(true)
+        #expect(alarm.calls == ["ask", "schedule"])
+        #expect(notifier.calls == ["cancel"])
+        #expect(services.alertStatus == .ready)
+
+        await services.setRingAtEnd(false)
+        #expect(alarm.calls.last == "cancel")
+        #expect(notifier.calls.last == "schedule")
+    }
+
+    @Test func aDeniedAlarmFallsBackToTheNotification() async {
+        let services = makeServices()
+        alarm.permission = .notDetermined
+        alarm.answer = .denied
+        await services.setRingAtEnd(true)
+        #expect(services.alertStatus == .alarmsOff)
+
+        services.engine.start(name: "Essay")
+        #expect(notifier.calls.last == "schedule")
+        #expect(alarm.calls.last == "cancel")
+    }
+
+    @Test func startBreakOnTheAlarmStartsThatSessionsBreak() async throws {
+        let services = ringing()
+        finishFocus(services)
+        let focus = try #require(services.engine.stage.completedFocus)
+
+        await services.alarmStartBreak(after: UUID())
+        #expect(services.engine.stage.completedFocus != nil)
+
+        await services.alarmStartBreak(after: focus.id)
+        #expect(services.engine.active?.phase == .rest)
+        #expect(alarm.calls.last == "schedule")
+        #expect(alarm.flushes == 2)
+    }
+
+    @Test func launchingIdleClearsAnAlarmLeftBehind() {
+        let services = ringing()
+        services.restore()
+        #expect(alarm.calls == ["cancel"])
     }
 }

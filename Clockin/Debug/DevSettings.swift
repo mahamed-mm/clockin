@@ -1,5 +1,4 @@
 #if DEBUG
-import AlarmKit
 import SwiftUI
 
 /// Development-only controls. Compiled out of Release builds.
@@ -30,11 +29,6 @@ struct DevMenu: View {
             } label: {
                 Label("Replay celebration", systemImage: "sparkles")
             }
-            Button {
-                Task { await DevAlarm.ringInOneMinute() }
-            } label: {
-                Label("Ring in 1 minute (AlarmKit)", systemImage: "alarm")
-            }
             Menu {
                 ForEach(hapticEvents, id: \.0) { title, event in
                     Button(title) { services.debugReplay(event) }
@@ -61,35 +55,6 @@ struct TestTimersBadge: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
                 .background(Retro.rust, in: .capsule)
-        }
-    }
-}
-
-/// The AlarmKit spike: can a Personal Team build ring through Silent and Focus?
-enum DevAlarm {
-    struct Metadata: AlarmMetadata {}
-
-    static func ringInOneMinute() async {
-        do {
-            let state = try await AlarmManager.shared.requestAuthorization()
-            Log.notifications.info("AlarmKit authorization: \(String(describing: state), privacy: .public)")
-            guard state == .authorized else { return }
-            let alert: AlarmPresentation.Alert
-            if #available(iOS 26.1, *) {
-                alert = AlarmPresentation.Alert(title: "Test alarm from Clockin")
-            } else {
-                alert = AlarmPresentation.Alert(title: "Test alarm from Clockin",
-                                                stopButton: AlarmButton(text: "Stop", textColor: .white,
-                                                                        systemImageName: "stop.circle"))
-            }
-            let attributes = AlarmAttributes<Metadata>(presentation: AlarmPresentation(alert: alert),
-                                                       tintColor: Retro.orange)
-            let alarm = try await AlarmManager.shared.schedule(
-                id: UUID(),
-                configuration: .alarm(schedule: .fixed(.now.addingTimeInterval(60)), attributes: attributes))
-            Log.notifications.info("AlarmKit scheduled: \(String(describing: alarm.state), privacy: .public)")
-        } catch {
-            Log.notifications.error("AlarmKit failed: \(error, privacy: .public)")
         }
     }
 }

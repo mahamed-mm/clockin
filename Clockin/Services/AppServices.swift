@@ -34,6 +34,8 @@ enum AlertStatus: Equatable, Sendable {
     case ready
     case notificationsOff
     case liveActivitiesOff
+    /// "Ring when time's up" is on, but Clockin may not ring alarms.
+    case alarmsOff
 }
 
 /// Wires the engine to its side effects: Live Activity, notifications,
@@ -77,6 +79,7 @@ final class AppServices: SessionEffects {
 
     @ObservationIgnored private let liveActivity: LiveActivityControlling
     @ObservationIgnored private let notifications: EndNotifying
+    @ObservationIgnored private let alarm: EndAlarming
     @ObservationIgnored private let widgets: WidgetReloading
     @ObservationIgnored private let haptics: CompletionFeedback
     @ObservationIgnored private let announce: @MainActor (String) -> Void
@@ -104,6 +107,7 @@ final class AppServices: SessionEffects {
          schedulesCompletion: Bool = true,
          liveActivity: LiveActivityControlling,
          notifications: EndNotifying,
+         alarm: EndAlarming = NoAlarm(),
          widgets: WidgetReloading,
          haptics: CompletionFeedback,
          announce: @escaping @MainActor (String) -> Void) {
@@ -111,6 +115,7 @@ final class AppServices: SessionEffects {
         self.historyUnavailable = historyUnavailable
         self.liveActivity = liveActivity
         self.notifications = notifications
+        self.alarm = alarm
         self.widgets = widgets
         self.haptics = haptics
         self.announce = announce
@@ -144,10 +149,13 @@ final class AppServices: SessionEffects {
                                    stateStore: DefaultsSessionStateStore(), settingsStore: DefaultsSettingsStore(),
                                    power: PowerState(),
                                    liveActivity: LiveActivityController(), notifications: EndNotifier(),
-                                   widgets: SystemWidgets(), haptics: CompletionHaptics(),
+                                   alarm: EndAlarm(), widgets: SystemWidgets(), haptics: CompletionHaptics(),
                                    announce: { AccessibilityNotification.Announcement($0).post() })
         IntentBridge.setPaused = { [weak services] paused, sessionID in
             await services?.lockScreenSetPaused(paused, sessionID: sessionID)
+        }
+        IntentBridge.startBreak = { [weak services] sessionID in
+            await services?.alarmStartBreak(after: sessionID)
         }
         services.engine.undoWindow = {
             // Reaching Undo takes longer with a screen reader or switches.
@@ -187,18 +195,18 @@ final class AppServices: SessionEffects {
         case .started, .resumed, .breakStarted, .restored, .extended:
             if let session = engine.active {
                 syncLiveActivity(session)
-                notifications.schedule(for: session)
+                scheduleEndAlert(for: session)
             }
         case .paused:
             if let session = engine.active { syncLiveActivity(session) }
-            notifications.cancel()
+            cancelEndAlert()
         case .cancelled:
             liveActivity.endAll()
-            notifications.cancel()
+            cancelEndAlert()
             announce(String(localized: "Session cancelled. Undo is available for a few seconds."))
         case .breakSkipped, .completionDismissed:
             liveActivity.endAll()
-            notifications.cancel()
+            cancelEndAlert()
         case .focusCompleted(let freshness):
             // Found long after the fact, it opens quietly: no ding, no sunburst,
             // and no "done" card left behind on the Lock Screen.
@@ -216,7 +224,7 @@ final class AppServices: SessionEffects {
         case .finishedEarly:
             // Finished by hand in the app: no alert to come, no ding, and
             // no card left on the Lock Screen.
-            notifications.cancel()
+            cancelEndAlert()
             let breakLength = engine.stage.completedFocus.map(engine.breakLength(after:)) ?? plan.shortBreak
             liveActivity.showFocusDone(completedToday: completedToday, breakDuration: breakLength, lingers: false)
             announce("\(Copy.endedEarly). \(Copy.breakLine(seconds: breakLength))")
@@ -323,6 +331,9 @@ final class AppServices: SessionEffects {
     func restore() {
         engine.restore()
         endOrphanedActivities()
+        // An alarm left from a session that's gone. One ringing for a finished
+        // session keeps going until it's stopped or the screen moves on.
+        if engine.stage == .idle { alarm.cancel() }
         refreshWidgets()
     }
 
@@ -371,6 +382,7 @@ final class AppServices: SessionEffects {
     /// so the system doesn't suspend the app before they land.
     func settle() async {
         await notifications.flush()
+        await alarm.flush()
         await liveActivity.flush()
     }
 
@@ -380,6 +392,10 @@ final class AppServices: SessionEffects {
     func refreshAlertStatus() async {
         let notificationStatus = await notifications.authorizationStatus()
         let activitiesEnabled = await liveActivity.areActivitiesEnabled()
+        if settings.ringAtEnd && alarm.permission == .denied {
+            alertStatus = .alarmsOff
+            return
+        }
         alertStatus = switch notificationStatus {
         case .notDetermined: .notAsked
         case .denied: .notificationsOff
@@ -388,10 +404,54 @@ final class AppServices: SessionEffects {
     }
 
     /// An ending found after the fact has already been alerted, or, after the
-    /// clock jumped forward, would be alerted late. Either way the alert is
-    /// stale. A live ending's alert is playing right now, so it stays.
+    /// clock jumped forward, would be alerted late. Either way the notification
+    /// is stale. A live ending's alert is playing right now, so it stays. The
+    /// alarm rings until someone stops it, so only one from long ago goes.
     private func clearLateAlert(_ freshness: Freshness) {
         if freshness != .live { notifications.cancel() }
+        if freshness == .stale { alarm.cancel() }
+    }
+
+    // MARK: End alert
+
+    /// The alarm stands in for the notification when it's switched on and allowed.
+    private var ringsAlarm: Bool { settings.ringAtEnd && alarm.permission == .authorized }
+
+    /// One alert for the end of the phase: the alarm or the notification, never both.
+    private func scheduleEndAlert(for session: ActiveSession) {
+        if ringsAlarm {
+            notifications.cancel()
+            alarm.schedule(for: session)
+        } else {
+            alarm.cancel()
+            notifications.schedule(for: session)
+        }
+    }
+
+    private func cancelEndAlert() {
+        notifications.cancel()
+        alarm.cancel()
+    }
+
+    /// "Ring when time's up" in Settings. Turning it on asks for permission the
+    /// first time; a session already running gets the new kind of alert at once.
+    func setRingAtEnd(_ on: Bool) async {
+        settings.ringAtEnd = on
+        if on, alarm.permission == .notDetermined {
+            _ = await alarm.requestPermission()
+        }
+        if let session = engine.active, !session.isPaused { scheduleEndAlert(for: session) }
+        await refreshAlertStatus()
+    }
+
+    /// "Start break" on the end-of-focus alarm: starts that session's break,
+    /// if it's still the one waiting for it.
+    func alarmStartBreak(after sessionID: UUID?) async {
+        engine.reconcile()
+        if let focus = engine.stage.completedFocus, sessionID == nil || sessionID == focus.id {
+            engine.startBreak()
+        }
+        await settle()
     }
 
     /// Moves `today` to the current day. True if it changed.
@@ -407,7 +467,7 @@ final class AppServices: SessionEffects {
     private func resyncSurfaces() {
         if let session = engine.active {
             syncLiveActivity(session)
-            notifications.schedule(for: session)
+            scheduleEndAlert(for: session)
         }
         refreshWidgets()
     }
@@ -435,7 +495,7 @@ final class AppServices: SessionEffects {
     /// In memory and without side effects, so previews never touch real data.
     static let preview = AppServices(container: makeEmptyContainer(), stateStore: InMemorySessionStateStore(),
                                      liveActivity: SilentEffects(), notifications: SilentEffects(),
-                                     widgets: SilentEffects(), haptics: SilentEffects(), announce: { _ in })
+                                     alarm: NoAlarm(), widgets: SilentEffects(), haptics: SilentEffects(), announce: { _ in })
 
     /// Replays an event's feedback without touching the session: its haptic,
     /// and for a completion the "ding" pattern and the sunburst.

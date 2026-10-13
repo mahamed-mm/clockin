@@ -102,7 +102,7 @@ final class EndNotifier: EndNotifying {
             content.title = Copy.breakOver
             content.body = Copy.readyWhenYouAre
         }
-        content.sound = .default
+        content.sound = UNNotificationSound(named: UNNotificationSoundName(ChimeSound.fileName))
         // Breaks through Focus only with the time-sensitive entitlement (see
         // project.yml); without it the system delivers at the normal level.
         content.interruptionLevel = .timeSensitive

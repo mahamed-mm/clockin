@@ -36,6 +36,16 @@ struct SettingsTests {
         #expect(try decode(#"{"appearance":"sepia"}"#).appearance == .system)
     }
 
+    @Test func theAlarmIsOffUntilChosen() throws {
+        #expect(try decode(#"{"preset":"deep"}"#).ringAtEnd == false)
+        #expect(try decode(#"{"ringAtEnd":true}"#).ringAtEnd)
+        let store = DefaultsSettingsStore(defaults: UserDefaults(suiteName: "clockin.tests.\(UUID())")!)
+        var settings = TimerSettings()
+        settings.ringAtEnd = true
+        store.save(settings)
+        #expect(store.load().ringAtEnd)
+    }
+
     @Test func weekSummariesAreOnUnlessTurnedOff() throws {
         #expect(try decode(#"{"preset":"deep"}"#).weekSummaries)
         #expect(try decode(#"{"weekSummaries":false}"#).weekSummaries == false)
