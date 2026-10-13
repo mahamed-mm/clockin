@@ -58,6 +58,37 @@ enum Copy {
         return String(localized: "Paused at \(TimeFormat.time(pausedAt))")
     }
 
+    // MARK: History
+
+    /// One calm line about the week under History's strip: "Mostly mornings
+    /// this week; Tuesday was your longest day." No names, no praise.
+    static func weekSentence(_ facts: WeekFacts, calendar: Calendar) -> String {
+        let style = Date.FormatStyle(date: .omitted, time: .omitted, locale: calendar.locale ?? .current,
+                                     calendar: calendar, timeZone: calendar.timeZone)
+        let day = facts.busiestDay.formatted(style.weekday(.wide))
+        if facts.sessions == 1 {
+            switch facts.firstPart {
+            case .morning: return String(localized: "One session this week, on \(day) morning.")
+            case .afternoon: return String(localized: "One session this week, on \(day) afternoon.")
+            case .evening: return String(localized: "One session this week, on \(day) evening.")
+            }
+        }
+        if facts.daysWithFocus == 1 {
+            switch facts.mostlyIn {
+            case .morning: return String(localized: "Mostly mornings this week, all on \(day).")
+            case .afternoon: return String(localized: "Mostly afternoons this week, all on \(day).")
+            case .evening: return String(localized: "Mostly evenings this week, all on \(day).")
+            case nil: return String(localized: "All on \(day) this week.")
+            }
+        }
+        switch facts.mostlyIn {
+        case .morning: return String(localized: "Mostly mornings this week; \(day) was your longest day.")
+        case .afternoon: return String(localized: "Mostly afternoons this week; \(day) was your longest day.")
+        case .evening: return String(localized: "Mostly evenings this week; \(day) was your longest day.")
+        case nil: return String(localized: "Spread across the day this week; \(day) was your longest day.")
+        }
+    }
+
     /// The session's name, or "Focus session" when it has none.
     static func displayName(_ name: String) -> String {
         name.isEmpty ? String(localized: "Focus session") : name

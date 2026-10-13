@@ -233,6 +233,9 @@
     "Alerts off" : {
 
     },
+    "All on %@ this week." : {
+
+    },
     "Appearance" : {
 
     },
@@ -430,6 +433,24 @@
     "Minutes of focus you've finished today." : {
 
     },
+    "Mostly afternoons this week, all on %@." : {
+
+    },
+    "Mostly afternoons this week; %@ was your longest day." : {
+
+    },
+    "Mostly evenings this week, all on %@." : {
+
+    },
+    "Mostly evenings this week; %@ was your longest day." : {
+
+    },
+    "Mostly mornings this week, all on %@." : {
+
+    },
+    "Mostly mornings this week; %@ was your longest day." : {
+
+    },
     "Next week" : {
 
     },
@@ -449,6 +470,15 @@
 
     },
     "On" : {
+
+    },
+    "One session this week, on %@ afternoon." : {
+
+    },
+    "One session this week, on %@ evening." : {
+
+    },
+    "One session this week, on %@ morning." : {
 
     },
     "Open Settings" : {
@@ -569,6 +599,9 @@
 
     },
     "Slow animations ×4" : {
+
+    },
+    "Spread across the day this week; %@ was your longest day." : {
 
     },
     "Start %lld-min break" : {

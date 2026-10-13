@@ -160,3 +160,58 @@ extension TodayStats {
         }
     }
 }
+
+/// What a week of focus came to, for the sentence under History's week
+/// strip: when and how long, never what the sessions were called.
+struct WeekFacts: Equatable, Sendable {
+    enum PartOfDay: String, CaseIterable, Sendable {
+        case morning, afternoon, evening
+
+        /// Before noon, before five, then evening (night included).
+        init(_ date: Date, calendar: Calendar) {
+            let hour = calendar.component(.hour, from: date)
+            self = hour < 12 ? .morning : hour < 17 ? .afternoon : .evening
+        }
+    }
+
+    struct Session: Equatable, Sendable {
+        var startedAt: Date
+        /// Days go by when a session finished, as in the week strip.
+        var completedAt: Date
+        var seconds: TimeInterval
+    }
+
+    var sessions: Int
+    var totalSeconds: TimeInterval
+    var longestSeconds: TimeInterval
+    /// The day with the most focus; the earlier one on a tie.
+    var busiestDay: Date
+    var daysWithFocus: Int
+    /// The part of the day most of the focus started in, when one had at
+    /// least 60% of it.
+    var mostlyIn: PartOfDay?
+    /// When the week's first session started, for a week of one.
+    var firstPart: PartOfDay
+
+    /// Nil for a week with no focus.
+    init?(sessions: [Session], calendar: Calendar) {
+        let sessions = sessions.filter { $0.seconds > 0 }.sorted { $0.startedAt < $1.startedAt }
+        guard let first = sessions.first else { return nil }
+        self.sessions = sessions.count
+        totalSeconds = sessions.reduce(0) { $0 + $1.seconds }
+        longestSeconds = sessions.map(\.seconds).max() ?? 0
+
+        var byDay: [Date: TimeInterval] = [:]
+        var byPart: [PartOfDay: TimeInterval] = [:]
+        for session in sessions {
+            byDay[calendar.startOfDay(for: session.completedAt), default: 0] += session.seconds
+            byPart[PartOfDay(session.startedAt, calendar: calendar), default: 0] += session.seconds
+        }
+        daysWithFocus = byDay.count
+        busiestDay = byDay.max { a, b in a.value == b.value ? a.key > b.key : a.value < b.value }?.key
+            ?? calendar.startOfDay(for: first.completedAt)
+        let total = totalSeconds
+        mostlyIn = PartOfDay.allCases.first { (byPart[$0] ?? 0) >= total * 0.6 }
+        firstPart = PartOfDay(first.startedAt, calendar: calendar)
+    }
+}

@@ -176,6 +176,16 @@ private struct HistoryWeek: View {
                 WeekStrip(totals: totals, today: today, calendar: calendar)
                     // A new week fills in afresh.
                     .id(week.start)
+                if let facts {
+                    Text(Copy.weekSentence(facts, calendar: calendar))
+                        .font(.retro(.meta))
+                        .foregroundStyle(Retro.inkSoft)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, Space.m)
+                        .id(week.start)
+                        .transition(.opacity)
+                }
             }
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: Space.xs, leading: 0, bottom: Space.s, trailing: 0))
@@ -277,6 +287,18 @@ private struct HistoryWeek: View {
     private var totals: [DayTotal] {
         TodayStats.weekTotals(saved: records.map(\.row), pending: engine.pendingRecords,
                               containing: week.start, calendar: calendar)
+    }
+
+    /// The week's focus, saved or still waiting to be saved, each once.
+    private var facts: WeekFacts? {
+        let savedIDs = Set(records.map(\.id))
+        let waiting = engine.pendingRecords.filter { week.includes($0.completedAt) && !savedIDs.contains($0.id) }
+        let sessions = records.map {
+            WeekFacts.Session(startedAt: $0.startedAt, completedAt: $0.completedAt, seconds: $0.focusSeconds)
+        } + waiting.map {
+            WeekFacts.Session(startedAt: $0.startedAt, completedAt: $0.completedAt, seconds: $0.focusSeconds)
+        }
+        return WeekFacts(sessions: sessions, calendar: calendar)
     }
 
     private var days: [(day: Date, records: [FocusRecord])] {
