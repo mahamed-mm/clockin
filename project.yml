@@ -52,6 +52,7 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         NSSupportsLiveActivities: true
+        NSAlarmKitUsageDescription: Clockin rings when a session or break is over, even on silent.
         # Fraunces cuts built by scripts/make-fonts.sh (SIL OFL, Shared/Fonts/OFL.txt).
         UIAppFonts: &fonts
           - FrauncesClockin-Display.ttf
