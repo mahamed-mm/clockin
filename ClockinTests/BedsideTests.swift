@@ -76,6 +76,13 @@ struct BedsideTests {
         #expect(try #require(orientation.calls.last).turn == .portrait)
     }
 
+    @Test func withSidewaysOffOnlySettingsShowsIt() {
+        let bedside = makeController()
+        #expect(!bedside.shows(running, onItsSide: true, followsRotation: false))
+        bedside.enter()
+        #expect(bedside.shows(running, onItsSide: false, followsRotation: false))
+    }
+
     @Test func theScreenStaysOnOnlyWhileTheClockRuns() {
         var paused = running
         paused.state = .paused(remaining: 600)

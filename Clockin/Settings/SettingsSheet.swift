@@ -15,7 +15,9 @@ struct SettingsSheet: View {
         NavigationStack {
             List {
                 timer
+                appearance
                 longBreak
+                bedside
                 alerts
                 data
                 about
@@ -68,6 +70,25 @@ struct SettingsSheet: View {
         }
     }
 
+    // MARK: Appearance
+
+    private var appearance: some View {
+        @Bindable var services = services
+        return Section {
+            Picker("Appearance", selection: $services.settings.appearance) {
+                ForEach(Appearance.allCases) { appearance in
+                    Text(appearance.title).tag(appearance)
+                }
+            }
+            .pickerStyle(.segmented)
+            .listRowBackground(rowBackground)
+        } header: {
+            Text("Appearance").retroLabel()
+        } footer: {
+            Text("The widget and Lock Screen follow your iPhone's setting.")
+        }
+    }
+
     // MARK: Long break
 
     private var longBreak: some View {
@@ -80,6 +101,29 @@ struct SettingsSheet: View {
             .listRowBackground(rowBackground)
         } footer: {
             Text("Every fourth full session of the day earns a \(TimeFormat.duration(TimerPlan.longBreakLength)) break.")
+        }
+    }
+
+    // MARK: Bedside clock
+
+    private var bedside: some View {
+        @Bindable var services = services
+        return Section {
+            Toggle(isOn: $services.settings.bedsideWhenSideways) {
+                Text("Turn sideways for the bedside clock")
+            }
+            .tint(Retro.orange)
+            .listRowBackground(rowBackground)
+            Button("Show bedside clock") {
+                services.bedside.enter()
+                dismiss()
+            }
+            .disabled(services.engine.active == nil)
+            .listRowBackground(rowBackground)
+        } header: {
+            Text("Bedside clock").retroLabel()
+        } footer: {
+            Text("A dimmed landscape clock for the nightstand. Show it during a session, even with orientation lock on.")
         }
     }
 

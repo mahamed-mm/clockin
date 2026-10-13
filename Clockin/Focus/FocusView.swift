@@ -21,20 +21,15 @@ struct FocusView: View {
     private static let spacing: CGFloat = 24
     private static let margins = EdgeInsets(top: 8, leading: 28, bottom: 20, trailing: 28)
 
-    @State private var bedside = BedsideController()
+    private var bedside: BedsideController { services.bedside }
 
     private var onItsSide: Bool { verticalSizeClass == .compact }
 
-    /// The session as a bedside clock: chosen with the moon button, or the
-    /// phone turned on its side.
+    /// The session as a bedside clock: chosen in Settings, or the phone
+    /// turned on its side.
     private var bedsideSession: ActiveSession? {
-        bedside.shows(engine.active, onItsSide: onItsSide) ? engine.active : nil
-    }
-
-    /// The moon button's action, while there's a session to show.
-    private var showBedside: (@MainActor () -> Void)? {
-        guard engine.active != nil else { return nil }
-        return { [bedside] in bedside.enter() }
+        bedside.shows(engine.active, onItsSide: onItsSide,
+                      followsRotation: services.settings.bedsideWhenSideways) ? engine.active : nil
     }
 
     var body: some View {
@@ -57,7 +52,6 @@ struct FocusView: View {
         .onChange(of: engine.active?.id, initial: true) { bedside.sessionChanged(to: engine.active) }
         .onChange(of: onItsSide) { _, sideways in bedside.orientationChanged(onItsSide: sideways) }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
-        .environment(\.showBedside, showBedside)
         .sensoryFeedback(trigger: services.lastEvent) { _, stamp in stamp.feedback }
         // VoiceOver's two-finger double tap does the main thing: start,
         // pause or resume, or start the break.

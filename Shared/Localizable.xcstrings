@@ -36,16 +36,6 @@
     "%@, one in progress" : {
 
     },
-    "%@, paused, %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@, paused, %2$@"
-          }
-        }
-      }
-    },
     "%@, today: %@, %@" : {
       "localizations" : {
         "en" : {
@@ -205,13 +195,13 @@
     "+%lld min" : {
 
     },
+    "A dimmed landscape clock for the nightstand. Show it during a session, even with orientation lock on." : {
+
+    },
     "About" : {
 
     },
     "Add %@" : {
-
-    },
-    "Add 5 minutes" : {
 
     },
     "Alerts & Live Activities" : {
@@ -221,6 +211,9 @@
 
     },
     "Alerts off" : {
+
+    },
+    "Appearance" : {
 
     },
     "Applies from the next session." : {
@@ -269,6 +262,9 @@
 
     },
     "Complete" : {
+
+    },
+    "Dark" : {
 
     },
     "Deep" : {
@@ -381,6 +377,9 @@
     "Leave bedside clock" : {
 
     },
+    "Light" : {
+
+    },
     "Live Activities are off for Clockin. Turn on" : {
 
     },
@@ -441,9 +440,6 @@
     "Paused · %@ left" : {
 
     },
-    "Paused · tap play to resume" : {
-
-    },
     "Paused, %@" : {
 
     },
@@ -460,9 +456,6 @@
 
     },
     "Ready, %@" : {
-
-    },
-    "Ready, %@ session" : {
 
     },
     "Recent names" : {
@@ -522,6 +515,9 @@
     "Short timers (10s / 5s)" : {
 
     },
+    "Show bedside clock" : {
+
+    },
     "Skip break" : {
 
     },
@@ -537,13 +533,16 @@
     "Start focus" : {
 
     },
-    "Tap play to resume" : {
+    "System" : {
 
     },
     "Test timers" : {
 
     },
     "The file couldn't be read." : {
+
+    },
+    "The widget and Lock Screen follow your iPhone's setting." : {
 
     },
     "This backup is from a newer version of Clockin." : {
@@ -579,7 +578,7 @@
     "Turn on" : {
 
     },
-    "Turns the screen sideways and dims it" : {
+    "Turn sideways for the bedside clock" : {
 
     },
     "Undo" : {

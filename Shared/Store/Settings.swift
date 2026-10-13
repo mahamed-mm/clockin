@@ -39,6 +39,23 @@ enum Preset: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// Light or dark, or whatever the phone is set to.
+enum Appearance: String, CaseIterable, Identifiable, Sendable {
+    case system
+    case light
+    case dark
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .system: String(localized: "System")
+        case .light: String(localized: "Light")
+        case .dark: String(localized: "Dark")
+        }
+    }
+}
+
 /// What the user picked in Settings. Saved as JSON in the App Group.
 /// Decoding never fails: a missing or unknown value falls back to its
 /// default, so settings written by another build still load.
@@ -46,25 +63,36 @@ struct TimerSettings: Codable, Equatable, Sendable {
     var preset: Preset = .classic
     /// A longer break after every fourth full session of the day.
     var longBreak = true
+    var appearance: Appearance = .system
+    /// Turning the phone on its side during a session shows the bedside clock.
+    var bedsideWhenSideways = true
 
-    init(preset: Preset = .classic, longBreak: Bool = true) {
+    init(preset: Preset = .classic, longBreak: Bool = true, appearance: Appearance = .system,
+         bedsideWhenSideways: Bool = true) {
         self.preset = preset
         self.longBreak = longBreak
+        self.appearance = appearance
+        self.bedsideWhenSideways = bedsideWhenSideways
     }
 
-    private enum CodingKeys: String, CodingKey { case preset, longBreak }
+    private enum CodingKeys: String, CodingKey { case preset, longBreak, appearance, bedsideWhenSideways }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let raw = try? container.decodeIfPresent(String.self, forKey: .preset)
-        preset = raw.flatMap(Preset.init(rawValue:)) ?? .classic
+        let preset = try? container.decodeIfPresent(String.self, forKey: .preset)
+        self.preset = preset.flatMap(Preset.init(rawValue:)) ?? .classic
         longBreak = (try? container.decodeIfPresent(Bool.self, forKey: .longBreak)) ?? true
+        let appearance = try? container.decodeIfPresent(String.self, forKey: .appearance)
+        self.appearance = appearance.flatMap(Appearance.init(rawValue:)) ?? .system
+        bedsideWhenSideways = (try? container.decodeIfPresent(Bool.self, forKey: .bedsideWhenSideways)) ?? true
     }
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(preset.rawValue, forKey: .preset)
         try container.encode(longBreak, forKey: .longBreak)
+        try container.encode(appearance.rawValue, forKey: .appearance)
+        try container.encode(bedsideWhenSideways, forKey: .bedsideWhenSideways)
     }
 
     var plan: TimerPlan {

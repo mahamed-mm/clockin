@@ -20,6 +20,8 @@ struct ClockinApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                // Settings › Appearance; nil follows the phone.
+                .preferredColorScheme(services.settings.appearance.colorScheme)
                 .environment(services)
                 .environment(services.engine)
                 .modelContainer(services.container)
@@ -35,6 +37,17 @@ struct ClockinApp: App {
             guard phase == .active else { return }
             services.reconcile()
             Task { await services.refreshAlertStatus() }
+        }
+    }
+}
+
+extension Appearance {
+    /// What SwiftUI should force, or nil to follow the phone.
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
         }
     }
 }

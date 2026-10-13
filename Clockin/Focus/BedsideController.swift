@@ -32,12 +32,12 @@ struct SystemOrientation: OrientationRequesting {
     }
 }
 
-/// Whether the session shows as a bedside clock: on the moon button, or
-/// when the phone is turned on its side.
+/// Whether the session shows as a bedside clock: chosen in Settings, or
+/// when the phone is turned on its side (if Settings allows that).
 @MainActor
 @Observable
 final class BedsideController {
-    /// Chosen with the moon button, which also turns the screen.
+    /// Chosen with "Show bedside clock", which also turns the screen.
     private(set) var isChosen = false
     /// Left while the phone was still on its side: don't jump straight back
     /// in until it's upright again or a new session starts.
@@ -49,9 +49,10 @@ final class BedsideController {
         self.orientation = orientation
     }
 
-    func shows(_ session: ActiveSession?, onItsSide: Bool) -> Bool {
+    /// `followsRotation` is the "Turn sideways for the bedside clock" setting.
+    func shows(_ session: ActiveSession?, onItsSide: Bool, followsRotation: Bool = true) -> Bool {
         guard session != nil else { return false }
-        return isChosen || (onItsSide && !isHeldOff)
+        return isChosen || (followsRotation && onItsSide && !isHeldOff)
     }
 
     func enter() {
@@ -64,7 +65,7 @@ final class BedsideController {
         let wasChosen = isChosen
         isChosen = false
         isHeldOff = onItsSide
-        // Turned upright only if the button turned it; otherwise the phone decides.
+        // Turned upright only if it was chosen (and so turned); otherwise the phone decides.
         orientation.allow(.allButUpsideDown, turningTo: wasChosen ? .portrait : nil)
     }
 

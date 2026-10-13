@@ -3,17 +3,12 @@ import SwiftUI
 
 // MARK: - Header
 
-extension EnvironmentValues {
-    /// Turns the running session into a bedside clock; nil when nothing runs.
-    @Entry var showBedside: (@MainActor () -> Void)?
-}
 
 /// Serif phase title with a time-range line underneath (Tiimo-style).
 struct FocusHeader: View {
     let stage: SessionStage
     @Environment(AppServices.self) private var services
     @Environment(SessionEngine.self) private var engine
-    @Environment(\.showBedside) private var showBedside
     @State private var showingSettings = false
 
     var body: some View {
@@ -57,20 +52,6 @@ struct FocusHeader: View {
                         .frame(width: 44, height: 44)
                 }
                 #endif
-                if let showBedside {
-                    Button(action: showBedside) {
-                        Image(systemName: "moon.stars")
-                            .font(.title3)
-                            .frame(width: 44, height: 44)
-                            .contentShape(.rect)
-                    }
-                    .accessibilityLabel(String(localized: "Bedside clock"))
-                    .accessibilityHint(String(localized: "Turns the screen sideways and dims it"))
-                    .accessibilityShowsLargeContentViewer {
-                        Label(String(localized: "Bedside clock"), systemImage: "moon.stars")
-                    }
-                    .transition(.opacity)
-                }
                 Button { showingSettings = true } label: {
                     Image(systemName: "gearshape")
                         .font(.title3)

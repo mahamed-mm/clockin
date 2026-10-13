@@ -27,6 +27,28 @@ struct SettingsTests {
         #expect(try decode(#"{"preset":"short","somethingNew":true}"#).preset == .short)
     }
 
+    @Test func appearanceAndSidewaysDefaultToTheSystemAndOn() throws {
+        // What M3 and M4 builds saved.
+        let older = try decode(#"{"preset":"deep","longBreak":false}"#)
+        #expect(older.appearance == .system)
+        #expect(older.bedsideWhenSideways)
+        #expect(older.preset == .deep)
+        #expect(try decode(#"{"appearance":"sepia"}"#).appearance == .system)
+    }
+
+    @Test func appearanceAndSidewaysAreSaved() {
+        let store = DefaultsSettingsStore(defaults: UserDefaults(suiteName: "clockin.tests.\(UUID())")!)
+        store.save(TimerSettings(appearance: .dark, bedsideWhenSideways: false))
+        #expect(store.load().appearance == .dark)
+        #expect(!store.load().bedsideWhenSideways)
+    }
+
+    @Test func appearanceMapsToAColorScheme() {
+        #expect(Appearance.system.colorScheme == nil)
+        #expect(Appearance.light.colorScheme == .light)
+        #expect(Appearance.dark.colorScheme == .dark)
+    }
+
     @Test func presetsHaveTheirLengths() {
         #expect(TimerSettings(preset: .classic).plan == TimerPlan(focus: 1_500, shortBreak: 300, longBreak: 900))
         #expect(TimerSettings(preset: .deep).plan == TimerPlan(focus: 3_000, shortBreak: 600, longBreak: 900))

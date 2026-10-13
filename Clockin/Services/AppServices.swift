@@ -83,6 +83,8 @@ final class AppServices: SessionEffects {
     @ObservationIgnored private let settingsStore: SettingsStoring
     /// Low Power Mode and heat: when set, decoration stops.
     let power: PowerState
+    /// The bedside clock, shared by the Focus screen and Settings.
+    let bedside: BedsideController
     /// Nil when the store couldn't be opened: History can't be changed then.
     @ObservationIgnored let history: HistoryService?
     @ObservationIgnored private let schedulesTimers: Bool
@@ -94,6 +96,7 @@ final class AppServices: SessionEffects {
          stateStore: SessionStateStoring,
          settingsStore: SettingsStoring = InMemorySettingsStore(),
          power: PowerState? = nil,
+         orientation: OrientationRequesting = SystemOrientation(),
          now: @escaping () -> Date = Date.init,
          calendar: Calendar = .autoupdatingCurrent,
          schedulesCompletion: Bool = true,
@@ -112,6 +115,7 @@ final class AppServices: SessionEffects {
         self.calendar = calendar
         self.settingsStore = settingsStore
         self.power = power ?? PowerState(read: { false })
+        bedside = BedsideController(orientation: orientation)
         self.schedulesTimers = schedulesCompletion
         history = historyUnavailable ? nil : HistoryService(container: container)
         settings = settingsStore.load()
