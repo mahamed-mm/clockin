@@ -33,15 +33,19 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 
 | Focus | Running | Complete |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/focus-idle.png" width="250" alt="Focus screen, ready to start"> | <img src="docs/screenshots/focus-running.png" width="250" alt="A focus session running"> | <img src="docs/screenshots/focus-complete.png" width="250" alt="Session complete with the sunburst"> |
+| <img src="docs/screenshots/focus-idle.png" width="250" alt="Focus screen with the length chips, ready to start"> | <img src="docs/screenshots/focus-running.png" width="250" alt="A focus session running"> | <img src="docs/screenshots/focus-complete.png" width="250" alt="Session complete with the sunburst"> |
 
-| History | Lock Screen | Home Screen widget |
+| History | Session card | Settings |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/history.png" width="250" alt="History with the week's session columns"> | <img src="docs/screenshots/lock-screen.png" width="250" alt="Live Activity on the Lock Screen"> | <img src="docs/screenshots/widget.png" width="250" alt="Medium widget on the Home Screen"> |
+| <img src="docs/screenshots/history.png" width="250" alt="History with the week's session columns"> | <img src="docs/screenshots/session-card.png" width="250" alt="A session's card, with Rename and Delete"> | <img src="docs/screenshots/settings.png" width="250" alt="Settings with lengths, appearance and the bedside clock"> |
 
-| StandBy | Dynamic Island |
+| Lock Screen | Home Screen widget |
 |:---:|:---:|
-| <img src="docs/screenshots/standby.png" width="420" alt="StandBy bedside timer"> | <img src="docs/screenshots/dynamic-island.png" width="380" alt="Expanded Dynamic Island"> |
+| <img src="docs/screenshots/lock-screen.png" width="250" alt="Live Activity on the Lock Screen"> | <img src="docs/screenshots/widget.png" width="250" alt="Medium widget on the Home Screen"> |
+
+| Bedside clock | Dynamic Island |
+|:---:|:---:|
+| <img src="docs/screenshots/bedside.png" width="420" alt="The bedside clock in landscape"> | <img src="docs/screenshots/dynamic-island.png" width="380" alt="Expanded Dynamic Island"> |
 
 ## Design
 
