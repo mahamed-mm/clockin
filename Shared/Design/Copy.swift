@@ -83,6 +83,15 @@ enum Copy {
     /// The break screen's style chips, as a group.
     static var duringThisBreak: String { String(localized: "During this break") }
 
+    /// The dial's label while breathing.
+    static var breatheIn: String { String(localized: "Breathe in") }
+    static var breatheOut: String { String(localized: "Breathe out") }
+
+    /// The dial for VoiceOver while breathing: "Breathe, in for 4 seconds, out for 6".
+    static func breatheSpoken(inhale: Int, exhale: Int) -> String {
+        String(localized: "Breathe, in for \(inhale) seconds, out for \(exhale)")
+    }
+
     // MARK: Phases
 
     static var focus: String { String(localized: "Focus") }

@@ -156,3 +156,13 @@ extension TickWorkout {
                   pausedRemaining: nil, seed: Self.seed(from: focus.id), style: style)
     }
 }
+
+extension TickBreak {
+    /// A running or paused break, spent as chosen; nil for anything else.
+    init?(session: ActiveSession) {
+        guard session.phase == .rest else { return nil }
+        let paused: TimeInterval? = if case .paused(let left) = session.state { min(session.plannedDuration, left) } else { nil }
+        self.init(planned: session.plannedDuration, endDate: session.endDate, pausedRemaining: paused,
+                  style: session.breakStyle ?? .rest, from: session.breakStyleFrom ?? 0)
+    }
+}

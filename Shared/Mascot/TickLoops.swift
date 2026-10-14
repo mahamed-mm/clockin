@@ -15,6 +15,8 @@ struct TickLoops {
     var breathes = true
     /// A workout starting: working's entry is gloving up, not just the headphones.
     var gearsUp = false
+    /// On a break with the mug in hand; off while stretching or breathing.
+    var mug = true
 
     /// How long the state's entry lasts.
     var entryLength: TimeInterval {
@@ -24,7 +26,7 @@ struct TickLoops {
         case .working: gearsUp ? WorkoutLoops.gearUpLength : 0.5
         case .ringing: 0.35
         case .done: 0.95
-        case .onBreak: 0.45
+        case .onBreak: mug ? 0.45 : 0
         case .streak: 0.7
         case .waiting, .interrupted, .sleeping, .ready: 0
         }
@@ -57,7 +59,7 @@ struct TickLoops {
             // A small hop every 2.5 s.
             motion.hop = 0.6 * hop(t, every: 2.5, offset: 1)
         case .onBreak:
-            motion.steam = (t / 1.6).truncatingRemainder(dividingBy: 1)
+            if mug { motion.steam = (t / 1.6).truncatingRemainder(dividingBy: 1) }
         case .hello:
             break // The wave is its entry; then it settles into ready.
         case .interrupted:
@@ -122,7 +124,7 @@ struct TickLoops {
     // MARK: When something moves
 
     /// Whether this state moves all the time (steam, z's, the alarm).
-    var isContinuous: Bool { pose == .onBreak || pose == .sleeping || pose == .ringing }
+    var isContinuous: Bool { (pose == .onBreak && mug) || pose == .sleeping || pose == .ringing }
 
     /// Seconds between frames while moving: 30 a second, but 15 for the
     /// slow drift of steam and z's, which a whole break or a night shows.

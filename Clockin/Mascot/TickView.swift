@@ -78,6 +78,9 @@ struct TickView: View {
     /// The focus session as a workout: while working, Tick boxes and
     /// kicks in bursts, tiring as the time runs out.
     var workout: TickWorkout? = nil
+    /// The break as it's being spent: stretching or breathing, Tick puts
+    /// the mug away and leads it.
+    var breakActivity: TickBreak? = nil
 
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @Environment(\.tickReduceMotion) private var galleryReduceMotion
@@ -110,7 +113,26 @@ struct TickView: View {
     private var loops: TickLoops {
         // Working out, or paused worn out, Tick breathes hard instead of in calm spells.
         let breathesHard = workoutLoops.map { !$0.isCalm && (pose == .working || (pose == .waiting && $0.pausedMoving)) } ?? false
-        return TickLoops(pose: pose, seed: seed, entering: entering, breathes: !breathesHard, gearsUp: gearingUp)
+        return TickLoops(pose: pose, seed: seed, entering: entering, breathes: !breathesHard && !breathing,
+                         gearsUp: gearingUp, mug: activeBreak == nil)
+    }
+
+    /// The break, while Tick is spending it other than resting.
+    private var activeBreak: TickBreak? {
+        guard pose == .onBreak, let breakActivity, breakActivity.style != .rest else { return nil }
+        return breakActivity
+    }
+
+    /// Breathing along with the halo: Tick's breath follows the same cycle.
+    private var breathing: Bool { activeBreak?.style == .breathe }
+
+    /// Tick's own frame for a break spent breathing or stretching.
+    private func breakFrame(at date: Date) -> WorkoutFrame? {
+        guard let activeBreak else { return nil }
+        switch activeBreak.style {
+        case .rest, .stretch: return nil
+        case .breathe: return WorkoutFrame(rig: .breathing, face: .breathing)
+        }
     }
 
     /// The workout behind Tick: working through one, paused in one, or just done.
@@ -159,7 +181,7 @@ struct TickView: View {
                     let calm = workoutLoops.map { CalmLoops($0) }
                     let frame = pose == .working
                         ? calm?.loops.calmFrame(at: context.date)
-                        : workoutFrame(calm?.loops, at: context.date, elapsed: .infinity)
+                        : workoutFrame(calm?.loops, at: context.date, elapsed: .infinity) ?? breakFrame(at: context.date)
                     figure(motion: .still, face: face(at: context.date, base: frame?.face).0, rig: frame?.rig)
                         .id(frame.map { "\($0.face.eyes)\($0.face.mouth)" })
                         .transition(.opacity)
@@ -173,7 +195,7 @@ struct TickView: View {
                 TimelineView(TickLoopSchedule(loops: loops, since: since, pokedAt: pokedAt, paused: paused,
                                               speed: Motion.speed, workout: workoutLoops)) { context in
                     let elapsed = context.date.timeIntervalSince(since) / Motion.speed
-                    let frame = workoutFrame(workoutLoops, at: context.date, elapsed: elapsed)
+                    let frame = workoutFrame(workoutLoops, at: context.date, elapsed: elapsed) ?? breakFrame(at: context.date)
                     let motion = paused ? TickMotion.still : withPoke(withWorkout(loops.motion(at: elapsed), frame), at: context.date)
                     let (face, swapBlink) = face(at: context.date, base: frame?.face)
                     GeometryReader { proxy in
@@ -196,8 +218,12 @@ struct TickView: View {
                     .offset(x: 1.5 * motion.tremble)
                 }
                 .aspectRatio(1, contentMode: .fit)
+                .modifier(BreathingAlong(activity: breathing ? activeBreak : nil, paused: paused))
             }
         }
+        // Into or out of a break's own stance as its style changes.
+        .animation(still ? Motion.calm(true) : .spring(duration: 0.6 * Motion.speed, bounce: 0.2),
+                   value: activeBreak?.style)
         // Pausing a workout drops back to guard quickly.
         .animation(still ? Motion.calm(true) : .spring(duration: (pose == .waiting && workout != nil ? 0.3 : 0.45) * Motion.speed,
                                                        bounce: 0.25), value: pose)
@@ -346,6 +372,23 @@ struct TickView: View {
             return (face, into / 0.07)
         }
         return (face, 1 - (into - 0.07) / 0.11)
+    }
+}
+
+/// Breathing with the halo: the whole drawn Tick grows 4% on each breath
+/// in, about its feet, moved by the render server between turns.
+private struct BreathingAlong: ViewModifier {
+    let activity: TickBreak?
+    let paused: Bool
+
+    func body(content: Content) -> some View {
+        if let activity, !paused {
+            BreathFollower(activity: activity) { fullness, _ in
+                content.scaleEffect(1 + 0.04 * fullness, anchor: UnitPoint(x: 0.5, y: 0.92))
+            }
+        } else {
+            content
+        }
     }
 }
 

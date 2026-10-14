@@ -337,6 +337,22 @@
     "Breathe" : {
 
     },
+    "Breathe in" : {
+
+    },
+    "Breathe out" : {
+
+    },
+    "Breathe, in for %lld seconds, out for %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Breathe, in for %1$lld seconds, out for %2$lld"
+          }
+        }
+      }
+    },
     "Brings the session back" : {
 
     },

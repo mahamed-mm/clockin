@@ -232,6 +232,11 @@ struct DialFace: View {
                     .frame(width: size, height: size)
             }
 
+            if let breakActivity, breakActivity.style == .breathe {
+                BreathHalo(size: size, activity: breakActivity)
+                    .transition(.opacity)
+            }
+
             // Only the arc and the digits follow the clock, and only while
             // the timer runs. The arc moves under half a point a second, so
             // when the phone asks to save power it moves once a minute.
@@ -287,8 +292,7 @@ struct DialFace: View {
     @ViewBuilder
     private func center(session: ActiveSession?) -> some View {
         VStack(spacing: size * 0.025) {
-            Text(status(session)).retroLabel()
-                .contentTransition(.opacity)
+            statusLabel(session)
             if !showsCountdown, let session {
                 Image(systemName: session.phase.symbol)
                     .font(.system(size: size * 0.16, weight: .semibold))
@@ -330,6 +334,31 @@ struct DialFace: View {
     private var activeSession: ActiveSession? {
         if case .active(let session) = stage { return session }
         return nil
+    }
+
+    /// A break spent stretching or breathing; never at the bedside, which rests.
+    private var breakActivity: TickBreak? {
+        guard !calmMascot, let session = activeSession, let activity = TickBreak(session: session),
+              activity.style != .rest else { return nil }
+        return activity
+    }
+
+    /// "Running", or what to do right now while breathing or stretching,
+    /// changing only when it says something new.
+    @ViewBuilder
+    private func statusLabel(_ session: ActiveSession?) -> some View {
+        if let breakActivity {
+            let guide = BreakGuide(activity: breakActivity)
+            TimelineView(.explicit(guide.changes(after: .now))) { context in
+                let text = guide.status(at: context.date) ?? status(session)
+                Text(text).retroLabel()
+                    .contentTransition(.opacity)
+                    .animation(Motion.calm(reduceMotion), value: text)
+            }
+        } else {
+            Text(status(session)).retroLabel()
+                .contentTransition(.opacity)
+        }
     }
 
     /// Changes only when the stage changes, not every second.
@@ -421,7 +450,11 @@ struct DialFace: View {
             return String(localized: "Ready, \(TimeFormat.spokenDuration(idleFocus))")
         case .active(let s):
             let left = TimeFormat.spokenTimeLeft(s.remaining(at: date))
-            return s.isPaused ? String(localized: "Paused, \(left)") : left
+            if s.isPaused { return String(localized: "Paused, \(left)") }
+            if let breakActivity, let doing = BreakGuide(activity: breakActivity).spoken(at: date) {
+                return "\(doing), \(left)"
+            }
+            return left
         case .focusComplete:
             let minutes = services.engine.overtime(at: date).map { Int($0 / 60) } ?? 0
             return minutes > 0 ? Copy.overtimeSpoken(minutes: minutes) : ""
@@ -486,7 +519,8 @@ private struct DialTick: View {
         let pose = director(at: date).pose(at: date)
         let dismiss: (() -> Void)? = services.alarmRinging ? { services.stopAlarm() } : nil
         return TickView(pose: shown ?? pose, progress: .fixed(TickPose.ringProgress(for: stage, at: date)),
-                        celebration: celebration, crown: crown, onDismiss: dismiss, workout: workout)
+                        celebration: celebration, crown: crown, onDismiss: dismiss, workout: workout,
+                        breakActivity: breakActivity)
             .onChange(of: pose, initial: true) { show(pose) }
     }
 
@@ -511,6 +545,12 @@ private struct DialTick: View {
         default:
             return nil
         }
+    }
+
+    /// A break spent stretching or breathing; the bedside rests.
+    private var breakActivity: TickBreak? {
+        guard !calm, case .active(let session) = stage else { return nil }
+        return TickBreak(session: session)
     }
 
     /// Shows a change at once, unless one showed under 0.3 s ago; then the
@@ -701,6 +741,37 @@ private struct IdleKnobGlow: View {
             .modifier(BreatheThrice(low: 0.08, high: 0.38, resting: 0.2))
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+    }
+}
+
+/// Breathing: a soft avocado halo round the dial that swells as you
+/// breathe in and settles as you breathe out, with a soft tap at each
+/// turn. Still with Reduce Motion and Low Power Mode, and no taps then.
+private struct BreathHalo: View {
+    let size: CGFloat
+    let activity: TickBreak
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppServices.self) private var services
+
+    var body: some View {
+        let constrained = services.power.isConstrained
+        BreathFollower(activity: activity, still: reduceMotion || constrained) { fullness, turn in
+            Circle()
+                .fill(RadialGradient(stops: [
+                    .init(color: Retro.avocado.opacity(0), location: 0.78),
+                    .init(color: Retro.avocado.opacity(0.4), location: 0.86),
+                    .init(color: Retro.avocado.opacity(0), location: 1),
+                ], center: .center, startRadius: 0, endRadius: size * 0.5))
+                // Drawn at the dial's size, so the layout never grows; it reaches past the rim scaled.
+                .frame(width: size, height: size)
+                .scaleEffect(1.08 + 0.12 * fullness)
+                .opacity(0.45 + 0.55 * fullness)
+                .sensoryFeedback(trigger: turn) { _, _ in
+                    constrained ? nil : .impact(flexibility: .soft, intensity: 0.5)
+                }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
