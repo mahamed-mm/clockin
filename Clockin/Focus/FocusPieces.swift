@@ -14,9 +14,14 @@ struct FocusHeader: View {
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: Space.xs) {
+                // One line always: a long title ("Focus complete") at large
+                // text sizes shrinks to fit rather than wrapping or clipping.
                 Text(title)
                     .retroFont(.title)
                     .foregroundStyle(Retro.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .allowsTightening(true)
                     .contentTransition(.numericText())
                     .accessibilityAddTraits(.isHeader)
                 // The line only changes on its own when a completion stops
