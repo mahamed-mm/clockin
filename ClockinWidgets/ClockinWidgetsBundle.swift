@@ -5,6 +5,7 @@ import WidgetKit
 struct ClockinWidgetsBundle: WidgetBundle {
     var body: some Widget {
         TodayWidget()
+        LockScreenWidget()
         FocusLiveActivity()
         AlarmLiveActivity()
         FocusControl()

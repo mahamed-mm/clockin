@@ -70,6 +70,19 @@ struct TickLiveGlyph: View {
     var crown = true
     @Environment(\.widgetRenderingMode) private var renderingMode
 
+    init(pose: TickPose, reading: TimerReading, phase: SessionPhase, crown: Bool = true) {
+        self.pose = pose
+        self.reading = reading
+        self.phase = phase
+        self.crown = crown
+    }
+
+    /// A ring that stands still at `progress`, e.g. today's sessions out of four.
+    init(pose: TickPose, progress: Double, crown: Bool = true) {
+        self.init(pose: pose, reading: .paused(fraction: min(1, max(0, progress)), remaining: 0), phase: .focus,
+                  crown: crown)
+    }
+
     var body: some View {
         GeometryReader { proxy in
             let side = min(proxy.size.width, proxy.size.height)

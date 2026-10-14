@@ -77,6 +77,32 @@
         }
       }
     },
+    "%@ today" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ i dag"
+          }
+        }
+      }
+    },
+    "%@ · %@ left" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@ left"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ · %@ igjen"
+          }
+        }
+      }
+    },
     "%@, %@ focus, %@ break" : {
       "localizations" : {
         "en" : {
@@ -965,6 +991,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Klassisk"
+          }
+        }
+      }
+    },
+    "Clockin" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Clockin"
           }
         }
       }
@@ -3073,6 +3109,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Dagens fokus"
+          }
+        }
+      }
+    },
+    "Today's focus, or the session running." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dagens fokus, eller økten som pågår."
           }
         }
       }

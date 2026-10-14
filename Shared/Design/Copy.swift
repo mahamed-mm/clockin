@@ -128,6 +128,11 @@ enum Copy {
         return String(localized: "Paused at \(TimeFormat.time(pausedAt))")
     }
 
+    /// "1 h 9 min today", for the Lock Screen.
+    static func focusedToday(seconds: TimeInterval) -> String {
+        String(localized: "\(TimeFormat.duration(seconds)) today")
+    }
+
     // MARK: Symbols
 
     /// What VoiceOver calls each symbol in the picker.
