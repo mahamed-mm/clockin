@@ -231,6 +231,10 @@ struct DialFace: View {
                     .transition(.opacity)
             }
 
+            if case .focusComplete = stage {
+                OvertimeArc(size: size)
+            }
+
             // Only the knob takes the drag, so a swipe anywhere else on the
             // dial still scrolls the page (the dial fills it at large text sizes).
             if setsLength {
@@ -269,6 +273,7 @@ struct DialFace: View {
                     // A constant value never bounces: still with Reduce Motion.
                     .symbolEffect(.bounce.up.byLayer, options: .nonRepeating, value: reduceMotion ? 0 : celebration)
                     .transition(.pop(reduceMotion))
+                OvertimeLabel(size: size)
             } else {
                 TimelineView(TickSchedule(countdownEnd: session?.endDate)) { context in
                     let clock = TimeFormat.clock(session?.remaining(at: context.date) ?? idleFocus)
@@ -389,8 +394,99 @@ struct DialFace: View {
             let left = TimeFormat.spokenTimeLeft(s.remaining(at: date))
             return s.isPaused ? String(localized: "Paused, \(left)") : left
         case .focusComplete:
-            return ""
+            let minutes = services.engine.overtime(at: date).map { Int($0 / 60) } ?? 0
+            return minutes > 0 ? Copy.overtimeSpoken(minutes: minutes) : ""
         }
+    }
+}
+
+// MARK: - Overtime
+
+/// Whole minutes worked past the bell at `date`, while they can still be kept.
+@MainActor
+private func overtimeMinutes(_ engine: SessionEngine, at date: Date) -> Int? {
+    engine.overtime(at: date).map { Int($0 / 60) }
+}
+
+/// After the bell the dial keeps time: a thin rust lap round the rim, one
+/// tick per minute you kept going. Redraws once a minute.
+private struct OvertimeArc: View {
+    let size: CGFloat
+    @Environment(SessionEngine.self) private var engine
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let schedule = TickSchedule(wakeDates: engine.overtimeChanges(after: .now))
+        TimelineView(schedule) { context in
+            let minutes = overtimeMinutes(engine, at: context.date) ?? 0
+            Circle()
+                .trim(from: 0, to: Double(minutes) / 60)
+                .stroke(Retro.rust, style: StrokeStyle(lineWidth: size * 0.014, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .frame(width: size * 0.985, height: size * 0.985)
+                .opacity(minutes > 0 ? 1 : 0)
+                .animation(Motion.snappy(reduceMotion), value: minutes)
+        }
+        .id(schedule)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// "+3 min" under the seal while there's time past the bell to keep.
+private struct OvertimeLabel: View {
+    let size: CGFloat
+    @Environment(SessionEngine.self) private var engine
+
+    var body: some View {
+        let schedule = TickSchedule(wakeDates: engine.overtimeChanges(after: .now))
+        TimelineView(schedule) { context in
+            if let minutes = overtimeMinutes(engine, at: context.date), minutes > 0 {
+                Text(Copy.overtimeShort(minutes: minutes))
+                    .font(.retroDisplay(size: size * 0.06))
+                    .foregroundStyle(Retro.rustText)
+                    .retroNumber()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+        }
+        .id(schedule)
+    }
+}
+
+/// Under the completion summary: offers the minutes worked past the bell
+/// as focus, then says they were kept.
+struct OvertimeChip: View {
+    let focus: CompletedFocus
+    @Environment(SessionEngine.self) private var engine
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let schedule = TickSchedule(wakeDates: engine.overtimeChanges(after: .now))
+        TimelineView(schedule) { context in
+            Group {
+                if let minutes = overtimeMinutes(engine, at: context.date), minutes > 0 {
+                    Button(action: engine.keepOvertime) {
+                        Label(Copy.keepOvertime(minutes: minutes), systemImage: "plus.circle.fill")
+                            .font(.retro(.meta).weight(.semibold))
+                            .foregroundStyle(Retro.rustText)
+                            .retroChip()
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Copy.keepOvertimeSpoken(minutes: minutes))
+                    .accessibilityInputLabels([Copy.keepOvertime(minutes: minutes)])
+                    .transition(.pop(reduceMotion))
+                } else if let kept = focus.keptOvertime {
+                    Label(Copy.keptOvertime(minutes: Int(kept / 60)), systemImage: "checkmark.circle")
+                        .font(.retro(.meta))
+                        .foregroundStyle(Retro.inkSoft)
+                        .frame(minHeight: 36)
+                        .transition(.opacity)
+                }
+            }
+            .animation(Motion.calm(reduceMotion), value: focus.keptOvertime)
+        }
+        .id(schedule)
     }
 }
 

@@ -6,6 +6,9 @@ import SwiftData
 @MainActor
 protocol FocusLogging {
     func record(_ focus: CompletedFocus) throws
+    /// Saves a session's new end and length, e.g. after kept overtime, or
+    /// records it if it isn't saved yet. Its name is left as it is.
+    func update(_ focus: CompletedFocus) throws
     /// Saved sessions that finished on the day containing `day`.
     func sessions(on day: Date, calendar: Calendar) throws -> [FocusRow]
 }
@@ -39,6 +42,21 @@ final class SwiftDataFocusLog: FocusLogging {
         }
     }
 
+    func update(_ focus: CompletedFocus) throws {
+        let id = focus.id
+        var existing = FetchDescriptor<FocusRecord>(predicate: #Predicate { $0.id == id })
+        existing.fetchLimit = 1
+        guard let record = try context.fetch(existing).first else { return try self.record(focus) }
+        record.completedAt = focus.completedAt
+        record.focusSeconds = focus.focusSeconds
+        do {
+            try context.save()
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
     func sessions(on day: Date, calendar: Calendar) throws -> [FocusRow] {
         try context.fetch(FetchDescriptor(predicate: FocusRecord.completed(on: day, calendar: calendar))).map(\.row)
     }
@@ -50,6 +68,10 @@ struct UnavailableFocusLog: FocusLogging {
     struct StoreUnavailable: Error {}
 
     func record(_ focus: CompletedFocus) throws {
+        throw StoreUnavailable()
+    }
+
+    func update(_ focus: CompletedFocus) throws {
         throw StoreUnavailable()
     }
 

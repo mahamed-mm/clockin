@@ -209,7 +209,10 @@ struct FocusView: View {
                     .glassEffectID("session", in: glass)
                     .glassEffectTransition(.matchedGeometry)
             case .focusComplete(let focus):
-                CompletionSummary(focus: focus, day: services.today)
+                VStack(spacing: Space.xs) {
+                    CompletionSummary(focus: focus, day: services.today)
+                    OvertimeChip(focus: focus)
+                }
             }
         }
     }

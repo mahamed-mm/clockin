@@ -29,6 +29,21 @@ struct AppServicesTests {
         services.reconcile()
     }
 
+    @Test func keptOvertimeReachesTheWidgetAndTheHistory() throws {
+        let services = makeServices()
+        finishFocus(services)
+        clock.advance(4 * 60)
+        let reloads = widgets.reloads
+        services.engine.keepOvertime()
+
+        #expect(widgets.reloads == reloads + 1)
+        #expect(widgets.lastSnapshot?.sessions.first?.seconds == Preset.classic.focus + 240)
+        #expect(services.lastEvent.event == .overtimeKept)
+        #expect(services.lastEvent.feedback == .selection)
+        let saved = try #require(try services.history?.allSessions().first)
+        #expect(saved.focusSeconds == Preset.classic.focus + 240)
+    }
+
     @Test func startShowsTheSessionEverywhere() {
         let services = makeServices()
         services.engine.start(name: "Essay")

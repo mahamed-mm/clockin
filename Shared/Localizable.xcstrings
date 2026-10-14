@@ -17,6 +17,9 @@
     "%@ of focus today" : {
 
     },
+    "%@ over" : {
+
+    },
     "%@ remaining" : {
 
     },
@@ -299,6 +302,9 @@
     "Complete" : {
 
     },
+    "Count %@ more as focus" : {
+
+    },
     "Counts" : {
 
     },
@@ -365,6 +371,9 @@
     "Export as CSV" : {
 
     },
+    "Extra" : {
+
+    },
     "Finish a focus session and it will show up here." : {
 
     },
@@ -416,6 +425,12 @@
 
     },
     "History couldn't be loaded" : {
+
+    },
+    "Keep +%lld min" : {
+
+    },
+    "Kept %lld more min" : {
 
     },
     "Last week" : {

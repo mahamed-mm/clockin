@@ -44,6 +44,29 @@ enum Copy {
         String(localized: "+\(Int(seconds / 60)) min")
     }
 
+    /// Time worked past the bell, under the dial: "+3 min".
+    static func overtimeShort(minutes: Int) -> String {
+        String(localized: "+\(minutes) min")
+    }
+
+    /// Adds the minutes past the bell to the session.
+    static func keepOvertime(minutes: Int) -> String {
+        String(localized: "Keep +\(minutes) min")
+    }
+
+    static func keepOvertimeSpoken(minutes: Int) -> String {
+        String(localized: "Count \(TimeFormat.spokenDuration(TimeInterval(minutes * 60))) more as focus")
+    }
+
+    static func keptOvertime(minutes: Int) -> String {
+        String(localized: "Kept \(minutes) more min")
+    }
+
+    /// The dial's VoiceOver value after the bell: "3 minutes over".
+    static func overtimeSpoken(minutes: Int) -> String {
+        String(localized: "\(TimeFormat.spokenDuration(TimeInterval(minutes * 60))) over")
+    }
+
     /// "+5 min" read aloud: "Add 5 minutes".
     static func extendSpoken(seconds: TimeInterval) -> String {
         String(localized: "Add \(TimeFormat.spokenDuration(seconds))")

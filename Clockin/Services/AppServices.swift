@@ -232,8 +232,8 @@ final class AppServices: SessionEffects {
             liveActivity.endAll()
             clearLateAlert(freshness)
             if freshness == .live { announce("\(Copy.breakOver). \(Copy.readyWhenYouAre)") }
-        case .historySaved:
-            break // The widget refresh below picks up the newly saved sessions.
+        case .historySaved, .overtimeKept:
+            break // The widget refresh below picks up the saved sessions' new totals.
         }
         lastEvent = EventStamp(event: event, serial: lastEvent.serial + 1)
         refreshWidgets()
@@ -535,7 +535,7 @@ struct EventStamp: Equatable {
     var feedback: SensoryFeedback? {
         switch event {
         case .started: .impact(weight: .medium, intensity: 0.8)
-        case .paused, .resumed, .extended: .selection
+        case .paused, .resumed, .extended, .overtimeKept: .selection
         case .finishedEarly: .impact(weight: .medium, intensity: 0.6)
         case .cancelled: .warning
         case .breakStarted: .impact(flexibility: .soft, intensity: 0.7)

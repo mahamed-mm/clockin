@@ -57,6 +57,11 @@ struct SessionSummary: Identifiable, Equatable {
         var rows = [Row(label: String(localized: "Focused"), value: TimeFormat.duration(focusSeconds))]
         if let plannedSeconds {
             rows.append(Row(label: String(localized: "Planned"), value: TimeFormat.duration(plannedSeconds)))
+            // Minutes beyond the plan: "+5 min" taps, and time kept after the bell.
+            let extra = ((focusSeconds - plannedSeconds) / 60).rounded(.down)
+            if outcome == .completed, extra >= 1 {
+                rows.append(Row(label: String(localized: "Extra"), value: Copy.overtimeShort(minutes: Int(extra))))
+            }
         }
         rows.append(Row(label: String(localized: "Ended"),
                         value: outcome == .endedEarly ? String(localized: "Early, with Finish now")

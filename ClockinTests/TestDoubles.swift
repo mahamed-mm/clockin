@@ -29,6 +29,16 @@ final class SpyLog: FocusLogging {
         recorded.append(focus)
     }
 
+    func update(_ focus: CompletedFocus) throws {
+        if failing { throw Failure() }
+        if let index = recorded.firstIndex(where: { $0.id == focus.id }) {
+            recorded[index].completedAt = focus.completedAt
+            recorded[index].focusSeconds = focus.focusSeconds
+        } else {
+            recorded.append(focus)
+        }
+    }
+
     func sessions(on day: Date, calendar: Calendar) throws -> [FocusRow] {
         if failing { throw Failure() }
         return recorded.filter { calendar.isDate($0.completedAt, inSameDayAs: day) }.map(\.row)

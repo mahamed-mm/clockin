@@ -22,6 +22,8 @@ enum SessionEvent: Equatable, Sendable {
     case extended
     /// The focus phase was finished early; its minutes were kept.
     case finishedEarly
+    /// Minutes worked past the bell were added to the finished session.
+    case overtimeKept
 }
 
 /// How soon after a phase ended the engine noticed, which sets how loudly
@@ -62,6 +64,9 @@ final class SessionEngine {
     static let maxExtension: TimeInterval = 15 * 60
     /// Before this much focus, Cancel (which can be undone) is the honest way out.
     static let minimumToFinishEarly: TimeInterval = 60
+    /// After the bell, the dial counts the time you kept going for this
+    /// long, so it can be added to the session.
+    static let maxOvertime: TimeInterval = 60 * 60
 
     private(set) var stage: SessionStage = .idle
     /// The focus phase cancelled moments ago, so it can be brought back.
@@ -161,6 +166,26 @@ final class SessionEngine {
             -(session.plannedDuration - min(Self.minimumToFinishEarly, session.originalPlan / 10)))
         let opensExtend = end.addingTimeInterval(-Self.extensionStep)
         return [unlocksFinish, opensExtend, end].filter { $0 > date }.sorted()
+    }
+
+    /// How long ago a focus phase ran out, while that time can still be
+    /// kept: only after a full session, once, and within `maxOvertime`.
+    func overtime(at date: Date) -> TimeInterval? {
+        guard case .focusComplete(let focus) = stage, (focus.outcome ?? .completed) == .completed,
+              focus.keptOvertime == nil else { return nil }
+        let over = date.timeIntervalSince(focus.completedAt)
+        guard over >= 0, over <= Self.maxOvertime else { return nil }
+        return over
+    }
+
+    /// The moments after `date` when overtime gains a minute, and when it
+    /// runs out, so the screen redraws once a minute and no more.
+    func overtimeChanges(after date: Date) -> [Date] {
+        guard overtime(at: date) != nil, case .focusComplete(let focus) = stage else { return [] }
+        let minutes = Int(Self.maxOvertime / 60)
+        return (1...minutes).map { focus.completedAt.addingTimeInterval(TimeInterval($0) * 60) }
+            .filter { $0 > date }
+            + [focus.completedAt.addingTimeInterval(Self.maxOvertime + 1)].filter { $0 > date }
     }
 
     // MARK: - Actions
@@ -271,6 +296,28 @@ final class SessionEngine {
         settleBreak(for: &focus, from: session)
         record(focus)
         apply(.focusComplete(focus), event: .finishedEarly)
+    }
+
+    /// Adds the whole minutes worked since the bell to the finished session,
+    /// as focus. Its end moves on by the same amount.
+    func keepOvertime() {
+        guard case .focusComplete(var focus) = stage, let over = overtime(at: now()) else { return }
+        let kept = (over / 60).rounded(.down) * 60
+        guard kept >= 60 else { return }
+        focus.focusSeconds += kept
+        focus.completedAt = focus.completedAt.addingTimeInterval(kept)
+        focus.keptOvertime = kept
+        if let waiting = pendingRecords.firstIndex(where: { $0.id == focus.id }) {
+            pendingRecords[waiting] = focus
+        } else {
+            do {
+                try log.update(focus)
+            } catch {
+                Log.store.error("Couldn't add overtime to a saved session; keeping it to retry: \(error, privacy: .public)")
+                pendingRecords.append(focus)
+            }
+        }
+        apply(.focusComplete(focus), event: .overtimeKept)
     }
 
     func startBreak() {
@@ -403,7 +450,9 @@ final class SessionEngine {
         let before = pendingRecords.count
         pendingRecords = pendingRecords.filter { focus in
             do {
-                try log.record(focus)
+                // Update, not record: a session waiting with kept overtime
+                // may already be saved without it.
+                try log.update(focus)
                 return false
             } catch {
                 return true

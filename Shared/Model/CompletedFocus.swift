@@ -19,6 +19,9 @@ struct CompletedFocus: Codable, Equatable, Sendable {
     var outcome: FocusOutcome? = nil
     /// Where it was saved, when known. Nil means wherever it's saved now.
     var timeZoneIdentifier: String? = nil
+    /// Minutes worked past the bell and added to `focusSeconds`. Nil when
+    /// none were kept, and from older builds.
+    var keptOvertime: TimeInterval? = nil
 
     /// Whether it fills a session pill and counts toward the set of four.
     var countsAsFull: Bool {
