@@ -123,6 +123,19 @@ struct IntentTests {
         #expect(services.engine.active?.phase == .rest)
     }
 
+    @Test func aWidgetButtonRedrawsTheWidgetsAfterActing() async {
+        let widgets = SpyWidgets()
+        let services = AppServices(container: AppServices.makeEmptyContainer(), stateStore: state,
+                                   now: { [clock] in clock.now }, calendar: osloCalendar, schedulesCompletion: false,
+                                   liveActivity: liveActivity, notifications: notifier, alarm: alarm,
+                                   widgets: widgets, haptics: SpyHaptics(), announce: { _ in })
+        let before = widgets.reloads
+        _ = await services.intentPrimary()
+        #expect(widgets.reloads > before)
+        // And the button it then shows is Pause.
+        #expect(ControlFace(state: state.state, now: clock.now).action == .pause)
+    }
+
     @Test func controlFaceFollowsTheSavedState() {
         let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
         func session(_ state: ActiveSession.RunState, phase: SessionPhase = .focus) -> ActiveSession {

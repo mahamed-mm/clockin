@@ -144,10 +144,11 @@ struct LockScreenView: View {
 // MARK: Previews
 
 extension TodayEntry {
+    // Shared by every widget's previews.
     static func preview(seconds: TimeInterval = 69 * 60, sessions: Int = 2, active: ActiveSession? = nil,
-                        symbol: String = "flask.fill") -> TodayEntry {
+                        symbol: String = "flask.fill", face: ControlFace = .start) -> TodayEntry {
         TodayEntry(date: .now, stats: TodayStats(focusSeconds: seconds, sessionCount: sessions), active: active,
-                   symbol: symbol)
+                   symbol: symbol, face: face)
     }
 
     static func running(_ phase: SessionPhase = .focus, paused: Bool = false) -> ActiveSession {

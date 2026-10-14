@@ -161,9 +161,9 @@ struct ControlFace: Equatable, Sendable {
                 // Ran out while the app wasn't looking: what it will offer next.
                 self = session.phase == .focus ? .startBreak : .start
             } else if session.isPaused {
-                self = ControlFace(action: .resume, title: String(localized: "Resume"), symbol: "play.fill")
+                self = .resume
             } else {
-                self = ControlFace(action: .pause, title: String(localized: "Pause"), symbol: "pause.fill")
+                self = .pause
             }
         } else if state.completedFocus != nil {
             self = .startBreak
@@ -174,4 +174,6 @@ struct ControlFace: Equatable, Sendable {
 
     static let start = ControlFace(action: .start, title: String(localized: "Start focus"), symbol: "play.fill")
     static let startBreak = ControlFace(action: .startBreak, title: Copy.startBreakShort, symbol: "cup.and.saucer.fill")
+    static let pause = ControlFace(action: .pause, title: String(localized: "Pause"), symbol: "pause.fill")
+    static let resume = ControlFace(action: .resume, title: String(localized: "Resume"), symbol: "play.fill")
 }

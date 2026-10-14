@@ -8,6 +8,8 @@ struct TodayEntry: TimelineEntry {
     let active: ActiveSession?
     /// The running session name's symbol.
     var symbol = SymbolCatalog.unnamed
+    /// What the big button would do at this moment, for the widget's own.
+    var face = ControlFace.start
 }
 
 struct TodayProvider: TimelineProvider {
@@ -39,7 +41,7 @@ struct TodayProvider: TimelineProvider {
         return dates.map { date in
             let stillRunning = active.flatMap { $0.isFinished(at: date) ? nil : $0 }
             return TodayEntry(date: date, stats: snapshot.stats(at: date, active: active), active: stillRunning,
-                              symbol: symbol)
+                              symbol: symbol, face: ControlFace(state: state, now: date))
         }
     }
 
@@ -129,10 +131,10 @@ struct TodayWidgetView: View {
 
     private var small: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
+            HStack(alignment: .top) {
                 Text("Today").retroLabel()
                 Spacer()
-                miniDial.frame(width: 30, height: 30)
+                FocusWidgetButton(entry: entry, compact: true)
             }
             Spacer(minLength: 0)
             minutes
@@ -165,9 +167,13 @@ struct TodayWidgetView: View {
                     activeLine(active)
                 }
                 Spacer(minLength: 0)
-                SessionPills(completed: entry.stats.sessionCount,
-                             inProgress: entry.active?.phase == .focus,
-                             pillWidth: 22, pillHeight: 6, showsCaption: true)
+                HStack(alignment: .bottom) {
+                    SessionPills(completed: entry.stats.sessionCount,
+                                 inProgress: entry.active?.phase == .focus,
+                                 pillWidth: 22, pillHeight: 6)
+                    Spacer(minLength: 4)
+                    FocusWidgetButton(entry: entry, compact: false)
+                }
             }
         }
     }
@@ -238,11 +244,49 @@ struct TodayWidgetView: View {
 #Preview(as: .systemSmall) {
     TodayWidget()
 } timeline: {
-    TodayEntry(date: .now, stats: TodayStats(focusSeconds: 75 * 60, sessionCount: 3), active: nil)
+    TodayEntry.preview(seconds: 75 * 60, sessions: 3)
+    TodayEntry.preview(active: TodayEntry.running(), face: .pause)
+    TodayEntry.preview(active: TodayEntry.running(paused: true), face: .resume)
+    TodayEntry.preview(sessions: 3, face: .startBreak)
+    TodayEntry.preview(active: TodayEntry.running(.rest), face: .pause)
 }
 
 #Preview(as: .systemMedium) {
     TodayWidget()
 } timeline: {
-    TodayEntry(date: .now, stats: TodayStats(focusSeconds: 50 * 60, sessionCount: 2), active: nil)
+    TodayEntry.preview(seconds: 50 * 60, sessions: 2)
+    TodayEntry.preview(active: TodayEntry.running(), face: .pause)
+    TodayEntry.preview(active: TodayEntry.running(paused: true), face: .resume)
+    TodayEntry.preview(sessions: 3, face: .startBreak)
+}
+
+/// The big button's twin: Start, Pause, Resume or Start break, as the app's
+/// would at this moment. It runs in the app, silently, and the widgets redraw
+/// after. A tap anywhere else still opens the app.
+struct FocusWidgetButton: View {
+    let entry: TodayEntry
+    /// Just the symbol, in a circle, where there's no room for the title.
+    let compact: Bool
+
+    private var tint: Color {
+        entry.active?.phase == .rest || entry.face.action == .startBreak ? Retro.avocado : Retro.orange
+    }
+
+    var body: some View {
+        Button(intent: FocusButtonIntent()) {
+            if compact {
+                Label(entry.face.title, systemImage: entry.face.symbol)
+                    .labelStyle(.iconOnly)
+                    .frame(width: 30, height: 30)
+            } else {
+                Label(entry.face.title, systemImage: entry.face.symbol)
+                    .frame(minHeight: 30)
+            }
+        }
+        .font(.retro(.meta).weight(.semibold))
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(compact ? .circle : .capsule)
+        .tint(tint)
+        .widgetAccentable()
+    }
 }
