@@ -18,6 +18,7 @@ struct MascotGallery: View {
                 VStack(alignment: .leading, spacing: Space.l) {
                     live
                     controls
+                    WorkoutSimulator()
                     ForEach(shown, id: \.self) { pose in
                         row(pose)
                     }
