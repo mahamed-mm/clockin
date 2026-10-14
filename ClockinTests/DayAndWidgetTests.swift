@@ -94,6 +94,54 @@ struct WidgetSnapshotTests {
         #expect(stats.sessionCount == 2)
     }
 
+    @Test func anOlderSnapshotStillReads() throws {
+        let json = #"{"sessions":[{"id":"6F9619FF-8B86-D011-B42D-00C04FC964FF","completedAt":800000000,"seconds":1500}],"writtenAt":800000000}"#
+        let old = try JSONDecoder().decode(WidgetSnapshot.self, from: Data(json.utf8))
+        #expect(old.week == nil)
+        #expect(old.sessions[0].name == nil)
+        #expect(old.sessions[0].symbol == nil)
+    }
+
+    func totals(_ counts: [Int], from start: Date) -> [DayTotal] {
+        counts.enumerated().map { index, count in
+            DayTotal(day: osloCalendar.date(byAdding: .day, value: index, to: start)!, seconds: Double(count) * 1_500,
+                     sessions: count)
+        }
+    }
+
+    @Test func theWeekKeepsEarlierDaysAndFollowsToday() {
+        let week = osloCalendar.weekInterval(containing: afternoon)
+        let written = WidgetSnapshot(
+            sessions: [.init(id: UUID(), completedAt: afternoon.addingTimeInterval(-60), seconds: 1_500, name: "A")],
+            week: totals([2, 3, 1, 0, 0, 0, 0], from: week.start), writtenAt: afternoon)
+        let days = written.week(at: afternoon, active: nil, calendar: osloCalendar)
+        #expect(days.count == 7)
+        let todayIndex = days.firstIndex { osloCalendar.isDate($0.day, inSameDayAs: afternoon) }!
+        #expect(days[todayIndex].sessions == 1) // From the sessions, as of now.
+        #expect(days.prefix(todayIndex).map(\.sessions) == Array([2, 3, 1, 0, 0, 0, 0].prefix(todayIndex)))
+        #expect(days.suffix(from: todayIndex + 1).allSatisfy { $0.sessions == 0 })
+    }
+
+    @Test func aNewWeekStartsEmptyWithoutTheApp() {
+        let week = osloCalendar.weekInterval(containing: afternoon)
+        let written = WidgetSnapshot(sessions: [], week: totals([4, 4, 4, 4, 4, 4, 4], from: week.start),
+                                     writtenAt: afternoon)
+        let nextWeek = osloCalendar.date(byAdding: .day, value: 7, to: afternoon)!
+        let days = written.week(at: nextWeek, active: nil, calendar: osloCalendar)
+        #expect(days.allSatisfy { $0.sessions == 0 })
+        #expect(days.contains { osloCalendar.isDate($0.day, inSameDayAs: nextWeek) })
+    }
+
+    @Test func todaysListIsNewestFirstAndOnlyToday() {
+        let written = WidgetSnapshot(sessions: [
+            .init(id: UUID(), completedAt: afternoon.addingTimeInterval(-7_200), seconds: 1_500, name: "Old"),
+            .init(id: UUID(), completedAt: afternoon.addingTimeInterval(-60), seconds: 1_500, name: "New"),
+        ], week: nil, writtenAt: afternoon)
+        #expect(written.sessions(on: afternoon, calendar: osloCalendar).map(\.name) == ["New", "Old"])
+        let tomorrow = osloCalendar.date(byAdding: .day, value: 1, to: afternoon)!
+        #expect(written.sessions(on: tomorrow, calendar: osloCalendar).isEmpty)
+    }
+
     @Test func roundTripsThroughDefaults() throws {
         let defaults = try #require(UserDefaults(suiteName: "clockin.tests.\(UUID())"))
         let store = WidgetSnapshotStore(defaults: defaults)

@@ -145,6 +145,17 @@ struct HistoryChangesTests {
         #expect(typed.isEmpty)
     }
 
+    @Test func theWidgetGetsTodaysNamesSymbolsAndTheWeek() throws {
+        let services = makeServices()
+        try #require(services.history).restore([session("Chemistry", minutesAgo: 30)])
+        services.setSymbol("lightbulb.fill", for: "Chemistry")
+        let snapshot = try #require(widgets.lastSnapshot)
+        #expect(snapshot.sessions.map(\.name) == ["Chemistry"])
+        #expect(snapshot.sessions.map(\.symbol) == ["lightbulb.fill"])
+        #expect(snapshot.week?.count == 7)
+        #expect(snapshot.week?.reduce(0) { $0 + $1.sessions } == 1)
+    }
+
     @Test func symbolsForNamesWithNoSessionAreForgotten() throws {
         let services = makeServices()
         services.lastSessionName = { "Typed but not started" }

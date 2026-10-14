@@ -10,6 +10,9 @@ struct TodayEntry: TimelineEntry {
     var symbol = SymbolCatalog.unnamed
     /// What the big button would do at this moment, for the widget's own.
     var face = ControlFace.start
+    /// For the large widget: the week so far, and today's sessions, newest first.
+    var week: [DayTotal] = []
+    var sessions: [WidgetSnapshot.Session] = []
 }
 
 struct TodayProvider: TimelineProvider {
@@ -37,11 +40,18 @@ struct TodayProvider: TimelineProvider {
         -> [TodayEntry] {
         let snapshot = WidgetSnapshotStore().load() ?? fallbackSnapshot(state: state)
         let active = state.active
-        let symbol = DefaultsSymbolBookStore().load().symbol(for: active?.name ?? "")
+        let book = DefaultsSymbolBookStore().load()
+        let symbol = book.symbol(for: active?.name ?? "")
         return dates.map { date in
             let stillRunning = active.flatMap { $0.isFinished(at: date) ? nil : $0 }
+            let sessions = snapshot.sessions(on: date).map { session in
+                var session = session
+                session.symbol = session.symbol ?? book.symbol(for: session.name ?? "")
+                return session
+            }
             return TodayEntry(date: date, stats: snapshot.stats(at: date, active: active), active: stillRunning,
-                              symbol: symbol, face: ControlFace(state: state, now: date))
+                              symbol: symbol, face: ControlFace(state: state, now: date),
+                              week: snapshot.week(at: date, active: active), sessions: sessions)
         }
     }
 
@@ -49,12 +59,21 @@ struct TodayProvider: TimelineProvider {
     /// the store directly. Read-only, so the widget can never migrate it.
     private func fallbackSnapshot(state: PersistedSessionState) -> WidgetSnapshot {
         let now = Date.now
-        var saved: [FocusRow] = []
+        var saved: [WidgetSnapshot.Session] = []
         if let container = try? SharedStore.makeModelContainer(readOnly: true) {
-            saved = TodayStats.fetchRecords(on: now, calendar: .autoupdatingCurrent,
-                                            context: ModelContext(container)).map(\.row)
+            saved = TodayStats.fetchRecords(on: now, calendar: .autoupdatingCurrent, context: ModelContext(container))
+                .map {
+                    WidgetSnapshot.Session(id: $0.id, completedAt: $0.completedAt, seconds: $0.focusSeconds,
+                                           countsAsFull: $0.row.countsAsFull, name: $0.name, startedAt: $0.startedAt)
+                }
         }
-        return WidgetSnapshot(rows: TodayStats.rows(saved: saved, pending: state.pendingRecords ?? []), writtenAt: now)
+        let ids = Set(saved.map(\.id))
+        let waiting = (state.pendingRecords ?? []).filter { !ids.contains($0.id) }.map {
+            WidgetSnapshot.Session(id: $0.id, completedAt: $0.completedAt, seconds: $0.focusSeconds,
+                                   countsAsFull: $0.countsAsFull, name: $0.name, startedAt: $0.startedAt)
+        }
+        // Today only: the week strip shows today alone until the app writes one.
+        return WidgetSnapshot(sessions: saved + waiting, week: nil, writtenAt: now)
     }
 }
 
@@ -67,7 +86,7 @@ struct TodayWidget: Widget {
         }
         .configurationDisplayName("Today's Focus")
         .description("Minutes of focus you've finished today.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
 
@@ -83,6 +102,7 @@ struct TodayWidgetView: View {
         } else {
             switch family {
             case .systemMedium: medium
+            case .systemLarge: LargeTodayView(entry: entry)
             default: small
             }
         }
@@ -213,8 +233,37 @@ struct TodayWidgetView: View {
         }
     }
 
-    @ViewBuilder
     private func activeLine(_ active: ActiveSession) -> some View {
+        ActiveLine(entry: entry, active: active)
+    }
+
+}
+
+#Preview(as: .systemSmall) {
+    TodayWidget()
+} timeline: {
+    TodayEntry.preview(seconds: 75 * 60, sessions: 3)
+    TodayEntry.preview(active: TodayEntry.running(), face: .pause)
+    TodayEntry.preview(active: TodayEntry.running(paused: true), face: .resume)
+    TodayEntry.preview(sessions: 3, face: .startBreak)
+    TodayEntry.preview(active: TodayEntry.running(.rest), face: .pause)
+}
+
+#Preview(as: .systemMedium) {
+    TodayWidget()
+} timeline: {
+    TodayEntry.preview(seconds: 50 * 60, sessions: 2)
+    TodayEntry.preview(active: TodayEntry.running(), face: .pause)
+    TodayEntry.preview(active: TodayEntry.running(paused: true), face: .resume)
+    TodayEntry.preview(sessions: 3, face: .startBreak)
+}
+
+/// The running session in one line: phase, symbol, name and time left.
+struct ActiveLine: View {
+    let entry: TodayEntry
+    let active: ActiveSession
+
+    var body: some View {
         HStack(spacing: 4) {
             Circle().fill(Retro.tint(for: active.phase)).frame(width: 6, height: 6)
                 .accessibilityHidden(true)
@@ -239,25 +288,6 @@ struct TodayWidgetView: View {
         .font(.retro(.meta))
         .foregroundStyle(Retro.ink)
     }
-}
-
-#Preview(as: .systemSmall) {
-    TodayWidget()
-} timeline: {
-    TodayEntry.preview(seconds: 75 * 60, sessions: 3)
-    TodayEntry.preview(active: TodayEntry.running(), face: .pause)
-    TodayEntry.preview(active: TodayEntry.running(paused: true), face: .resume)
-    TodayEntry.preview(sessions: 3, face: .startBreak)
-    TodayEntry.preview(active: TodayEntry.running(.rest), face: .pause)
-}
-
-#Preview(as: .systemMedium) {
-    TodayWidget()
-} timeline: {
-    TodayEntry.preview(seconds: 50 * 60, sessions: 2)
-    TodayEntry.preview(active: TodayEntry.running(), face: .pause)
-    TodayEntry.preview(active: TodayEntry.running(paused: true), face: .resume)
-    TodayEntry.preview(sessions: 3, face: .startBreak)
 }
 
 /// The big button's twin: Start, Pause, Resume or Start break, as the app's

@@ -79,21 +79,10 @@ struct WeekStrip: View {
         return totals.last(where: { $0.seconds > 0 })?.day ?? totals.first?.day
     }
 
-    /// "Monday 12 October, today: 2 sessions, 50 minutes", or "…, upcoming"
-    /// for a day still to come. The date is there because the strip can
-    /// show any week.
+    /// "Monday 12 October, today: 2 sessions, 50 minutes", or "…, upcoming".
     static func accessibilityText(_ entry: DayTotal, today: Date, calendar: Calendar,
                                   locale: Locale = .autoupdatingCurrent) -> String {
-        let style = Date.FormatStyle(locale: locale, calendar: calendar, timeZone: calendar.timeZone)
-            .weekday(.wide).day().month(.wide)
-        let day = entry.day.formatted(style)
-        if calendar.isDate(entry.day, inSameDayAs: today) {
-            return String(localized: "\(day), today: \(Copy.sessions(entry.sessions)), \(TimeFormat.spokenDuration(entry.seconds))")
-        }
-        if entry.day > today {
-            return String(localized: "\(day), upcoming")
-        }
-        return String(localized: "\(day): \(Copy.sessions(entry.sessions)), \(TimeFormat.spokenDuration(entry.seconds))")
+        Copy.daySpoken(entry, today: today, calendar: calendar, locale: locale)
     }
 }
 

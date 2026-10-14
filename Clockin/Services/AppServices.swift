@@ -753,7 +753,30 @@ final class AppServices: SessionEffects {
     }
 
     private func refreshWidgets() {
-        widgets.reload(with: WidgetSnapshot(rows: todayRows(), writtenAt: engine.now()))
+        widgets.reload(with: widgetSnapshot())
+    }
+
+    /// Today's sessions with their names and symbols, and this week's totals.
+    func widgetSnapshot() -> WidgetSnapshot {
+        let now = engine.now()
+        let saved = TodayStats.fetchRecords(on: now, calendar: calendar, context: container.mainContext)
+        let savedIDs = Set(saved.map(\.id))
+        let waiting = engine.pendingRecords(on: now).filter { !savedIDs.contains($0.id) }
+        let sessions = saved.map {
+            WidgetSnapshot.Session(id: $0.id, completedAt: $0.completedAt, seconds: $0.focusSeconds,
+                                   countsAsFull: $0.row.countsAsFull, name: $0.name, symbol: symbol(for: $0.name),
+                                   startedAt: $0.startedAt)
+        } + waiting.map {
+            WidgetSnapshot.Session(id: $0.id, completedAt: $0.completedAt, seconds: $0.focusSeconds,
+                                   countsAsFull: $0.countsAsFull, name: $0.name, symbol: symbol(for: $0.name),
+                                   startedAt: $0.startedAt)
+        }
+        let week = calendar.weekInterval(containing: now)
+        let weekRecords = (try? container.mainContext.fetch(FetchDescriptor<FocusRecord>(
+            predicate: FocusRecord.completed(in: week)))) ?? []
+        let totals = TodayStats.weekTotals(saved: weekRecords.map(\.row), pending: engine.pendingRecords,
+                                           containing: now, calendar: calendar)
+        return WidgetSnapshot(sessions: sessions, week: totals, writtenAt: now)
     }
 
     /// Focus sessions finished today, saved or waiting.

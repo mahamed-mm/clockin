@@ -133,6 +133,26 @@ enum Copy {
         String(localized: "\(TimeFormat.duration(seconds)) today")
     }
 
+    /// "Monday 12 October, today: 2 sessions, 50 minutes", or "…, upcoming"
+    /// for a day still to come. The date is there because the strip can
+    /// show any week.
+    static func daySpoken(_ entry: DayTotal, today: Date, calendar: Calendar,
+                          locale: Locale = .autoupdatingCurrent) -> String {
+        let style = Date.FormatStyle(locale: locale, calendar: calendar, timeZone: calendar.timeZone)
+            .weekday(.wide).day().month(.wide)
+        let day = entry.day.formatted(style)
+        if calendar.isDate(entry.day, inSameDayAs: today) {
+            return String(localized: "\(day), today: \(Copy.sessions(entry.sessions)), \(TimeFormat.spokenDuration(entry.seconds))")
+        }
+        if entry.day > today {
+            return String(localized: "\(day), upcoming")
+        }
+        return String(localized: "\(day): \(Copy.sessions(entry.sessions)), \(TimeFormat.spokenDuration(entry.seconds))")
+    }
+
+    /// "+2 more", under the large widget's list.
+    static func moreSessions(_ count: Int) -> String { String(localized: "+\(count) more") }
+
     // MARK: Symbols
 
     /// What VoiceOver calls each symbol in the picker.

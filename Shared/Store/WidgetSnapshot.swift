@@ -12,16 +12,35 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         var seconds: TimeInterval
         /// Nil in snapshots written before sessions could end early: full.
         var countsAsFull: Bool?
+        /// For the large widget's list. Nil in older snapshots.
+        var name: String?
+        var symbol: String?
+        var startedAt: Date?
+    }
+
+    /// One day of the week, for the large widget's strip.
+    struct Day: Codable, Equatable, Sendable {
+        var day: Date
+        var seconds: TimeInterval
+        var sessions: Int
     }
 
     /// Sessions that finished on the day the snapshot was written.
     var sessions: [Session]
     var writtenAt: Date
+    /// The week the snapshot was written in. Nil in older snapshots.
+    var week: [Day]?
 
     init(rows: [FocusRow], writtenAt: Date) {
         sessions = rows.map {
             Session(id: $0.id, completedAt: $0.completedAt, seconds: $0.seconds, countsAsFull: $0.countsAsFull)
         }
+        self.writtenAt = writtenAt
+    }
+
+    init(sessions: [Session], week: [DayTotal]?, writtenAt: Date) {
+        self.sessions = sessions
+        self.week = week?.map { Day(day: $0.day, seconds: $0.seconds, sessions: $0.sessions) }
         self.writtenAt = writtenAt
     }
 
@@ -36,6 +55,35 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// that ran out while the app was suspended counts before the app records it.
     func stats(at date: Date, active: ActiveSession?, calendar: Calendar = .autoupdatingCurrent) -> TodayStats {
         TodayStats.make(records: rows, unrecordedActive: active, now: date, calendar: calendar)
+    }
+
+    /// The week strip at `date`: the snapshot's week with today's column as
+    /// of `date`, or, once a new week has begun without the app, a fresh one
+    /// with only today filled in.
+    func week(at date: Date, active: ActiveSession?, calendar: Calendar = .autoupdatingCurrent) -> [DayTotal] {
+        let interval = calendar.weekInterval(containing: date)
+        let saved = (week ?? []).filter { interval.includes($0.day) }
+        let today = stats(at: date, active: active, calendar: calendar)
+        var day = interval.start
+        var days: [DayTotal] = []
+        while day < interval.end {
+            if calendar.isDate(day, inSameDayAs: date) {
+                days.append(DayTotal(day: day, seconds: today.focusSeconds, sessions: today.sessionCount))
+            } else if let known = saved.first(where: { calendar.isDate($0.day, inSameDayAs: day) }), day < date {
+                days.append(DayTotal(day: day, seconds: known.seconds, sessions: known.sessions))
+            } else {
+                days.append(DayTotal(day: day, seconds: 0, sessions: 0))
+            }
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
+        }
+        return days
+    }
+
+    /// Sessions finished on `date`'s day, newest first.
+    func sessions(on date: Date, calendar: Calendar = .autoupdatingCurrent) -> [Session] {
+        sessions.filter { calendar.isDate($0.completedAt, inSameDayAs: date) }
+            .sorted { $0.completedAt > $1.completedAt }
     }
 }
 

@@ -496,6 +496,16 @@
         }
       }
     },
+    "+%lld more" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "+%lld til"
+          }
+        }
+      }
+    },
     "0 minutes" : {
       "localizations" : {
         "nb" : {
@@ -1949,6 +1959,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Ingen økter ennå"
+          }
+        }
+      }
+    },
+    "No sessions yet today" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingen økter ennå i dag"
           }
         }
       }
