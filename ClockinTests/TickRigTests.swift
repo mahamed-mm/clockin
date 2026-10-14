@@ -54,6 +54,46 @@ struct TickRigTests {
         #expect(copy == working)
     }
 
+    // MARK: Workout
+
+    @Test func workoutStancesWearGloves() {
+        for (name, rig) in WorkoutSamples.stances {
+            #expect(rig.gloves == 1, "\(name)")
+            #expect(rig.leftGloveScale == 1 && rig.rightGloveScale == 1, "\(name)")
+            // The gloves, about 8 units round, stay in Tick's square, clear of the dial.
+            for hand in [rig.leftArm.end, rig.rightArm.end] {
+                let point = Self.placed(hand, in: rig)
+                #expect((12...92).contains(point.x), "\(name) \(point)")
+                #expect((10...92).contains(point.y), "\(name) \(point)")
+            }
+        }
+        #expect(TickPose.allCases.allSatisfy { TickRig($0).gloves == 0 })
+    }
+
+    @Test func tiringLowersTheGuard() {
+        let fresh = TickRig(workout: WorkoutSamples.params(left: 900))
+        let tired = TickRig(workout: WorkoutSamples.params(left: 70))
+        #expect(tired.lean > fresh.lean)
+        #expect(tired.rightArm.end.y > fresh.rightArm.end.y)
+        #expect(WorkoutSamples.params(left: 30).stance == .handsOnKnees)
+        #expect(TickRig(workout: WorkoutSamples.params(left: 30)).legFollow == 0)
+    }
+
+    @Test func glovesPopOnThroughTheInBetween() {
+        let ready = TickRig(.ready), boxing = TickRig(workout: WorkoutSamples.params(left: 900))
+        var halfway = ready
+        halfway.animatableData = ready.animatableData + (boxing.animatableData - ready.animatableData).scaled(by: 0.5)
+        #expect(halfway.gloves == 0.5)
+        #expect(halfway.leftGloveScale == 1)
+    }
+
+    /// A point given relative to the body, where it's drawn: leaned about the pivot.
+    static func placed(_ point: CGPoint, in rig: TickRig) -> CGPoint {
+        let a = rig.lean * .pi / 180
+        let x = point.x, y = rig.centerY + point.y - rig.pivotY
+        return CGPoint(x: 50 + x * cos(a) - y * sin(a), y: rig.pivotY + x * sin(a) + y * cos(a))
+    }
+
     @Test func zeroStandsInForAnyLength() {
         let rig = TickRig(.done).animatableData
         #expect(rig + .zero == rig)

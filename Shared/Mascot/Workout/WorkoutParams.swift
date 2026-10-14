@@ -14,6 +14,14 @@ struct WorkoutParams: Equatable, Sendable {
         case panting
     }
 
+    /// How Tick stands between moves.
+    enum Stance: Sendable {
+        /// Gloves up by the face, on its toes.
+        case guardUp
+        /// Bent over, gloves on its knees, getting its breath back.
+        case handsOnKnees
+    }
+
     /// Multiplies every move's speed: 1 is full speed.
     var tempo: Double
     /// How far punches and kicks reach, 0...1 of full.
@@ -34,6 +42,7 @@ struct WorkoutParams: Equatable, Sendable {
     /// How far the gloves drop from the face in guard, in Tick units.
     var guardDrop: Double
     var face: Face
+    var stance: Stance = .guardUp
     /// How flushed the cheeks are, 0...1.
     var flush: Double
 
@@ -57,6 +66,7 @@ struct WorkoutParams: Equatable, Sendable {
             // Hands on knees; a weak jab every 6–10 s.
             self.init(tempo: 0.4, reach: 0.5, rest: 6...10, bounce: 0, breathPeriod: 1.2, breathDepth: 0.05,
                       sweatRate: 1, hunch: 14, guardDrop: 6, face: .panting, flush: 1)
+            stance = .handsOnKnees
         case .finalPush:
             // One last flurry, upright and determined.
             self.init(tempo: 1.3, reach: 1, rest: 0...0, bounce: 0, breathPeriod: 1.2, breathDepth: 0.05,

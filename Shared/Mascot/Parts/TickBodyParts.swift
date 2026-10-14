@@ -130,11 +130,51 @@ struct TickArmsPart: View {
 
     var body: some View {
         let style = StrokeStyle(lineWidth: look.limbWidth, lineCap: .round, lineJoin: .round)
+        let gloveScales = [look.rig.leftGloveScale, look.rig.rightGloveScale]
         ZStack {
-            ForEach(Array(look.arms.enumerated()), id: \.offset) { _, arm in
+            ForEach(Array(look.arms.enumerated()), id: \.offset) { index, arm in
                 Ink(TickPath.limb(arm, from: look)).stroke(look.palette.limbs, style: style)
                 Ink(TickPath.circle(look.body(arm.end), look.handRadius)).fill(look.palette.limbs)
+                if look.rig.gloves > 0 {
+                    TickGlove(look: look, arm: arm, scale: look.rig.gloves * gloveScales[index])
+                }
             }
+        }
+    }
+}
+
+/// A boxing glove over the hand: a round mitt about twice the hand, a thumb
+/// on top, a darker cuff at the wrist, outlined like the crown.
+private struct TickGlove: View {
+    let look: TickLook
+    let arm: TickRig.Limb
+    /// 0 to 1 as it pops on, more when punching toward you.
+    let scale: Double
+
+    var body: some View {
+        let r = look.handRadius * 2.1
+        let hand = look.body(arm.end), bend = look.body(arm.bend)
+        let angle = atan2(hand.y - bend.y, hand.x - bend.x)
+        // Along the forearm, the thumb kept on top whichever way the arm points.
+        let place = CGAffineTransform(scaleX: scale, y: cos(angle) < 0 ? -scale : scale)
+            .concatenating(CGAffineTransform(rotationAngle: angle))
+            .concatenating(CGAffineTransform(translationX: hand.x, y: hand.y))
+        let cuff = Path(roundedRect: CGRect(x: -1.35 * r, y: -0.62 * r, width: 0.85 * r, height: 1.24 * r),
+                        cornerRadius: 0.3 * r).applying(place)
+        let mitt = Path(roundedRect: CGRect(x: -0.8 * r, y: -0.9 * r, width: 1.95 * r, height: 1.8 * r),
+                        cornerRadius: 0.85 * r).applying(place)
+        let thumb = Path(ellipseIn: CGRect(x: -0.4 * r, y: -1.12 * r, width: 0.95 * r, height: 0.62 * r)).applying(place)
+        let shine = TickPath.line(CGPoint(x: 0.15 * r, y: -0.45 * r), CGPoint(x: 0.65 * r, y: -0.45 * r)).applying(place)
+        let ink = look.palette.eyes
+        let outline = (look.handmade ? 1.4 : 1.7) * min(1, scale)
+        return ZStack {
+            Ink(cuff).fill(look.palette.gloveCuff)
+            Ink(cuff).stroke(ink, lineWidth: outline)
+            Ink(mitt).fill(look.palette.glove)
+            Ink(mitt).stroke(ink, lineWidth: outline)
+            Ink(thumb).fill(look.palette.glove)
+            Ink(thumb).stroke(ink, lineWidth: outline)
+            Ink(shine).stroke(look.palette.face.opacity(0.7), style: StrokeStyle(lineWidth: 1.4 * min(1, scale), lineCap: .round))
         }
     }
 }

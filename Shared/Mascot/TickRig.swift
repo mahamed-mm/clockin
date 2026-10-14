@@ -46,6 +46,12 @@ struct TickRig: Equatable, Sendable {
     /// How far the crown is pressed in, 0 to 1.
     var crownPress: Double = 0
 
+    /// Boxing gloves over the hands, 0 off to 1 on (they pop on and off).
+    var gloves: Double = 0
+    /// Each glove's size: over 1 when punching toward you.
+    var leftGloveScale: Double = 1
+    var rightGloveScale: Double = 1
+
     /// An arm or leg: where it starts on the body, the bend it curves
     /// through, and where it ends, all relative to the body's centre.
     struct Limb: Equatable, Sendable {
@@ -168,7 +174,8 @@ extension TickRig: Animatable {
     var animatableData: RigVector {
         get {
             var values = [centerY, lean, scaleX, scaleY, pivotY, legFollow, shadowWidth, leftFoot, rightFoot,
-                          headphones, mug, star, zees, sparkles, alarm, gold, waveLines, tapLines, crownPress]
+                          headphones, mug, star, zees, sparkles, alarm, gold, waveLines, tapLines, crownPress,
+                          gloves, leftGloveScale, rightGloveScale]
             for limb in [leftArm, rightArm, leftLeg, rightLeg] {
                 values += [limb.root.x, limb.root.y, limb.bend.x, limb.bend.y, limb.end.x, limb.end.y]
             }
@@ -185,12 +192,13 @@ extension TickRig: Animatable {
             shadowWidth = next(); leftFoot = next(); rightFoot = next()
             headphones = next(); mug = next(); star = next(); zees = next(); sparkles = next(); alarm = next()
             gold = next(); waveLines = next(); tapLines = next(); crownPress = next()
+            gloves = next(); leftGloveScale = next(); rightGloveScale = next()
             leftArm = nextLimb(); rightArm = nextLimb(); leftLeg = nextLimb(); rightLeg = nextLimb()
         }
     }
 
-    /// 19 numbers and four limbs of three points.
-    private static let numberCount = 19 + 4 * 6
+    /// 22 numbers and four limbs of three points.
+    private static let numberCount = 22 + 4 * 6
 }
 
 /// A list of numbers that SwiftUI can animate: the rig's, and the face's.

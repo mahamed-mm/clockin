@@ -21,6 +21,11 @@ struct MascotGallery: View {
                     ForEach(shown, id: \.self) { pose in
                         row(pose)
                     }
+                    if state == nil {
+                        ForEach(Array(WorkoutSamples.stances.enumerated()), id: \.offset) { _, stance in
+                            row(stance.name, rig: stance.rig, face: TickFace(.working))
+                        }
+                    }
                 }
                 .padding(Space.l)
             }
@@ -85,31 +90,35 @@ struct MascotGallery: View {
     }
 
     private func row(_ pose: TickPose) -> some View {
+        row(pose.rawValue, rig: TickRig(pose), face: TickFace(pose), sheetProgress: pose.sheetProgress)
+    }
+
+    /// One pose at every size, in light and dark.
+    private func row(_ name: String, rig: TickRig, face: TickFace, sheetProgress: Double = 0.6) -> some View {
         VStack(alignment: .leading, spacing: Space.xs) {
-            Text(pose.rawValue).retroLabel()
+            Text(name).retroLabel()
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .bottom, spacing: Space.s) {
-                    cell(pose, size: 180, scheme: .light)
-                    cell(pose, size: 180, scheme: .dark)
-                    cell(pose, size: 60, scheme: .light)
-                    cell(pose, size: 60, scheme: .dark)
-                    cell(pose, size: 20, scheme: .light)
-                    cell(pose, size: 20, scheme: .dark)
+                    ForEach([180.0, 60, 20], id: \.self) { size in
+                        cell(name, rig: rig, face: face, sheetProgress: sheetProgress, size: size, scheme: .light)
+                        cell(name, rig: rig, face: face, sheetProgress: sheetProgress, size: size, scheme: .dark)
+                    }
                     // 16 px on a 2x screen, 24 px on 3x: the glyph's solid shapes.
-                    cell(pose, size: 8, scheme: .light)
+                    cell(name, rig: rig, face: face, sheetProgress: sheetProgress, size: 8, scheme: .light)
                 }
             }
             .scrollClipDisabled()
         }
     }
 
-    private func cell(_ pose: TickPose, size: Double, scheme: ColorScheme) -> some View {
-        TickFigure(pose: pose, palette: .standard, progress: usesSheetRing ? nil : progress)
+    private func cell(_ name: String, rig: TickRig, face: TickFace, sheetProgress: Double, size: Double,
+                      scheme: ColorScheme) -> some View {
+        TickFigure(rig: rig, face: face, palette: .standard, progress: usesSheetRing ? sheetProgress : progress)
             .frame(width: size, height: size)
             .padding(size >= 60 ? Space.s : Space.xs)
             .background(Retro.paper, in: .rect(cornerRadius: max(4, size * 0.1)))
             .environment(\.colorScheme, scheme)
-            .accessibilityLabel("\(pose.rawValue), \(Int(size)) points, \(scheme == .dark ? "dark" : "light")")
+            .accessibilityLabel("\(name), \(Int(size)) points, \(scheme == .dark ? "dark" : "light")")
     }
 }
 

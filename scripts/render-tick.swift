@@ -19,12 +19,13 @@ struct RenderTick {
     static func main() throws {
         let arguments = CommandLine.arguments.dropFirst()
         guard let mode = arguments.first, let out = arguments.dropFirst().first else {
-            print("usage: render-tick sheet|shapes|hero <file.png> | icon <directory>")
+            print("usage: render-tick sheet|shapes|workout|hero <file.png> | icon <directory>")
             exit(2)
         }
         switch mode {
         case "sheet": try write(ContactSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "shapes": try write(Silhouettes(), scale: 2, to: URL(fileURLWithPath: out))
+        case "workout": try write(WorkoutSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "hero":
             // The README's banner: the name in Fraunces, Tick working, resting, done.
             for font in ["Display", "Title", "Text"] {
@@ -88,6 +89,34 @@ struct ContactSheet: View {
                     // True 16 px (8 pt on this 2x sheet); the glyph fills ~90% of it.
                     TickFigure(pose: pose, palette: palette).frame(width: 8, height: 8)
                         .background(paper)
+                }
+            }
+        }
+        .padding(24)
+        .background(Color(white: 0.97))
+        .foregroundStyle(Color(white: 0.15))
+    }
+}
+
+/// The workout's stances at the same sizes, for tuning them.
+struct WorkoutSheet: View {
+    var body: some View {
+        let palette = TickPalette.assets(in: assets)
+        let paper = Color("Paper", bundle: assets)
+        let face = TickFace(.working)
+        Grid(horizontalSpacing: 18, verticalSpacing: 14) {
+            ForEach(Array(WorkoutSamples.stances.enumerated()), id: \.offset) { _, sample in
+                GridRow {
+                    Text(sample.name).font(.system(size: 15, weight: .semibold))
+                    TickFigure(rig: sample.rig, face: face, palette: palette, progress: 0.6).frame(width: 180, height: 180)
+                        .padding(8).background(paper, in: .rect(cornerRadius: 16))
+                    TickFigure(rig: sample.rig, face: face, palette: palette, progress: 0.6).frame(width: 180, height: 180)
+                        .padding(8).background(paper, in: .rect(cornerRadius: 16))
+                        .environment(\.colorScheme, .dark)
+                    TickFigure(rig: sample.rig, face: face, palette: palette, progress: 0.6).frame(width: 106, height: 106)
+                        .padding(6).background(paper, in: .rect(cornerRadius: 12))
+                    TickFigure(rig: sample.rig, face: face, palette: palette, progress: 0.6).frame(width: 60, height: 60)
+                        .padding(6).background(paper, in: .rect(cornerRadius: 10))
                 }
             }
         }

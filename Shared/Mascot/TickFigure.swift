@@ -50,6 +50,9 @@ struct TickPalette: Equatable, Sendable {
     /// Sparkles, the star, alarm and vibration lines, the tongue.
     var effects: Color
     var shadow: Color
+    /// Boxing gloves, mustard like the crown, and their darker cuffs.
+    var glove: Color
+    var gloveCuff: Color
 
     /// Tick from the asset catalog in `bundle` (the app's own by default;
     /// the icon script passes the catalog it compiles).
@@ -58,7 +61,7 @@ struct TickPalette: Equatable, Sendable {
         return TickPalette(face: named("Face"), ring: named("Ring"), track: named("Track"), cap: named("Cap"),
                            crown: named("Crown"), eyes: named("Eyes"), cheeks: named("Cheeks"), limbs: named("Limbs"),
                            doneGold: named("DoneGold"), ringingRed: named("RingingRed"), effects: named("Effects"),
-                           shadow: named("Shadow"))
+                           shadow: named("Shadow"), glove: named("Glove"), gloveCuff: named("GloveCuff"))
     }
 
     /// The app icon's Tick: deep terracotta limbs, so one picture reads on
