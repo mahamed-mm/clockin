@@ -264,8 +264,9 @@ private struct HistoryWeek: View {
     @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
-    /// The session whose card is open.
-    @State private var opened: SessionSummary?
+    /// The session whose card is open, and how.
+    @State private var opened: OpenedCard?
+    @Environment(\.showFocus) private var showFocus
 
     init(week: DateInterval, today: Date, calendar: Calendar, canGoBack: Bool, canGoForward: Bool,
          page: @escaping (Int) -> Void, scroll: ScrollViewProxy, pickedDay: Binding<Date?>, morph: Namespace.ID?,
@@ -336,13 +337,20 @@ private struct HistoryWeek: View {
             Section {
                 ForEach(Array(group.records.enumerated()), id: \.element.id) { rowIndex, record in
                     // A real button, so Full Keyboard Access and Switch Control reach it too.
-                    Button { opened = SessionSummary(record) } label: {
+                    Button { opened = OpenedCard(SessionSummary(record)) } label: {
                         SessionRow(record: record)
                             .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint(String(localized: "Shows the session, to rename or delete it"))
                     .accessibilityInputLabels([Copy.displayName(record.name)])
+                    .contextMenu {
+                        menu(for: record)
+                    } preview: {
+                        SessionPeek(summary: SessionSummary(record), now: today, calendar: calendar,
+                                    symbol: services.symbol(for: record.name))
+                    }
+                    .accessibilityActions { menu(for: record) }
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 services.deleteSessions([record.id])
@@ -367,9 +375,10 @@ private struct HistoryWeek: View {
             .listRowBackground(Retro.paperDeep.opacity(0.6))
             .id(Self.sectionID(group.day))
         }
-        .sheet(item: $opened) { summary in
+        .sheet(item: $opened) { card in
+            let summary = card.summary
             SessionCard(summary: summary, now: today, calendar: calendar,
-                        symbol: services.symbol(for: summary.name),
+                        symbol: services.symbol(for: summary.name), opening: card.mode,
                         rename: { services.renameSession(summary.id, to: $0) },
                         setSymbol: { services.setSymbol($0, for: summary.name) },
                         delete: { services.deleteSessions([summary.id]) })
@@ -406,7 +415,27 @@ private struct HistoryWeek: View {
     /// Opens a session's card from the ribbon; one still waiting to be saved has none.
     private func open(_ id: UUID) {
         guard let record = records.first(where: { $0.id == id }) else { return }
-        opened = SessionSummary(record)
+        opened = OpenedCard(SessionSummary(record))
+    }
+
+    /// The row's long-press menu, also offered as VoiceOver actions.
+    @ViewBuilder
+    private func menu(for record: FocusRecord) -> some View {
+        Button(String(localized: "Rename"), systemImage: "pencil") {
+            opened = OpenedCard(SessionSummary(record), mode: .renaming)
+        }
+        if !SymbolBook.key(for: record.name).isEmpty {
+            Button(Copy.changeSymbol, systemImage: "square.grid.2x2") {
+                opened = OpenedCard(SessionSummary(record), mode: .pickingSymbol)
+            }
+        }
+        Button(String(localized: "Start again"), systemImage: "arrow.counterclockwise") {
+            if services.prepareFocus(name: record.name, planned: record.plannedSeconds) { showFocus() }
+        }
+        .disabled(engine.active != nil)
+        Button(String(localized: "Delete"), systemImage: "trash", role: .destructive) {
+            services.deleteSessions([record.id])
+        }
     }
 
     /// "This week", "Last week", or "28 Sept – 4 Oct".
@@ -504,5 +533,18 @@ private struct SessionRow: View {
             \(Copy.displayName(record.name)), \(TimeFormat.spokenDuration(record.focusSeconds)), \
             finished at \(TimeFormat.time(record.completedAt))
             """))
+    }
+}
+
+/// A session's card as it opens: as it is, or straight into renaming or
+/// picking a symbol from the row's menu.
+struct OpenedCard: Identifiable {
+    var summary: SessionSummary
+    var mode: SessionCard.Mode = .viewing
+    var id: UUID { summary.id }
+
+    init(_ summary: SessionSummary, mode: SessionCard.Mode = .viewing) {
+        self.summary = summary
+        self.mode = mode
     }
 }

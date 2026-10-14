@@ -18,9 +18,22 @@ struct SessionCard: View {
     let delete: () -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var mode: Mode = .viewing
-    @State private var draft = ""
+    @State private var mode: Mode
+    @State private var draft: String
     @FocusState private var fieldFocused: Bool
+
+    init(summary: SessionSummary, now: Date, calendar: Calendar, symbol: String, opening mode: Mode = .viewing,
+         rename: @escaping (String) -> Void, setSymbol: @escaping (String) -> Void, delete: @escaping () -> Void) {
+        self.summary = summary
+        self.now = now
+        self.calendar = calendar
+        self.symbol = symbol
+        self.rename = rename
+        self.setSymbol = setSymbol
+        self.delete = delete
+        _mode = State(initialValue: mode)
+        _draft = State(initialValue: mode == .renaming ? summary.name : "")
+    }
 
     private var renaming: Bool { mode == .renaming }
 
@@ -86,10 +99,44 @@ struct SessionCard: View {
         }
         .animation(Motion.calm(reduceMotion), value: mode)
         .accessibilityAction(.escape) { dismiss() }
+        .onAppear { if mode == .renaming { fieldFocused = true } }
     }
 
     private func save() {
         rename(draft)
         dismiss()
+    }
+}
+
+/// The card in brief, shown while a row's menu is open.
+struct SessionPeek: View {
+    let summary: SessionSummary
+    let now: Date
+    let calendar: Calendar
+    let symbol: String
+
+    var body: some View {
+        VStack(spacing: Space.xs) {
+            Image(systemName: symbol)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Retro.ink)
+                .frame(width: 44, height: 44)
+                .background(Retro.ink.opacity(0.14), in: .circle)
+            Text(summary.overline(now: now, calendar: calendar))
+                .font(.retro(.label))
+                .textCase(.uppercase)
+                .tracking(2.2)
+                .foregroundStyle(Retro.orangeText)
+            Text(summary.title)
+                .retroFont(.headline)
+                .foregroundStyle(Retro.ink)
+                .multilineTextAlignment(.center)
+            Text(TimeFormat.duration(summary.focusSeconds))
+                .font(.retro(.meta))
+                .foregroundStyle(Retro.inkSoft)
+        }
+        .padding(Space.l)
+        .frame(width: 300)
+        .background(Retro.paper)
     }
 }

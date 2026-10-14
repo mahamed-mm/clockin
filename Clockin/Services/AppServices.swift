@@ -625,6 +625,21 @@ final class AppServices: SessionEffects {
     @ObservationIgnored var lastSessionName: () -> String = {
         UserDefaults.standard.string(forKey: "lastSessionName") ?? ""
     }
+    /// Puts a name in the Focus screen's field.
+    @ObservationIgnored var setLastSessionName: (String) -> Void = {
+        UserDefaults.standard.set($0, forKey: "lastSessionName")
+    }
+
+    /// Sets Focus up to run a past session again: its name in the field and
+    /// its planned length on the dial (the setting, as turning the dial
+    /// would). Doesn't start it, and does nothing while a session runs.
+    @discardableResult
+    func prepareFocus(name: String, planned: TimeInterval?) -> Bool {
+        guard engine.active == nil else { return false }
+        setLastSessionName(name)
+        if let length = SessionLength(planned: planned), length != settings.length { settings.length = length }
+        return true
+    }
 
     /// Each intent may wake the app in the background: catch up with the
     /// clock first, act, then wait for the alerts and Live Activity to land.

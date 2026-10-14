@@ -115,6 +115,36 @@ struct HistoryChangesTests {
         #expect(liveActivity.lastSymbol == "lightbulb.fill")
     }
 
+    @Test(arguments: [(nil, nil), (1_500.0, 25), (3_000, 50), (37 * 60, 35), (10, 5), (3 * 3_600, 60)] as [(TimeInterval?, Int?)])
+    func aPastSessionsLengthOnTheDial(planned: TimeInterval?, minutes: Int?) {
+        #expect(SessionLength(planned: planned)?.minutes == minutes)
+    }
+
+    @Test func startAgainSetsFocusUpWithoutStarting() {
+        let services = makeServices()
+        var typed = ""
+        services.setLastSessionName = { typed = $0 }
+        services.settings.length = .preset(.classic)
+
+        #expect(services.prepareFocus(name: "Chemistry", planned: 50 * 60))
+        #expect(typed == "Chemistry")
+        #expect(services.settings.length == .preset(.deep))
+        #expect(services.engine.active == nil)
+
+        // No plan saved: the dial stays where it is.
+        #expect(services.prepareFocus(name: "Spanish", planned: nil))
+        #expect(services.settings.length == .preset(.deep))
+    }
+
+    @Test func startAgainWaitsWhileASessionRuns() {
+        let services = makeServices()
+        var typed = ""
+        services.setLastSessionName = { typed = $0 }
+        services.engine.start(name: "Running")
+        #expect(!services.prepareFocus(name: "Chemistry", planned: 1_500))
+        #expect(typed.isEmpty)
+    }
+
     @Test func symbolsForNamesWithNoSessionAreForgotten() throws {
         let services = makeServices()
         services.lastSessionName = { "Typed but not started" }

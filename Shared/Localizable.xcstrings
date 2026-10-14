@@ -2723,6 +2723,16 @@
         }
       }
     },
+    "Start again" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Start på nytt"
+          }
+        }
+      }
+    },
     "Start break" : {
       "localizations" : {
         "nb" : {

@@ -15,6 +15,7 @@ struct RootView: View {
             }
             Tab("History", systemImage: "clock.arrow.circlepath", value: .history) {
                 HistoryView()
+                    .environment(\.showFocus, ShowFocusAction { tab = .focus })
                     // Away from Focus, a running session stays in sight above
                     // the tab bar. It floats in History's own content, not the
                     // tab bar's accessory slot: that slot widens the whole bar,
@@ -35,6 +36,17 @@ struct RootView: View {
             if url.scheme == "clockin" { tab = url.host() == "history" ? .history : .focus }
         }
     }
+}
+
+/// Switches to the Focus tab, e.g. to start a past session again.
+struct ShowFocusAction {
+    var action: () -> Void = {}
+
+    func callAsFunction() { action() }
+}
+
+extension EnvironmentValues {
+    @Entry var showFocus = ShowFocusAction()
 }
 
 /// Phase, name and time left on a glass capsule; a tap goes back to Focus.

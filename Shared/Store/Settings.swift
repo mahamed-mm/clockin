@@ -55,6 +55,13 @@ enum SessionLength: Hashable, Sendable {
 
     /// Snaps `minutes` to the dial. A preset's length comes back as that
     /// preset, so its chip stays lit.
+    /// The length a past session was planned at, to start it again; nil
+    /// for a session saved without one.
+    init?(planned: TimeInterval?) {
+        guard let planned, planned > 0 else { return nil }
+        self.init(minutes: Int((planned / 60).rounded()))
+    }
+
     init(minutes: Int) {
         let step = Self.minuteStep
         let snapped = ((minutes + step / 2) / step) * step
