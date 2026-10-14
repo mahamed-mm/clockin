@@ -179,6 +179,8 @@ struct DialFace: View {
     var showsPills = true
     /// First launch: a ghost thumb shows how the knob turns.
     var teaches = false
+    /// Tick, leaning on the dial's lower right.
+    var showsMascot = true
     @AppStorage(Onboarding.dialHintKey) private var dialHintSeen = false
     @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -261,6 +263,14 @@ struct DialFace: View {
 
             center(session: session)
                 .padding(size * 0.25)
+
+            // Tick leans on the rim in the square's empty corner, so the
+            // layout around the dial is untouched. Too cramped on small dials.
+            if showsMascot, size >= DialTick.minimumDial {
+                DialTick(stage: stage, celebration: celebration)
+                    .frame(width: size * 0.3, height: size * 0.3)
+                    .position(x: size * 0.9, y: size * 0.88)
+            }
         }
         .frame(width: size, height: size)
         .coordinateSpace(.named(Self.dialSpace))
@@ -409,6 +419,45 @@ struct DialFace: View {
         case .focusComplete:
             let minutes = services.engine.overtime(at: date).map { Int($0 / 60) } ?? 0
             return minutes > 0 ? Copy.overtimeSpoken(minutes: minutes) : ""
+        }
+    }
+}
+
+// MARK: - Tick
+
+/// Tick for the dial: the pose for where the session stands, which also
+/// changes on its own a minute past the bell (back to work) and at night.
+private struct DialTick: View {
+    /// Below this the dial has no room to spare in its corner.
+    static let minimumDial: CGFloat = 200
+
+    let stage: SessionStage
+    let celebration: Int
+    @Environment(SessionEngine.self) private var engine
+    @Environment(AppServices.self) private var services
+
+    var body: some View {
+        let schedule = TickSchedule(wakeDates: wakeDates(after: .now))
+        TimelineView(schedule) { context in
+            TickView(pose: TickPose.forStage(stage, overtime: engine.overtime(at: context.date),
+                                             hour: services.calendar.component(.hour, from: context.date)),
+                     celebration: celebration)
+        }
+        .id(schedule)
+    }
+
+    /// A minute past the bell, and when night starts or ends while idle.
+    private func wakeDates(after date: Date) -> [Date] {
+        switch stage {
+        case .idle:
+            let calendar = services.calendar
+            return [22, 6].compactMap {
+                calendar.nextDate(after: date, matching: DateComponents(hour: $0, minute: 0), matchingPolicy: .nextTime)
+            }
+        case .focusComplete:
+            return engine.overtimeChanges(after: date).prefix(1).map { $0 }
+        case .active:
+            return []
         }
     }
 }

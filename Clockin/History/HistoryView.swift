@@ -48,7 +48,11 @@ struct HistoryView: View {
                     if newest.isEmpty {
                         Section {
                             ContentUnavailableView {
-                                Label("No sessions yet", systemImage: "hourglass")
+                                VStack(spacing: Space.s) {
+                                    TickView(pose: .hello)
+                                        .frame(width: 104, height: 104)
+                                    Text("No sessions yet")
+                                }
                             } description: {
                                 Text("Finish a focus session and it will show up here.")
                                     .font(.retro(.body))
