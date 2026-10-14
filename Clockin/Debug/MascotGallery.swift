@@ -22,8 +22,8 @@ struct MascotGallery: View {
                         row(pose)
                     }
                     if state == nil {
-                        ForEach(Array(WorkoutSamples.stances.enumerated()), id: \.offset) { _, stance in
-                            row(stance.name, rig: stance.rig, face: TickFace(.working))
+                        ForEach(Array((WorkoutSamples.stances + WorkoutSamples.faces).enumerated()), id: \.offset) { _, sample in
+                            row(sample.name, rig: sample.rig, face: sample.face)
                         }
                     }
                 }

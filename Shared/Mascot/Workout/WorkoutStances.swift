@@ -58,13 +58,27 @@ enum WorkoutSamples {
         WorkoutParams(.at(planned: planned, remaining: left))
     }
 
-    static let stances: [(name: String, rig: TickRig)] = [
-        ("warm-up", TickRig(workout: params(left: 1490))),
-        ("strong", TickRig(workout: params(left: 900))),
-        ("tired", TickRig(workout: params(left: 240))),
-        ("tired, late", TickRig(workout: params(left: 70))),
-        ("exhausted", TickRig(workout: params(left: 30))),
-        ("paused", .glovedWaiting),
-        ("champion", .champion),
+    /// A stance with the face that goes with it.
+    static func sample(left: TimeInterval) -> (rig: TickRig, face: TickFace) {
+        let params = params(left: left)
+        return (TickRig(workout: params), TickFace(workout: params.face, flush: params.flush))
+    }
+
+    static let stances: [(name: String, rig: TickRig, face: TickFace)] = [
+        ("warm-up", sample(left: 1490).rig, sample(left: 1490).face),
+        ("strong", sample(left: 900).rig, sample(left: 900).face),
+        ("tired", sample(left: 240).rig, sample(left: 240).face),
+        ("tired, late", sample(left: 70).rig, sample(left: 70).face),
+        ("exhausted", sample(left: 30).rig, sample(left: 30).face),
+        ("paused", .glovedWaiting, TickFace(.waiting)),
+        ("champion", .champion, TickFace(.done)),
+    ]
+
+    /// The four faces, on the strong stance.
+    static let faces: [(name: String, rig: TickRig, face: TickFace)] = [
+        ("determined", sample(left: 900).rig, TickFace(workout: .determined)),
+        ("effort", sample(left: 900).rig, TickFace(workout: .determined, hit: true)),
+        ("strained", sample(left: 70).rig, TickFace(workout: .strained, flush: 0.8)),
+        ("panting", sample(left: 30).rig, TickFace(workout: .panting, flush: 1)),
     ]
 }

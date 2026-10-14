@@ -57,7 +57,7 @@ struct TickRigTests {
     // MARK: Workout
 
     @Test func workoutStancesWearGloves() {
-        for (name, rig) in WorkoutSamples.stances {
+        for (name, rig, _) in WorkoutSamples.stances {
             #expect(rig.gloves == 1, "\(name)")
             #expect(rig.leftGloveScale == 1 && rig.rightGloveScale == 1, "\(name)")
             // The gloves, about 8 units round, stay in Tick's square, clear of the dial.
@@ -85,6 +85,34 @@ struct TickRigTests {
         halfway.animatableData = ready.animatableData + (boxing.animatableData - ready.animatableData).scaled(by: 0.5)
         #expect(halfway.gloves == 0.5)
         #expect(halfway.leftGloveScale == 1)
+    }
+
+    @Test func workoutFacesTireInStages() {
+        let determined = TickFace(workout: .determined)
+        let strained = TickFace(workout: .strained, flush: 0.8)
+        let panting = TickFace(workout: .panting, flush: 1)
+        #expect(determined.mouth == .set && determined.browHandAngle < 0)
+        #expect(strained.eyes == .squint && strained.mouth == .gritted)
+        #expect(panting.eyes == .tired && panting.mouth == .pant && panting.mouthOpen > 0)
+        #expect(panting.flush == 1 && determined.flush == 0)
+        // Turned toward the punches, on the right.
+        #expect([determined, strained, panting].allSatisfy { $0.gazeX > 0 })
+        // A hit screws the eyes shut and puffs the cheeks; panting stays open-mouthed.
+        let hit = TickFace(workout: .determined, hit: true)
+        #expect(hit.eyes == .squeezed && hit.mouth == .puffed && hit.flush > 0)
+        #expect(TickFace(workout: .panting, hit: true).mouth == .pant)
+        // The state faces look straight ahead.
+        #expect(TickPose.allCases.allSatisfy { TickFace($0).gazeX == 0 && TickFace($0).flush == 0 })
+    }
+
+    @Test func faceNumbersAnimate() {
+        let calm = TickFace(.working), panting = TickFace(workout: .panting, flush: 1)
+        var halfway = calm
+        halfway.animatableData = calm.animatableData + (panting.animatableData - calm.animatableData).scaled(by: 0.5)
+        #expect(halfway.flush == 0.5 && halfway.gazeX == 1.5 && halfway.mouthOpen == 0.3)
+        var copy = panting
+        copy.animatableData = panting.animatableData
+        #expect(copy == panting)
     }
 
     /// A point given relative to the body, where it's drawn: leaned about the pivot.

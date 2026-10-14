@@ -103,9 +103,9 @@ struct WorkoutSheet: View {
     var body: some View {
         let palette = TickPalette.assets(in: assets)
         let paper = Color("Paper", bundle: assets)
-        let face = TickFace(.working)
         Grid(horizontalSpacing: 18, verticalSpacing: 14) {
-            ForEach(Array(WorkoutSamples.stances.enumerated()), id: \.offset) { _, sample in
+            ForEach(Array((WorkoutSamples.stances + WorkoutSamples.faces).enumerated()), id: \.offset) { _, sample in
+                let face = sample.face
                 GridRow {
                     Text(sample.name).font(.system(size: 15, weight: .semibold))
                     TickFigure(rig: sample.rig, face: face, palette: palette, progress: 0.6).frame(width: 180, height: 180)
