@@ -30,6 +30,8 @@ struct TickParts: View, Animatable {
         ZStack(alignment: .topLeading) {
             if case .glyph(let mouth) = detail {
                 TickGlyphPart(look: look, mouth: mouth)
+            } else if detail == .face {
+                TickFacePart(look: look)
             } else {
                 TickGroundPart(look: look)
                 TickLegsPart(look: look)

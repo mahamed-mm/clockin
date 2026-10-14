@@ -146,8 +146,11 @@ struct TodayWidgetView: View {
         HStack(spacing: 18) {
             ZStack {
                 miniDial
+                // Its ring shows the time left as of this entry.
                 TickBadge(pose: TickPose.forWidget(entry.active, at: entry.date,
-                                                   hour: Calendar.current.component(.hour, from: entry.date)))
+                                                   hour: Calendar.current.component(.hour, from: entry.date)),
+                          progress: TickPose.ringProgress(for: entry.active.map(SessionStage.active) ?? .idle,
+                                                          at: entry.date))
                     .frame(width: 50, height: 50)
             }
             .frame(width: 104, height: 104)

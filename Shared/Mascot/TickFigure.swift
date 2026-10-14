@@ -140,6 +140,9 @@ enum TickDetail: Equatable, Sendable {
     /// Under 40 pt: ring, crown and eyes, plus a mouth from 14 pt. The
     /// smallest is solid shapes only.
     case glyph(mouth: Bool)
+    /// Just the face, eyes and mouth, for inside a ring the system draws
+    /// (a live countdown on the Lock Screen and in the Dynamic Island).
+    case face
 
     static func fitting(points: Double) -> TickDetail {
         if points >= 120 { return .handmade }

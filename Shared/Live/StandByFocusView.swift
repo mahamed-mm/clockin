@@ -23,7 +23,8 @@ struct StandByFocusView: View {
                 .frame(width: 116, height: 116)
                 // Tick leans on the dial, as in the app.
                 .overlay(alignment: .bottomTrailing) {
-                    TickBadge(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done))
+                    TickLiveGlyph(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done),
+                                  reading: reading, phase: state.phase)
                         .frame(width: 46, height: 46)
                         .offset(x: 16, y: 10)
                 }

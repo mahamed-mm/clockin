@@ -55,3 +55,21 @@ struct TickGlyphPart: View {
         }
     }
 }
+
+/// Tick's face filling the square, for inside a ring the system draws:
+/// the face, cheeks, eyes and mouth, large enough to read at 16 pt.
+struct TickFacePart: View {
+    let look: TickLook
+
+    var body: some View {
+        let c = CGPoint(x: 50, y: 50)
+        var cheeks = Path()
+        for x in [24.0, 76.0] { cheeks.addEllipse(in: CGRect(x: x - 7, y: 58, width: 14, height: 8)) }
+        return ZStack(alignment: .topLeading) {
+            Ink(TickPath.circle(c, 48)).fill(look.palette.face)
+            Ink(cheeks).fill(look.palette.cheeks)
+            TickEyesPart(look: look, center: CGPoint(x: c.x, y: c.y - 6), scale: 2)
+            TickMouthPart(look: look, center: CGPoint(x: c.x, y: c.y + 16), scale: 2)
+        }
+    }
+}

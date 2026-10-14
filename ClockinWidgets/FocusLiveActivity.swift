@@ -19,7 +19,8 @@ struct FocusLiveActivity: Widget {
                     Label {
                         Text(state.phase.label)
                     } icon: {
-                        TickBadge(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done))
+                        TickLiveGlyph(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done),
+                                      reading: TimerReading(state: state, done: done), phase: state.phase, crown: false)
                             .frame(width: 26, height: 26)
                     }
                     .font(.retro(.label))
@@ -49,9 +50,10 @@ struct FocusLiveActivity: Widget {
                     .padding(.horizontal, 8)
                 }
             } compactLeading: {
-                // Tick's face: its eyes and ring say how things stand.
-                TickBadge(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done))
-                    .frame(width: 22, height: 22)
+                // Tick's face in a live ring: its eyes and the time left say how things stand.
+                TickLiveGlyph(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done),
+                              reading: TimerReading(state: state, done: done), phase: state.phase, crown: false)
+                    .frame(width: 24, height: 24)
                     .accessibilityElement()
                     .accessibilityLabel(cardStatus(state, done: done))
             } compactTrailing: {
@@ -61,24 +63,11 @@ struct FocusLiveActivity: Widget {
                     .frame(maxWidth: 52)
                     .foregroundStyle(tint)
             } minimal: {
-                // Sharing the island: Tick's face inside the time-left ring.
-                let tick = TickBadge(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done))
-                if let end = state.endDate, !done {
-                    ProgressView(timerInterval: state.timerRange, countsDown: true) {
-                        EmptyView()
-                    } currentValueLabel: {
-                        tick.frame(width: 16, height: 16)
-                    }
-                    .progressViewStyle(.circular)
-                    .tint(tint)
-                    .id(end)
+                // Sharing the island: Tick's face inside the live ring.
+                TickLiveGlyph(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done),
+                              reading: TimerReading(state: state, done: done), phase: state.phase, crown: false)
                     .accessibilityElement()
-                    .accessibilityLabel(state.phase.label)
-                } else {
-                    tick.frame(width: 22, height: 22)
-                        .accessibilityElement()
-                        .accessibilityLabel(cardStatus(state, done: done))
-                }
+                    .accessibilityLabel(cardStatus(state, done: done))
             }
             .keylineTint(tint)
             .widgetURL(URL(string: "clockin://focus"))
@@ -131,8 +120,9 @@ private struct LockScreenFocusView: View {
                 LiveDial(reading: TimerReading(state: state, done: done), phase: state.phase)
                     .frame(width: 76, height: 76)
                     .overlay(alignment: .bottomTrailing) {
-                        TickBadge(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done))
-                            .frame(width: 30, height: 30)
+                        TickLiveGlyph(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done),
+                                      reading: TimerReading(state: state, done: done), phase: state.phase)
+                            .frame(width: 32, height: 32)
                             .offset(x: 9, y: 7)
                     }
                 VStack(alignment: .leading, spacing: 2) {

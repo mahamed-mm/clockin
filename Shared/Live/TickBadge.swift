@@ -10,6 +10,10 @@ import WidgetKit
 /// Live Activity surface.
 struct TickBadge: View {
     let pose: TickPose
+    /// Nil picks the detail from the size.
+    var detail: TickDetail? = nil
+    /// The ring's time left; the character sheet's own when nil.
+    var progress: Double? = nil
     @Environment(\.widgetRenderingMode) private var renderingMode
     @Environment(\.displayScale) private var displayScale
     @Environment(\.colorScheme) private var colorScheme
@@ -35,7 +39,7 @@ struct TickBadge: View {
     }
 
     private var figure: TickFigure {
-        TickFigure(pose: pose, palette: renderingMode == .fullColor ? .standard : .monochrome)
+        TickFigure(pose: pose, palette: palette, detail: detail, progress: progress)
     }
 
     /// Tick at this size, keeping the detail the size calls for.
@@ -47,6 +51,82 @@ struct TickBadge: View {
         renderer.scale = displayScale
         renderer.isOpaque = false
         return renderer.uiImage
+    }
+}
+
+extension TickBadge {
+    var palette: TickPalette { renderingMode == .fullColor ? .standard : .monochrome }
+}
+
+/// Tick on the Lock Screen and in the Dynamic Island, where it can't
+/// move: its face, still, inside a live ring the system draws, so the time
+/// left keeps moving. The ring drains through focus and fills through a
+/// break; it's gold when done and red while the alarm rings. With room,
+/// the crown sits on top.
+struct TickLiveGlyph: View {
+    let pose: TickPose
+    let reading: TimerReading
+    let phase: SessionPhase
+    var crown = true
+    @Environment(\.widgetRenderingMode) private var renderingMode
+
+    var body: some View {
+        GeometryReader { proxy in
+            let side = min(proxy.size.width, proxy.size.height)
+            let ringSide = crown ? side * 0.84 : side
+            ZStack(alignment: .top) {
+                ring
+                    .overlay { TickBadge(pose: pose, detail: .face).padding(ringSide * 0.09) }
+                    .frame(width: ringSide, height: ringSide)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                if crown { crownShape(width: ringSide * 0.42) }
+            }
+            .frame(width: side, height: side)
+            .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .accessibilityHidden(true)
+    }
+
+    private var palette: TickPalette { renderingMode == .fullColor ? .standard : .monochrome }
+
+    private var tint: Color {
+        switch pose {
+        case .done, .streak: palette.doneGold
+        case .ringing: palette.ringingRed
+        default: palette.ring
+        }
+    }
+
+    @ViewBuilder
+    private var ring: some View {
+        Group {
+            switch (pose, reading) {
+            case (.ringing, _), (_, .done):
+                ProgressView(value: 1)
+            case (_, .running(let range)):
+                ProgressView(timerInterval: range, countsDown: phase == .focus) {
+                    EmptyView()
+                } currentValueLabel: {
+                    EmptyView()
+                }
+            case (_, .paused(let fraction, _)):
+                ProgressView(value: phase == .focus ? fraction : 1 - fraction)
+            }
+        }
+        .progressViewStyle(.circular)
+        .tint(tint)
+    }
+
+    /// The crown on its stem, in the ring's colours.
+    private func crownShape(width: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: width * 0.18)
+                .fill(palette.crown)
+                .overlay { RoundedRectangle(cornerRadius: width * 0.18).strokeBorder(palette.eyes, lineWidth: max(1, width * 0.08)) }
+                .frame(width: width, height: width * 0.5)
+            Rectangle().fill(palette.ring).frame(width: width * 0.36, height: width * 0.34)
+        }
     }
 }
 
