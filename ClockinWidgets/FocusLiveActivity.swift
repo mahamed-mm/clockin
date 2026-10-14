@@ -61,19 +61,22 @@ struct FocusLiveActivity: Widget {
                     .frame(maxWidth: 52)
                     .foregroundStyle(tint)
             } minimal: {
+                // Sharing the island: Tick's face inside the time-left ring.
+                let tick = TickBadge(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done))
                 if let end = state.endDate, !done {
                     ProgressView(timerInterval: state.timerRange, countsDown: true) {
                         EmptyView()
                     } currentValueLabel: {
-                        Image(systemName: state.phase.symbol).font(.caption2)
+                        tick.frame(width: 16, height: 16)
                     }
                     .progressViewStyle(.circular)
                     .tint(tint)
                     .id(end)
+                    .accessibilityElement()
                     .accessibilityLabel(state.phase.label)
                 } else {
-                    // Says what the glyph means, so "pause.fill" isn't read as a Pause button.
-                    Image(systemName: done ? "checkmark" : "pause.fill").foregroundStyle(tint)
+                    tick.frame(width: 22, height: 22)
+                        .accessibilityElement()
                         .accessibilityLabel(cardStatus(state, done: done))
                 }
             }
