@@ -149,4 +149,26 @@ struct IntentTests {
         #expect(IntentOutcome.paused(remaining: 720).dialog == "Paused. 12 minutes left.")
         #expect(IntentOutcome.finished(kept: 840).dialog == "Stopped. 14 minutes of focus kept.")
     }
+
+    #if compiler(>=6.4)
+    @Test func aSessionReadsAsSirisTimer() throws {
+        guard #available(iOS 27, *) else { return }
+        let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        var session = ActiveSession(id: UUID(), name: "Essay", phase: .focus, plannedDuration: 1500,
+                                    focusStartedAt: now.addingTimeInterval(-600),
+                                    state: .running(endDate: now.addingTimeInterval(900)))
+        var timer = FocusTimerEntity(session, now: now)
+        #expect(timer.id == session.id)
+        #expect(timer.duration == .seconds(1500))
+        #expect(timer.durationRemaining == .seconds(900))
+        #expect(timer.label == "Essay")
+        #expect(timer.state == .running)
+
+        session.state = .paused(remaining: 300)
+        timer = FocusTimerEntity(session, now: now)
+        #expect(timer.state == .paused)
+        session.state = .running(endDate: now.addingTimeInterval(-1))
+        #expect(FocusTimerEntity(session, now: now).state == .firing)
+    }
+    #endif
 }

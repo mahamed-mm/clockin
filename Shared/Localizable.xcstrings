@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@" : {
+
+    },
     "%@ focus · %@ break" : {
       "localizations" : {
         "en" : {
@@ -724,6 +727,9 @@
     "Stop Focus" : {
 
     },
+    "Stopped" : {
+
+    },
     "Stopped. %@ of focus kept." : {
 
     },
@@ -755,6 +761,9 @@
 
     },
     "Time for a %lld-second break." : {
+
+    },
+    "Time's up" : {
 
     },
     "Timer" : {
