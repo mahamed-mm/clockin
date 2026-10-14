@@ -18,6 +18,11 @@ struct HistoryView: View {
     /// The month's day being opened, which morphs into its week column.
     @State private var morphDay: Date?
     @Namespace private var morph
+    /// The session whose card is open. Presented from the list itself, not
+    /// a row, which scrolls away (and once each day's section tried it too).
+    @State private var opened: OpenedCard?
+    /// The card zooms out of its row.
+    @Namespace private var zoom
 
     private static var newestFirst: FetchDescriptor<FocusRecord> { firstRecord(order: .reverse) }
     private static var oldestFirst: FetchDescriptor<FocusRecord> { firstRecord(order: .forward) }
@@ -57,7 +62,7 @@ struct HistoryView: View {
                             HistoryWeek(week: week, today: services.today, calendar: services.calendar,
                                         canGoBack: canGoBack, canGoForward: canGoForward, page: page,
                                         scroll: scroll, pickedDay: $pickedDay, morph: reduceMotion ? nil : morph,
-                                        modePicker: AnyView(modePicker))
+                                        modePicker: AnyView(modePicker), opened: $opened, zoom: zoom)
                         case .month:
                             HistoryMonth(month: month, today: services.today, calendar: services.calendar,
                                          canGoBack: canGoBackMonth, canGoForward: canGoForwardMonth,
@@ -83,6 +88,16 @@ struct HistoryView: View {
                     }
                 }
                 .scrollContentBackground(.hidden)
+            }
+            .sheet(item: $opened) { card in
+                let summary = card.summary
+                SessionCard(summary: summary, now: services.today, calendar: services.calendar,
+                            symbol: services.symbol(for: summary.name), opening: card.mode,
+                            rename: { services.renameSession(summary.id, to: $0) },
+                            setSymbol: { services.setSymbol($0, for: summary.name) },
+                            delete: { services.deleteSessions([summary.id]) })
+                    .fittedSheet()
+                    .modifier(ZoomFromRow(id: card.id, in: zoom, enabled: card.fromRow && !reduceMotion))
             }
             // The same edge as the Focus screen, so the titles line up.
             .contentMargins(.horizontal, Space.gutter, for: .scrollContent)
@@ -265,12 +280,13 @@ private struct HistoryWeek: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
     /// The session whose card is open, and how.
-    @State private var opened: OpenedCard?
+    @Binding var opened: OpenedCard?
+    let zoom: Namespace.ID
     @Environment(\.showFocus) private var showFocus
 
     init(week: DateInterval, today: Date, calendar: Calendar, canGoBack: Bool, canGoForward: Bool,
          page: @escaping (Int) -> Void, scroll: ScrollViewProxy, pickedDay: Binding<Date?>, morph: Namespace.ID?,
-         modePicker: AnyView) {
+         modePicker: AnyView, opened: Binding<OpenedCard?>, zoom: Namespace.ID) {
         self.week = week
         self.today = today
         self.calendar = calendar
@@ -281,6 +297,8 @@ private struct HistoryWeek: View {
         _pickedDay = pickedDay
         self.morph = morph
         self.modePicker = modePicker
+        _opened = opened
+        self.zoom = zoom
         _records = Query(filter: FocusRecord.completed(in: week), sort: \.completedAt, order: .reverse)
     }
 
@@ -337,10 +355,15 @@ private struct HistoryWeek: View {
             Section {
                 ForEach(Array(group.records.enumerated()), id: \.element.id) { rowIndex, record in
                     // A real button, so Full Keyboard Access and Switch Control reach it too.
-                    Button { opened = OpenedCard(SessionSummary(record)) } label: {
+                    Button { opened = OpenedCard(SessionSummary(record), fromRow: true) } label: {
                         SessionRow(record: record)
                             .contentShape(.rect)
                     }
+                    .matchedTransitionSource(id: record.id, in: zoom)
+                    // The open card's row stays lit, so it's clear where the card came from.
+                    .listRowBackground(Retro.paperDeep.opacity(0.6)
+                        .overlay(Retro.ink.opacity(opened?.id == record.id ? 0.08 : 0))
+                        .animation(Motion.calm(reduceMotion), value: opened?.id))
                     .buttonStyle(.plain)
                     .accessibilityHint(String(localized: "Shows the session, to rename or delete it"))
                     .accessibilityInputLabels([Copy.displayName(record.name)])
@@ -374,15 +397,6 @@ private struct HistoryWeek: View {
             }
             .listRowBackground(Retro.paperDeep.opacity(0.6))
             .id(Self.sectionID(group.day))
-        }
-        .sheet(item: $opened) { card in
-            let summary = card.summary
-            SessionCard(summary: summary, now: today, calendar: calendar,
-                        symbol: services.symbol(for: summary.name), opening: card.mode,
-                        rename: { services.renameSession(summary.id, to: $0) },
-                        setSymbol: { services.setSymbol($0, for: summary.name) },
-                        delete: { services.deleteSessions([summary.id]) })
-                .fittedSheet()
         }
     }
 
@@ -541,10 +555,35 @@ private struct SessionRow: View {
 struct OpenedCard: Identifiable {
     var summary: SessionSummary
     var mode: SessionCard.Mode = .viewing
+    /// Tapped in the list, so it can zoom out of its row.
+    var fromRow = false
     var id: UUID { summary.id }
 
-    init(_ summary: SessionSummary, mode: SessionCard.Mode = .viewing) {
+    init(_ summary: SessionSummary, mode: SessionCard.Mode = .viewing, fromRow: Bool = false) {
         self.summary = summary
         self.mode = mode
+        self.fromRow = fromRow
     }
 }
+
+/// Opens the card out of its row; with Reduce Motion, the plain sheet.
+private struct ZoomFromRow: ViewModifier {
+    let id: UUID
+    let namespace: Namespace.ID
+    let enabled: Bool
+
+    init(id: UUID, in namespace: Namespace.ID, enabled: Bool) {
+        self.id = id
+        self.namespace = namespace
+        self.enabled = enabled
+    }
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content.navigationTransition(.zoom(sourceID: id, in: namespace))
+        } else {
+            content
+        }
+    }
+}
+
