@@ -17,7 +17,8 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 - **Calm while it runs:** eight seconds after your last touch, everything round a running dial fades back to the countdown and Pause; a tap brings it back. It stays put while paused, in the last five minutes and with VoiceOver or Switch Control. A paused dial goes still and sepia, and the header says when you paused.
 - **Survives relaunch:** the timer is date-based, so a running session is restored exactly after the app is closed or the phone restarts. A session that finished while the app was closed opens quietly, saying when it finished.
 - **Keeps up with the clock:** "today" moves on at midnight, and on time zone and clock changes, everywhere at once. Setting the clock back can't add time to a session.
-- **History:** today's focused minutes, then a week at a time as session columns and sessions by day, paging back to the first one. Tap a session for its card: when it ran, focused and planned minutes, how it ended, any extra minutes beyond the plan and whether it counts toward the set, with Rename and Delete. Swipe to delete too; both offer Undo. Under the week, one line sums it up ("Mostly mornings this week; Tuesday was your longest day."). On iPhones with Apple Intelligence the on-device model writes it, from session times and lengths only, never names; everywhere else it's a fixed sentence.
+- **A symbol for each name:** every session name gets a small symbol, guessed from the name ("Chemistry" a flask, "Spanish vocab" a globe, "Les" a stack of books, in English and Norwegian) and changed from 24 in a glass grid: tap the symbol at the start of the name field, or Change symbol on a session's card. It belongs to the name, so it shows on every session with it, past and future, in the field, the running session, the summary, History, the recent names, the Live Activity and the widgets. Unnamed sessions keep the book.
+- **History:** today's focused minutes, then a week at a time as session columns and sessions by day, paging back to the first one. Tap a day to see it as a ribbon of its sessions, from start to end, in the order they filled the set; tap a block to open it. Week or Month: the month is a calendar of small dials, each filled to that day's sessions out of four, and a day opens its week. "By subject" shows where the week's time went, by name. Tap a session for its card, which zooms out of the row: when it ran, focused and planned minutes, how it ended, any extra minutes beyond the plan and whether it counts toward the set, with Rename, Change symbol and Delete. Long-press a session for the same, plus Start again, which sets Focus up with its name and length. Swipe to delete too; both offer Undo. Under the week, one line sums it up ("Mostly mornings this week; Tuesday was your longest day."). On iPhones with Apple Intelligence the on-device model writes it, from session times and lengths only, never names or symbols; everywhere else it's a fixed sentence.
 - **Appearance:** System, Light or Dark in Settings, following the phone by default. The paper has a faint, still grain (none with Increase Contrast), and the dial's track a hint of Bakelite shine.
 - **Kitchen-timer sounds:** a ratchet click for each five-minute detent of the knob, a wind-up and click on Start, a soft clunk on Pause and a lighter click on Resume. They're system sounds, so Silent mode mutes them and they never stop or duck your music, and they only play for what you do in the app (not Siri, Shortcuts or the Lock Screen). Settings › Sounds turns them off.
 - **English and Norwegian:** every screen, the widget, alerts, Siri phrases and permission prompts. On a Norwegian phone the week line is written in Norwegian when the on-device model can, and is the fixed Norwegian sentence when it can't.
@@ -28,7 +29,7 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 - **Rings on time:** turn on "Ring when time's up" and the end of a session or break is an AlarmKit alarm: it sounds through Silent mode and a Focus, repeating Clockin's chime until you stop it, and after focus it offers Start break right on the alarm. Pause, +5 min and Finish now move or take it away. Without it, a notification plays the same chime. If alarms are turned off for Clockin, Settings and the Focus screen say so and link to the switch.
 - **Live Activity:** a Lock Screen card and Dynamic Island with a live countdown and a pause/resume button that works without opening the app.
 - **StandBy and bedside mode:** a full-screen bedside clock when the phone is charging on its side, and a bedside clock inside the app: open it from Settings during a session (it turns the screen even with orientation lock on) or turn the phone on its side. It uses a night palette, and the screen stays on only while the clock runs.
-- **Home Screen widget:** today's progress in small and medium sizes, including tinted and clear Home Screens; tapping it opens the Focus screen. In History, a running session floats above the tab bar; a tap goes back to Focus.
+- **Widgets:** today's progress on the Home Screen in small, medium and large, including tinted and clear Home Screens, each with a button that does what the app's big button would (start, pause, resume or start the break) without opening it. The large one adds the week's pills and today's sessions with their symbols. On the Lock Screen: Tick in a ring of the time left (or today's sessions out of four), today's minutes and pills or the running session's countdown, and a line above the clock ("1 h 9 min today", "Chemistry · 12:30 left"); session names hide while the phone is locked if you ask the Lock Screen to. Tapping a widget opens the Focus screen. In History, a running session floats above the tab bar; a tap goes back to Focus.
 - **Feel:** subtle haptics on every transition, a custom Core Haptics pattern and a sunburst when a session completes, the finished session's pill filling like liquid, and calm fallbacks when Reduce Motion is on.
 - **Easy on the battery:** screens redraw only when something on them changes, so a paused or idle timer draws nothing. Low Power Mode and a hot phone stop the decoration.
 
@@ -38,6 +39,7 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 - **VoiceOver:** the dial says "24 minutes left", updating about once a minute, with Pause/Resume as an action and on the magic tap. While waiting, swipe up or down on it to change the length by five minutes. Durations are read in words, the week strip names each date and says "today", and every widget and Lock Screen surface has its own labels.
 - **Voice Control:** every control answers to what's on screen, e.g. "Tap What are you focusing on" or "Tap Add 5 minutes".
 - **Large text:** the Focus screen scrolls rather than pushing controls off-screen, even at the largest sizes on an iPhone SE. Rows and the completion summary stack, and icon-only buttons offer the Large Content Viewer.
+- **History:** each block on a day's ribbon is a button that reads its name and times ("Chemistry, 19:00 to 19:25"), each day of the month reads its date and sessions, and a session's long-press actions are VoiceOver actions too. At the largest text sizes the month is a list of its days.
 - **Breaks:** while stretching or breathing, the dial says which stretch it is ("Stretch, 2 of 4, shoulder shrug") or the pace ("Breathe, in for 4 seconds, out for 6") without announcing every move or breath.
 - **Reduce Motion and Differentiate Without Color:** every animation has a calm fallback, and the session in progress is a dashed pill, not just a different colour.
 
@@ -51,13 +53,17 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 |:---:|:---:|:---:|
 | <img src="docs/screenshots/break-stretch.png" width="250" alt="A break with Tick leading a neck roll, the stretch named on the dial"> | <img src="docs/screenshots/break-breathe.png" width="250" alt="A break spent breathing, with a soft halo round the dial and Breathe out on it"> | <img src="docs/screenshots/break-over.png" width="250" alt="Break's over, naming the next session, with Tick ready"> |
 
-| History | Session card | Settings |
+| History | Month | Long-press |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/history.png" width="250" alt="History with the week's session columns and a line about the week"> | <img src="docs/screenshots/session-card.png" width="250" alt="A session's card, with Rename and Delete"> | <img src="docs/screenshots/settings.png" width="250" alt="Settings with the mascot during focus, during breaks and timer sounds"> |
+| <img src="docs/screenshots/history.png" width="250" alt="History with the week's session columns, today's ribbon of sessions and the week by subject"> | <img src="docs/screenshots/history-month.png" width="250" alt="The month as a calendar of small dials filled in the set's colours"> | <img src="docs/screenshots/history-menu.png" width="250" alt="A session's long-press menu: Rename, Change symbol, Start again and Delete"> |
 
-| Lock Screen | Home Screen widget |
+| Session card | Settings | Lock Screen |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/session-card.png" width="250" alt="A session's card with its symbol, and Rename, Change symbol and Delete"> | <img src="docs/screenshots/settings.png" width="250" alt="Settings with the mascot during focus, during breaks and timer sounds"> | <img src="docs/screenshots/lock-screen.png" width="250" alt="Live Activity on the Lock Screen, with Tick on the dial"> |
+
+| Lock Screen widgets | Home Screen widgets |
 |:---:|:---:|
-| <img src="docs/screenshots/lock-screen.png" width="250" alt="Live Activity on the Lock Screen, with Tick on the dial"> | <img src="docs/screenshots/widget.png" width="250" alt="Medium widget on the Home Screen"> |
+| <img src="docs/screenshots/lock-screen-widgets.png" width="250" alt="Clockin's Lock Screen widgets: today's minutes above the clock, minutes and pills, and Tick in a ring"> | <img src="docs/screenshots/widget.png" width="250" alt="The large and medium widgets on the Home Screen, each with a Start button"> |
 
 | Bedside clock | Dynamic Island |
 |:---:|:---:|
@@ -123,7 +129,7 @@ Debug builds accept these launch arguments (Product → Scheme → Edit Scheme �
 |---|---|
 | `-ShortTimers` | 10-second focus and 5-second break (15-second long break), for this run only |
 | `-SlowAnimations` | Plays every animation 4× slower |
-| `-DemoData` | Fills an empty store with a week of sample sessions and hides the debug menu |
+| `-DemoData` | Fills an empty store with six weeks of sample sessions and a few symbol picks, and hides the debug menu and the alert hints |
 | `-DemoFinishing` | Starts a 25-minute session that ends 3 seconds after launch |
 | `-DemoOvertime` | A 25-minute session that ended four minutes before launch, for the overtime screen |
 | `-DemoBreak` | A break halfway through (seconds long with `-ShortTimers`); add `-DemoBreakStyle stretch` or `breathe` to spend it that way from launch |
@@ -155,7 +161,7 @@ Logs go to the unified log under the subsystem `com.moha.clockin` (categories `s
 - History is a SwiftData store with a versioned schema (`Shared/Model/ClockinSchema.swift`). Never edit a shipped version. Add a new one and a migration stage instead. V2 added planned length, time zone and outcome, all optional, with a lightweight migration from 1.0.
 - Settings are saved as JSON in the App Group's defaults and always load: a missing or unknown value falls back to its default (during breaks falls back to Rest, timer sounds to on).
 - The running session is saved as JSON in the App Group's defaults. Fields added after 1.0 must be optional. Format 4 added a break's style and when it began (an unknown style reads as Rest) and the "Break's over" moment; older state loads with none.
-- The widget doesn't open the store. The app writes today's totals to the App Group (`Shared/Store/WidgetSnapshot.swift`) after every change; until it has, the widget reads the store read-only, so it can never run a migration.
+- The widget doesn't open the store. The app writes today's sessions (with their names and symbols) and the week's totals to the App Group (`Shared/Store/WidgetSnapshot.swift`) after every change; fields added later are optional, so an older snapshot still reads. Until the app has written one, the widget reads today from the store read-only, so it can never run a migration.
 - `ClockinTests/StoreCompatibilityTests.swift` checks both against real data written by 1.0, including `ClockinTests/Fixtures/ClockinV1.store`, which it migrates to V2.
 - Each session name's symbol is saved as JSON in the App Group's defaults (`Shared/Store/SymbolBook.swift`), keyed by the name ignoring case and extra spaces. Only picked symbols are saved; a missing or unknown one shows the book. Picks for names no session has any more are dropped, and Erase all history clears them.
 - Backups (`Clockin/Settings/HistoryExport.swift`) carry a format number. A restore matches sessions by id, so restoring the same backup twice changes nothing. Format 2 added each name's symbol: format 1 backups still restore, a restore never replaces a symbol picked on this phone, and a backup from a newer format says so instead of failing.
