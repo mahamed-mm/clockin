@@ -144,14 +144,21 @@ struct FocusView: View {
         return ScrollView {
             VStack(spacing: Self.spacing) {
                 FocusHeader(stage: engine.stage)
+                    .fixedSize(horizontal: false, vertical: true)
                     .measuredHeight($headerHeight)
                     .opacity(chromeOpacity)
                 DialFace(stage: engine.stage, size: side, celebration: services.celebrations)
                     .frame(maxWidth: .infinity)
                 sessionSlot
+                    // Its natural height, whatever room the dial leaves: text
+                    // that may shrink to fit would otherwise shrink as the dial
+                    // grows, and the dial and the slot would resize each other
+                    // forever.
+                    .fixedSize(horizontal: false, vertical: true)
                     .measuredHeight($slotHeight)
                     .opacity(chromeOpacity)
                 controls
+                    .fixedSize(horizontal: false, vertical: true)
                     .measuredHeight($controlsHeight)
             }
             .padding(Self.margins)
