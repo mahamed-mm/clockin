@@ -37,6 +37,8 @@
 	<false/>
 	<key>NSAlarmKitUsageDescription</key>
 	<string>Clockin rings when a session or break is over, even on silent.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Clockin saves finished focus sessions to Health as Mindful Minutes.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIAppFonts</key>

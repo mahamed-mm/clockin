@@ -220,6 +220,12 @@ struct SettingsSheet: View {
 
     private var data: some View {
         Section {
+            Toggle(isOn: Binding(get: { services.settings.saveToHealth },
+                                 set: { on in Task { await services.setSaveToHealth(on) } })) {
+                RowLabel("Save to Apple Health", symbol: "heart.text.square")
+            }
+            .tint(Retro.orange)
+            .listRowBackground(rowBackground)
             Group {
                 Button { export(.commaSeparatedText) } label: {
                     RowLabel("Export as CSV", symbol: "tablecells")
@@ -240,7 +246,14 @@ struct SettingsSheet: View {
         } header: {
             Text("Your data").retroLabel()
         } footer: {
-            Text("CSV opens in Numbers or Excel. A backup restores here, keeping the sessions you already have.")
+            VStack(alignment: .leading, spacing: Space.xs) {
+                if services.healthPermission == .denied {
+                    Text("Health access is off for Clockin. Turn it on in the Health app: your profile › Apps › Clockin.")
+                } else {
+                    Text("Finished focus sessions appear in Health as Mindful Minutes. Clockin doesn't read anything from Health.")
+                }
+                Text("CSV opens in Numbers or Excel. A backup restores here, keeping the sessions you already have.")
+            }
         }
         .confirmationDialog("Erase all history?", isPresented: $confirmingErase, titleVisibility: .visible) {
             Button("Erase All", role: .destructive) { services.eraseHistory() }

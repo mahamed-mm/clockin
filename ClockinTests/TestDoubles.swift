@@ -106,6 +106,28 @@ final class SpyAlarm: EndAlarming {
 }
 
 @MainActor
+final class SpyMindful: MindfulLogging {
+    var permission: HealthPermission = .authorized
+    /// What the permission prompt would answer.
+    var answer: HealthPermission = .authorized
+    var asked = 0
+    var saved: [CompletedFocus] = []
+    var removed: [UUID] = []
+    var removedAll = 0
+    var flushes = 0
+
+    func requestPermission() async -> HealthPermission {
+        asked += 1
+        permission = answer
+        return answer
+    }
+    func save(_ focus: CompletedFocus) { saved.append(focus) }
+    func remove(ids: [UUID]) { removed += ids }
+    func removeAll() { removedAll += 1 }
+    func flush() async { flushes += 1 }
+}
+
+@MainActor
 final class SpyWidgets: WidgetReloading {
     var reloads = 0
     var lastSnapshot: WidgetSnapshot?

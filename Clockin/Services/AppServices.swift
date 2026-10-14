@@ -81,6 +81,7 @@ final class AppServices: SessionEffects {
     @ObservationIgnored private let liveActivity: LiveActivityControlling
     @ObservationIgnored private let notifications: EndNotifying
     @ObservationIgnored private let alarm: EndAlarming
+    @ObservationIgnored private let mindful: MindfulLogging
     @ObservationIgnored private let widgets: WidgetReloading
     @ObservationIgnored private let haptics: CompletionFeedback
     @ObservationIgnored private let announce: @MainActor (String) -> Void
@@ -109,6 +110,7 @@ final class AppServices: SessionEffects {
          liveActivity: LiveActivityControlling,
          notifications: EndNotifying,
          alarm: EndAlarming = NoAlarm(),
+         mindful: MindfulLogging = NoMindfulLog(),
          widgets: WidgetReloading,
          haptics: CompletionFeedback,
          announce: @escaping @MainActor (String) -> Void) {
@@ -117,6 +119,7 @@ final class AppServices: SessionEffects {
         self.liveActivity = liveActivity
         self.notifications = notifications
         self.alarm = alarm
+        self.mindful = mindful
         self.widgets = widgets
         self.haptics = haptics
         self.announce = announce
@@ -150,7 +153,8 @@ final class AppServices: SessionEffects {
                                    stateStore: DefaultsSessionStateStore(), settingsStore: DefaultsSettingsStore(),
                                    power: PowerState(),
                                    liveActivity: LiveActivityController(), notifications: EndNotifier(),
-                                   alarm: EndAlarm(), widgets: SystemWidgets(), haptics: CompletionHaptics(),
+                                   alarm: EndAlarm(), mindful: MindfulMinutes(), widgets: SystemWidgets(),
+                                   haptics: CompletionHaptics(),
                                    announce: { AccessibilityNotification.Announcement($0).post() })
         IntentBridge.setPaused = { [weak services] paused, sessionID in
             await services?.lockScreenSetPaused(paused, sessionID: sessionID)
@@ -229,6 +233,7 @@ final class AppServices: SessionEffects {
             if freshness == .live {
                 announce("\(Copy.focusComplete). \(Copy.breakLine(seconds: breakLength))")
             }
+            saveFinishedToHealth()
         case .finishedEarly:
             // Finished by hand in the app: no alert to come, no ding, and
             // no card left on the Lock Screen.
@@ -236,11 +241,14 @@ final class AppServices: SessionEffects {
             let breakLength = engine.stage.completedFocus.map(engine.breakLength(after:)) ?? plan.shortBreak
             liveActivity.showFocusDone(completedToday: completedToday, breakDuration: breakLength, lingers: false)
             announce("\(Copy.endedEarly). \(Copy.breakLine(seconds: breakLength))")
+            saveFinishedToHealth()
         case .breakFinished(let freshness):
             liveActivity.endAll()
             clearLateAlert(freshness)
             if freshness == .live { announce("\(Copy.breakOver). \(Copy.readyWhenYouAre)") }
-        case .historySaved, .overtimeKept:
+        case .overtimeKept:
+            saveFinishedToHealth()
+        case .historySaved:
             break // The widget refresh below picks up the saved sessions' new totals.
         }
         lastEvent = EventStamp(event: event, serial: lastEvent.serial + 1)
@@ -259,6 +267,7 @@ final class AppServices: SessionEffects {
             Log.store.error("Couldn't delete sessions: \(error, privacy: .public)")
             return
         }
+        if writesHealth { mindful.remove(ids: Array(ids)) }
         historyChanged()
         announce(String(localized: "Session deleted. Undo is available for a few seconds."))
         let window = engine.undoWindow()
@@ -279,6 +288,7 @@ final class AppServices: SessionEffects {
             Log.store.error("Couldn't put deleted sessions back: \(error, privacy: .public)")
             return
         }
+        if writesHealth { undoableDeletion.forEach(mindful.save) }
         clearUndoableDeletion()
         historyChanged()
     }
@@ -300,6 +310,7 @@ final class AppServices: SessionEffects {
             Log.store.error("Couldn't erase History: \(error, privacy: .public)")
             return
         }
+        if writesHealth { mindful.removeAll() }
         engine.discardAllPending()
         clearUndoableDeletion()
         historyChanged()
@@ -350,6 +361,8 @@ final class AppServices: SessionEffects {
     func reconcile() {
         engine.reconcile()
         endOrphanedActivities()
+        // Health writes that waited for the phone to be unlocked.
+        if writesHealth { Task { await mindful.flush() } }
         if refreshToday() { resyncSurfaces() }
     }
 
@@ -392,12 +405,14 @@ final class AppServices: SessionEffects {
         await notifications.flush()
         await alarm.flush()
         await liveActivity.flush()
+        await mindful.flush()
     }
 
     /// Re-reads whether alerts and Live Activities are allowed. Called at launch
     /// and on every return to the foreground, which covers coming back from the
     /// permission prompt or from Settings.
     func refreshAlertStatus() async {
+        healthPermission = mindful.permission
         let notificationStatus = await notifications.authorizationStatus()
         let activitiesEnabled = await liveActivity.areActivitiesEnabled()
         if settings.ringAtEnd && alarm.permission == .denied {
@@ -450,6 +465,32 @@ final class AppServices: SessionEffects {
         }
         if let session = engine.active, !session.isPaused { scheduleEndAlert(for: session) }
         await refreshAlertStatus()
+    }
+
+    // MARK: Health
+
+    /// Health access, re-read with the alert status. Observed by Settings.
+    private(set) var healthPermission: HealthPermission = .notDetermined
+
+    /// The toggle is on and Health allows it.
+    private var writesHealth: Bool { settings.saveToHealth && mindful.permission == .authorized }
+
+    /// The session just finished, or just given its overtime, goes to Health.
+    private func saveFinishedToHealth() {
+        guard writesHealth, let focus = engine.stage.completedFocus else { return }
+        mindful.save(focus)
+    }
+
+    /// "Save to Apple Health" in Settings. Turning it on asks the first time;
+    /// refused, the toggle goes back off and Settings says why. Sessions
+    /// finished from now on are written; earlier ones aren't.
+    func setSaveToHealth(_ on: Bool) async {
+        settings.saveToHealth = on
+        if on, mindful.permission == .notDetermined {
+            _ = await mindful.requestPermission()
+        }
+        healthPermission = mindful.permission
+        if on, healthPermission != .authorized { settings.saveToHealth = false }
     }
 
     /// "Start break" on the end-of-focus alarm: starts that session's break,

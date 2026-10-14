@@ -35,6 +35,8 @@ targets:
         # Lets the end alert break through Focus. Needs a paid Apple Developer
         # Program team (free Personal Teams can't sign it), so it's off for now.
         # com.apple.developer.usernotifications.time-sensitive: true
+        # Writes finished focus sessions to Health as Mindful Minutes (opt-in).
+        com.apple.developer.healthkit: true
     info:
       path: Clockin/Info.plist
       properties:
@@ -53,6 +55,7 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         NSSupportsLiveActivities: true
         NSAlarmKitUsageDescription: Clockin rings when a session or break is over, even on silent.
+        NSHealthUpdateUsageDescription: Clockin saves finished focus sessions to Health as Mindful Minutes.
         # Fraunces cuts built by scripts/make-fonts.sh (SIL OFL, Shared/Fonts/OFL.txt).
         UIAppFonts: &fonts
           - FrauncesClockin-Display.ttf

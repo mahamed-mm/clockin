@@ -420,6 +420,9 @@
     "Finished at %@" : {
 
     },
+    "Finished focus sessions appear in Health as Mindful Minutes. Clockin doesn't read anything from Health." : {
+
+    },
     "Finished yesterday at %@" : {
 
     },
@@ -452,6 +455,9 @@
 
     },
     "Haptics lab" : {
+
+    },
+    "Health access is off for Clockin. Turn it on in the Health app: your profile › Apps › Clockin." : {
 
     },
     "History" : {
@@ -647,6 +653,9 @@
 
     },
     "Save name" : {
+
+    },
+    "Save to Apple Health" : {
 
     },
     "Session" : {

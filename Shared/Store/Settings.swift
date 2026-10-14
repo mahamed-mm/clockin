@@ -147,6 +147,8 @@ struct TimerSettings: Codable, Equatable, Sendable {
     /// An alarm at the end of each phase, through Silent and Focus, instead of
     /// a notification. Off until chosen, since it asks for permission.
     var ringAtEnd = false
+    /// Finished focus sessions go to Health as Mindful Minutes. Off until chosen.
+    var saveToHealth = false
 
     init(preset: Preset = .classic, longBreak: Bool = true, appearance: Appearance = .system,
          bedsideWhenSideways: Bool = true) {
@@ -172,7 +174,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case preset, customMinutes, longBreak, appearance, bedsideWhenSideways, weekSummaries, ringAtEnd
+        case preset, customMinutes, longBreak, appearance, bedsideWhenSideways, weekSummaries, ringAtEnd, saveToHealth
     }
 
     init(from decoder: Decoder) throws {
@@ -190,6 +192,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
         bedsideWhenSideways = (try? container.decodeIfPresent(Bool.self, forKey: .bedsideWhenSideways)) ?? true
         weekSummaries = (try? container.decodeIfPresent(Bool.self, forKey: .weekSummaries)) ?? true
         ringAtEnd = (try? container.decodeIfPresent(Bool.self, forKey: .ringAtEnd)) ?? false
+        saveToHealth = (try? container.decodeIfPresent(Bool.self, forKey: .saveToHealth)) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -201,6 +204,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
         try container.encode(bedsideWhenSideways, forKey: .bedsideWhenSideways)
         try container.encode(weekSummaries, forKey: .weekSummaries)
         try container.encode(ringAtEnd, forKey: .ringAtEnd)
+        try container.encode(saveToHealth, forKey: .saveToHealth)
     }
 
     var plan: TimerPlan {
