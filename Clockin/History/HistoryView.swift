@@ -307,6 +307,13 @@ private struct HistoryWeek: View {
                         .id(week.start)
                         .transition(.opacity)
                 }
+                let subjects = subjectTotals
+                if !subjects.top.isEmpty {
+                    WeekSubjects(totals: subjects)
+                        .padding(.top, Space.xs)
+                        .id(week.start)
+                        .transition(.opacity)
+                }
             }
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: Space.xs, leading: 0, bottom: Space.s, trailing: 0))
@@ -416,6 +423,17 @@ private struct HistoryWeek: View {
     private var totals: [DayTotal] {
         TodayStats.weekTotals(saved: records.map(\.row), pending: engine.pendingRecords,
                               containing: week.start, calendar: calendar)
+    }
+
+    /// The week's minutes by name, saved or waiting.
+    private var subjectTotals: SubjectTotals {
+        let savedIDs = Set(records.map(\.id))
+        let waiting = engine.pendingRecords.filter { week.includes($0.completedAt) && !savedIDs.contains($0.id) }
+        return SubjectTotals(records.map {
+            SubjectTotals.Session(name: $0.name, completedAt: $0.completedAt, seconds: $0.focusSeconds)
+        } + waiting.map {
+            SubjectTotals.Session(name: $0.name, completedAt: $0.completedAt, seconds: $0.focusSeconds)
+        })
     }
 
     /// The week's focus, saved or still waiting to be saved, each once.

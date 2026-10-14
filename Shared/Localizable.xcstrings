@@ -869,6 +869,16 @@
         }
       }
     },
+    "By subject" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Etter emne"
+          }
+        }
+      }
+    },
     "CSV opens in Numbers or Excel. A backup restores here, keeping the sessions you already have." : {
       "localizations" : {
         "nb" : {
@@ -2053,6 +2063,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Åpner Innstillinger"
+          }
+        }
+      }
+    },
+    "Other" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Annet"
           }
         }
       }
