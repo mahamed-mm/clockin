@@ -24,12 +24,23 @@ final class HistoryService {
         return removed
     }
 
-    func rename(id: UUID, to name: String) throws {
+    /// Renames a session and returns its old name, or nil if it's gone.
+    @discardableResult
+    func rename(id: UUID, to name: String) throws -> String? {
         var descriptor = FetchDescriptor<FocusRecord>(predicate: #Predicate { $0.id == id })
         descriptor.fetchLimit = 1
-        guard let record = try context.fetch(descriptor).first else { return }
+        guard let record = try context.fetch(descriptor).first else { return nil }
+        let old = record.name
         record.name = ActiveSession.cleanName(name)
         try save()
+        return old
+    }
+
+    /// Every name a saved session has, once each.
+    func distinctNames() throws -> Set<String> {
+        var descriptor = FetchDescriptor<FocusRecord>()
+        descriptor.propertiesToFetch = [\.name]
+        return Set(try context.fetch(descriptor).map(\.name))
     }
 
     /// Deletes every saved session. Returns how many there were.
@@ -84,13 +95,15 @@ final class HistoryService {
         try save()
     }
 
-    /// Recent session names for quick picks: newest first, each once, no
-    /// blanks, leaving out what's already typed.
+    /// Recent session names for quick picks: newest first, each once (as
+    /// last spelled), no blanks, leaving out what's already typed. Names
+    /// match the way their symbols do, ignoring case and extra spaces.
     nonisolated static func recentNames(_ names: [String], excluding typed: String, limit: Int) -> [String] {
-        let current = typed.trimmingCharacters(in: .whitespacesAndNewlines)
-        var seen = Set<String>()
+        var seen: Set<String> = [SymbolBook.key(for: typed)]
         var picks: [String] = []
-        for name in names where !name.isEmpty && name != current && seen.insert(name).inserted {
+        for name in names {
+            let key = SymbolBook.key(for: name)
+            guard !key.isEmpty, seen.insert(key).inserted else { continue }
             picks.append(name)
             if picks.count == limit { break }
         }

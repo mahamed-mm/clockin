@@ -6,8 +6,9 @@ import UniformTypeIdentifiers
 /// restored. With everything on this iPhone and no iCloud, the backup is
 /// how History survives a lost or replaced phone.
 enum HistoryExport {
-    /// Bumped only for changes older builds couldn't read.
-    static let backupFormat = 1
+    /// Bumped for changes older builds couldn't read. Format 2 added each
+    /// name's symbol; format 1 backups still restore, without symbols.
+    static let backupFormat = 2
 
     /// One session in a backup.
     struct Session: Codable, Equatable {
@@ -25,6 +26,8 @@ enum HistoryExport {
         var format: Int
         var exportedAt: Date
         var sessions: [Session]
+        /// The symbol picked for each name, by name. Nil before format 2.
+        var symbols: [String: String]?
     }
 
     enum ImportError: LocalizedError {
@@ -52,12 +55,13 @@ enum HistoryExport {
 
     // MARK: JSON backup
 
-    static func backup(_ sessions: [CompletedFocus], exportedAt: Date) throws -> Data {
+    static func backup(_ sessions: [CompletedFocus], symbols: SymbolBook = SymbolBook(),
+                       exportedAt: Date) throws -> Data {
         let backup = Backup(format: backupFormat, exportedAt: exportedAt, sessions: sessions.map {
             Session(id: $0.id, name: $0.name, startedAt: $0.startedAt, completedAt: $0.completedAt,
                     focusSeconds: $0.focusSeconds, plannedSeconds: $0.plannedSeconds, outcome: $0.outcome?.rawValue,
                     timeZone: $0.timeZoneIdentifier)
-        })
+        }, symbols: symbols.picks)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .custom { date, encoder in
@@ -97,14 +101,20 @@ enum HistoryExport {
         var unchanged = 0
         /// Sessions that didn't make sense (or repeated an id) and are skipped.
         var skipped = 0
+        /// Symbol picks from the backup for names without one on this phone.
+        var symbols: [String: String] = [:]
 
         var changes: [CompletedFocus] { new + updated }
         var isEmpty: Bool { changes.isEmpty }
     }
 
     /// Checks every session and compares it with what's saved, by id.
-    static func plan(_ backup: Backup, existing: [UUID: CompletedFocus], now: Date) -> ImportPlan {
+    static func plan(_ backup: Backup, existing: [UUID: CompletedFocus], symbols: SymbolBook = SymbolBook(),
+                     now: Date) -> ImportPlan {
         var plan = ImportPlan()
+        var merged = symbols
+        merged.merge(backup.symbols ?? [:])
+        plan.symbols = merged.picks.filter { symbols.picks[$0.key] == nil }
         var seen = Set<UUID>()
         for session in backup.sessions {
             guard seen.insert(session.id).inserted, let focus = validated(session, now: now) else {
@@ -144,14 +154,16 @@ enum HistoryExport {
 
     // MARK: CSV
 
-    static let csvHeader = "id,name,started_at,completed_at,focus_seconds,planned_seconds,outcome,time_zone"
+    /// New columns go at the end, so sheets that read by position keep working.
+    static let csvHeader = "id,name,started_at,completed_at,focus_seconds,planned_seconds,outcome,time_zone,symbol"
 
     /// One row per session, oldest first, for Numbers or Excel. Export only.
-    static func csv(_ sessions: [CompletedFocus]) -> String {
+    static func csv(_ sessions: [CompletedFocus], symbols: SymbolBook = SymbolBook()) -> String {
         let rows = sessions.map { focus in
             [focus.id.uuidString, csvField(focus.name), dateString(focus.startedAt), dateString(focus.completedAt),
              number(focus.focusSeconds), focus.plannedSeconds.map(number) ?? "",
-             (focus.outcome ?? .completed).rawValue, focus.timeZoneIdentifier ?? ""].joined(separator: ",")
+             (focus.outcome ?? .completed).rawValue, focus.timeZoneIdentifier ?? "",
+             SymbolBook.key(for: focus.name).isEmpty ? "" : symbols.symbol(for: focus.name)].joined(separator: ",")
         }
         return ([csvHeader] + rows).joined(separator: "\r\n") + "\r\n"
     }

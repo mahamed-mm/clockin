@@ -157,7 +157,8 @@ Logs go to the unified log under the subsystem `com.moha.clockin` (categories `s
 - The running session is saved as JSON in the App Group's defaults. Fields added after 1.0 must be optional. Format 4 added a break's style and when it began (an unknown style reads as Rest) and the "Break's over" moment; older state loads with none.
 - The widget doesn't open the store. The app writes today's totals to the App Group (`Shared/Store/WidgetSnapshot.swift`) after every change; until it has, the widget reads the store read-only, so it can never run a migration.
 - `ClockinTests/StoreCompatibilityTests.swift` checks both against real data written by 1.0, including `ClockinTests/Fixtures/ClockinV1.store`, which it migrates to V2.
-- Backups (`Clockin/Settings/HistoryExport.swift`) carry a format number. A restore matches sessions by id, so restoring the same backup twice changes nothing.
+- Each session name's symbol is saved as JSON in the App Group's defaults (`Shared/Store/SymbolBook.swift`), keyed by the name ignoring case and extra spaces. Only picked symbols are saved; a missing or unknown one shows the book. Picks for names no session has any more are dropped, and Erase all history clears them.
+- Backups (`Clockin/Settings/HistoryExport.swift`) carry a format number. A restore matches sessions by id, so restoring the same backup twice changes nothing. Format 2 added each name's symbol: format 1 backups still restore, a restore never replaces a symbol picked on this phone, and a backup from a newer format says so instead of failing.
 
 ## Project structure
 

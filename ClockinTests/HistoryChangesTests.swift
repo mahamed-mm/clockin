@@ -11,9 +11,11 @@ struct HistoryChangesTests {
     let liveActivity = SpyLiveActivity()
     let announcer = SpyAnnouncer()
 
+    let symbols = InMemorySymbolBookStore()
+
     func makeServices() -> AppServices {
         AppServices(container: AppServices.makeEmptyContainer(), stateStore: InMemorySessionStateStore(),
-                    now: { [clock] in clock.now }, calendar: osloCalendar, schedulesCompletion: false,
+                    symbolStore: symbols, now: { [clock] in clock.now }, calendar: osloCalendar, schedulesCompletion: false,
                     liveActivity: liveActivity, notifications: SpyNotifier(), widgets: widgets,
                     haptics: SpyHaptics(), announce: { [announcer] in announcer.spoken.append($0) })
     }
@@ -69,6 +71,65 @@ struct HistoryChangesTests {
         #expect(try saved(services).first?.name == "Thesis, chapter 2")
     }
 
+    @Test func renamingRedrawsOutsideTheAppAndKeepsTheSymbol() throws {
+        let services = makeServices()
+        let focus = session("Chemsitry", minutesAgo: 30)
+        let other = session("Spanish", minutesAgo: 90)
+        try #require(services.history).restore([focus, other])
+        services.setSymbol("flask.fill", for: "Chemsitry")
+        services.setSymbol("globe", for: "Spanish")
+        let reloads = widgets.reloads
+
+        // A fresh name takes the pick along.
+        services.renameSession(focus.id, to: "Chemistry")
+        #expect(widgets.reloads == reloads + 1)
+        #expect(services.symbol(for: "chemistry") == "flask.fill")
+        #expect(symbols.book.picks["chemistry"] == "flask.fill")
+
+        // A known name keeps its own.
+        services.renameSession(focus.id, to: "spanish")
+        #expect(services.symbol(for: "Spanish") == "globe")
+    }
+
+    @Test func aSymbolBelongsToTheNameAndRedrawsOutsideTheApp() {
+        let services = makeServices()
+        let reloads = widgets.reloads
+        services.setSymbol("flask.fill", for: " Chemistry ")
+        #expect(services.symbol(for: "CHEMISTRY") == "flask.fill")
+        #expect(widgets.reloads == reloads + 1)
+
+        // Nothing for an unnamed session, or a symbol that isn't offered.
+        services.setSymbol("flask.fill", for: "  ")
+        services.setSymbol("star.fill", for: "Chemistry")
+        #expect(services.symbol(for: "") == SymbolCatalog.unnamed)
+        #expect(services.symbol(for: "Chemistry") == "flask.fill")
+        #expect(widgets.reloads == reloads + 1)
+    }
+
+    @Test func symbolsForNamesWithNoSessionAreForgotten() throws {
+        let services = makeServices()
+        services.lastSessionName = { "Typed but not started" }
+        let focus = session("Chemistry", minutesAgo: 30)
+        try #require(services.history).restore([focus, session("Spanish", minutesAgo: 90)])
+        for name in ["Chemistry", "Spanish", "Typed but not started"] { services.setSymbol("globe", for: name) }
+        services.engine.start(name: "Running now")
+        services.setSymbol("pencil", for: "Running now")
+
+        services.deleteSessions([focus.id])
+        services.pruneSymbols()
+        #expect(Set(services.symbolBook.picks.keys) == ["spanish", "typed but not started", "running now"])
+    }
+
+    @Test func eraseAllForgetsTheSymbolsToo() throws {
+        let services = makeServices()
+        try #require(services.history).restore([session("Chemistry", minutesAgo: 30)])
+        services.setSymbol("flask.fill", for: "Chemistry")
+
+        services.eraseHistory()
+        #expect(services.symbolBook.picks.isEmpty)
+        #expect(symbols.book.picks.isEmpty)
+    }
+
     @Test func eraseAllLeavesNothingToComeBack() throws {
         let services = makeServices()
         try #require(services.history).restore([session("A", minutesAgo: 30), session("B", minutesAgo: 90)])
@@ -99,6 +160,12 @@ struct HistoryChangesTests {
         #expect(services.history == nil)
         services.deleteSessions([UUID()])
         #expect(services.undoableDeletion.isEmpty)
+    }
+
+    @Test func recentNamesMatchIgnoringCaseAndSpaces() {
+        let names = ["chemistry ", "Chemistry", "Spanish  vocab", "spanish vocab", "Essay"]
+        #expect(HistoryService.recentNames(names, excluding: "", limit: 4) == ["chemistry ", "Spanish  vocab", "Essay"])
+        #expect(HistoryService.recentNames(names, excluding: "CHEMISTRY", limit: 4) == ["Spanish  vocab", "Essay"])
     }
 
     @Test func recentNamesAreNewestFirstEachOnceAndNeverBlank() {

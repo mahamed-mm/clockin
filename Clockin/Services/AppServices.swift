@@ -68,6 +68,11 @@ final class AppServices: SessionEffects {
         didSet { settingsStore.save(settings) }
     }
 
+    /// The symbol picked for each session name.
+    private(set) var symbolBook: SymbolBook {
+        didSet { if symbolBook != oldValue { symbolStore.save(symbolBook) } }
+    }
+
     /// Sessions deleted from History moments ago, so they can be put back.
     /// Cleared when the undo window closes.
     private(set) var undoableDeletion: [CompletedFocus] = []
@@ -97,6 +102,7 @@ final class AppServices: SessionEffects {
     @ObservationIgnored private var soundsMuted = 0
     @ObservationIgnored private let announce: @MainActor (String) -> Void
     @ObservationIgnored private let settingsStore: SettingsStoring
+    @ObservationIgnored private let symbolStore: SymbolBookStoring
     /// Low Power Mode and heat: when set, decoration stops.
     let power: PowerState
     /// Writes History's week line on the device, when Apple Intelligence can.
@@ -113,6 +119,7 @@ final class AppServices: SessionEffects {
          historyUnavailable: Bool = false,
          stateStore: SessionStateStoring,
          settingsStore: SettingsStoring = InMemorySettingsStore(),
+         symbolStore: SymbolBookStoring = InMemorySymbolBookStore(),
          power: PowerState? = nil,
          orientation: OrientationRequesting = SystemOrientation(),
          now: @escaping () -> Date = Date.init,
@@ -143,11 +150,13 @@ final class AppServices: SessionEffects {
         self.announce = announce
         self.calendar = calendar
         self.settingsStore = settingsStore
+        self.symbolStore = symbolStore
         self.power = power ?? PowerState(read: { false })
         bedside = BedsideController(orientation: orientation)
         self.schedulesTimers = schedulesCompletion
         history = historyUnavailable ? nil : HistoryService(container: container)
         settings = settingsStore.load()
+        symbolBook = symbolStore.load()
         today = calendar.startOfDay(for: now())
         let log: FocusLogging = historyUnavailable ? UnavailableFocusLog() : SwiftDataFocusLog(container: container)
         engine = SessionEngine(now: now, calendar: calendar, store: stateStore, log: log,
@@ -170,6 +179,7 @@ final class AppServices: SessionEffects {
         }
         let services = AppServices(container: container, historyUnavailable: historyUnavailable,
                                    stateStore: DefaultsSessionStateStore(), settingsStore: DefaultsSettingsStore(),
+                                   symbolStore: DefaultsSymbolBookStore(),
                                    power: PowerState(),
                                    liveActivity: LiveActivityController(), notifications: EndNotifier(),
                                    alarm: EndAlarm(), mindful: MindfulMinutes(), widgets: SystemWidgets(),
@@ -332,6 +342,7 @@ final class AppServices: SessionEffects {
             try? await Task.sleep(for: .seconds(window))
             guard !Task.isCancelled else { return }
             self?.undoableDeletion = []
+            self?.pruneSymbols()
         }
     }
 
@@ -350,9 +361,44 @@ final class AppServices: SessionEffects {
 
     func renameSession(_ id: UUID, to name: String) {
         do {
-            try history?.rename(id: id, to: name)
+            guard let old = try history?.rename(id: id, to: name) else { return }
+            symbolBook.rename(from: old, to: name)
         } catch {
             Log.store.error("Couldn't rename a session: \(error, privacy: .public)")
+            return
+        }
+        historyChanged()
+    }
+
+    // MARK: Symbols
+
+    /// The symbol a session with this name shows.
+    func symbol(for name: String) -> String { symbolBook.symbol(for: name) }
+
+    /// Picks the symbol for every session with this name, past and future.
+    func setSymbol(_ symbol: String, for name: String) {
+        let before = symbolBook
+        symbolBook.pick(symbol, for: name)
+        if symbolBook != before { historyChanged() }
+    }
+
+    /// Forgets symbols for names no session has any more: not saved, not
+    /// waiting to be saved, not running and not typed.
+    func pruneSymbols() {
+        guard let history, !symbolBook.picks.isEmpty else { return }
+        do {
+            var names = try history.distinctNames()
+            names.formUnion(engine.pendingRecords.map(\.name))
+            switch engine.stage {
+            case .idle: break
+            case .active(let session): names.insert(session.name)
+            case .focusComplete(let focus): names.insert(focus.name)
+            }
+            if let moment = engine.breakOver { names.insert(moment.name) }
+            names.insert(lastSessionName())
+            symbolBook.prune(keeping: names)
+        } catch {
+            Log.store.error("Couldn't read names to tidy symbols: \(error, privacy: .public)")
         }
     }
 
@@ -368,6 +414,7 @@ final class AppServices: SessionEffects {
         if writesHealth { mindful.removeAll() }
         engine.discardAllPending()
         clearUndoableDeletion()
+        symbolBook = SymbolBook()
         historyChanged()
     }
 
@@ -376,13 +423,14 @@ final class AppServices: SessionEffects {
         guard let history else { throw HistoryExport.ImportError.unreadable }
         let backup = try HistoryExport.readBackup(data)
         let existing = try history.sessions(ids: Set(backup.sessions.map(\.id)))
-        return HistoryExport.plan(backup, existing: existing, now: engine.now())
+        return HistoryExport.plan(backup, existing: existing, symbols: symbolBook, now: engine.now())
     }
 
     /// Saves a restore worked out by `planImport`, all at once.
     func importSessions(_ plan: HistoryExport.ImportPlan) throws {
         guard let history else { return }
         try history.upsert(plan.changes)
+        symbolBook.merge(plan.symbols)
         clearUndoableDeletion()
         historyChanged()
     }
@@ -408,6 +456,7 @@ final class AppServices: SessionEffects {
         // An alarm left from a session that's gone. One ringing for a finished
         // session keeps going until it's stopped or the screen moves on.
         if engine.stage == .idle { alarm.cancel() }
+        pruneSymbols()
         refreshWidgets()
     }
 

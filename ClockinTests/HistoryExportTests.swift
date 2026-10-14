@@ -43,8 +43,19 @@ struct HistoryExportTests {
         let lines = HistoryExport.csv([early]).components(separatedBy: "\r\n")
         #expect(lines[0] == HistoryExport.csvHeader)
         #expect(lines[1].hasPrefix("\(early.id.uuidString),\"Essay, part 1\","))
-        #expect(lines[1].hasSuffix(",300,1500,endedEarly,Europe/Oslo"))
+        #expect(lines[1].hasSuffix(",300,1500,endedEarly,Europe/Oslo,book.closed.fill"))
         #expect(lines.count == 3) // Header, row, and the final line break.
+    }
+
+    @Test func csvAddsEachNamesSymbolLast() {
+        var book = SymbolBook()
+        book.pick("flask.fill", for: "Chemistry")
+        let rows = HistoryExport.csv([session("chemistry", endedAgo: 600), session("", endedAgo: 900)], symbols: book)
+            .components(separatedBy: "\r\n")
+        #expect(HistoryExport.csvHeader.hasPrefix("id,name,started_at,completed_at,focus_seconds,planned_seconds,outcome,time_zone,"))
+        #expect(HistoryExport.csvHeader.hasSuffix(",symbol"))
+        #expect(rows[1].hasSuffix(",Europe/Oslo,flask.fill"))
+        #expect(rows[2].hasSuffix(",Europe/Oslo,")) // Unnamed: no symbol.
     }
 
     // MARK: Backup
@@ -52,7 +63,7 @@ struct HistoryExportTests {
     @Test func aBackupRestoresWithoutASingleChange() throws {
         let sessions = [session("Essay", endedAgo: 600), session("", endedAgo: 7_200, outcome: nil)]
         let backup = try HistoryExport.readBackup(try HistoryExport.backup(sessions, exportedAt: now))
-        #expect(backup.format == 1)
+        #expect(backup.format == 2)
 
         let existing = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0) })
         let plan = HistoryExport.plan(backup, existing: existing, now: now)
@@ -86,9 +97,34 @@ struct HistoryExportTests {
     }
 
     @Test func aBackupFromANewerBuildSaysSo() {
-        let json = #"{"format":2,"exportedAt":"2027-01-15T08:00:00.000Z","sessions":[]}"#
+        let json = #"{"format":3,"exportedAt":"2027-01-15T08:00:00.000Z","sessions":[]}"#
         #expect(throws: HistoryExport.ImportError.newerFormat) { try HistoryExport.readBackup(Data(json.utf8)) }
         #expect(throws: HistoryExport.ImportError.unreadable) { try HistoryExport.readBackup(Data("hello".utf8)) }
+    }
+
+    @Test func aFormatOneBackupStillRestores() throws {
+        let json = #"""
+        {"format":1,"exportedAt":"2027-01-15T08:00:00.000Z","sessions":[{"id":"6F9619FF-8B86-D011-B42D-00C04FC964FF",
+        "name":"Essay","startedAt":"2027-01-15T07:00:00.000Z","completedAt":"2027-01-15T07:25:00.000Z",
+        "focusSeconds":1500}]}
+        """#
+        let backup = try HistoryExport.readBackup(Data(json.utf8))
+        #expect(backup.symbols == nil)
+        let plan = HistoryExport.plan(backup, existing: [:], now: .distantFuture)
+        #expect(plan.new.map(\.name) == ["Essay"])
+        #expect(plan.symbols.isEmpty)
+    }
+
+    @Test func aRestoreBringsSymbolsButKeepsThisPhonesPicks() throws {
+        var exported = SymbolBook()
+        exported.pick("flask.fill", for: "Chemistry")
+        exported.pick("globe", for: "Spanish")
+        let file = try HistoryExport.backup([session("Chemistry", endedAgo: 600)], symbols: exported, exportedAt: now)
+        var here = SymbolBook()
+        here.pick("pencil", for: "chemistry")
+
+        let plan = HistoryExport.plan(try HistoryExport.readBackup(file), existing: [:], symbols: here, now: now)
+        #expect(plan.symbols == ["spanish": "globe"])
     }
 
     @Test func exportEraseRestoreGivesHistoryBack() throws {
@@ -96,10 +132,12 @@ struct HistoryExportTests {
         let history = try #require(services.history)
         let sessions = [session("Essay", endedAgo: 600), session("Spanish", endedAgo: 90_000, seconds: 900)]
         try history.restore(sessions)
-        let file = try HistoryExport.backup(try history.allSessions(), exportedAt: now)
+        services.setSymbol("pencil", for: "Essay")
+        let file = try HistoryExport.backup(try history.allSessions(), symbols: services.symbolBook, exportedAt: now)
 
         services.eraseHistory()
         #expect(try history.allSessions().isEmpty)
+        #expect(services.symbol(for: "Essay") == SymbolCatalog.unnamed)
 
         let plan = try services.planImport(of: file)
         #expect(plan.new.count == 2)
@@ -110,6 +148,7 @@ struct HistoryExportTests {
         #expect(restored.map(\.name) == original.map(\.name))
         #expect(restored.map(\.focusSeconds) == original.map(\.focusSeconds))
         #expect(restored.map(\.timeZoneIdentifier) == original.map(\.timeZoneIdentifier))
+        #expect(services.symbol(for: "Essay") == "pencil")
 
         // Restoring the same file again changes nothing.
         let again = try services.planImport(of: file)
