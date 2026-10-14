@@ -117,17 +117,18 @@ final class EndAlarm: EndAlarming {
     private nonisolated static func configuration(for session: ActiveSession,
                                       endingAt end: Date) -> AlarmManager.AlarmConfiguration<ClockinAlarm> {
         let focus = session.phase == .focus
-        let title = LocalizedStringResource(stringLiteral: focus ? Copy.focusComplete : Copy.breakOver)
+        // Resources, not already-translated text, so the system shows them in the phone's language.
+        let title: LocalizedStringResource = focus ? "Focus complete" : "Break's over"
         // After focus, the alarm offers the break; after a break there's
         // nothing to start, so it only stops.
-        let startBreak = AlarmButton(text: LocalizedStringResource(stringLiteral: Copy.startBreakShort),
+        let startBreak = AlarmButton(text: "Start break",
                                      textColor: .white, systemImageName: "cup.and.saucer.fill")
         let alert: AlarmPresentation.Alert
         if #available(iOS 26.1, *) {
             alert = AlarmPresentation.Alert(title: title, secondaryButton: focus ? startBreak : nil,
                                             secondaryButtonBehavior: focus ? .custom : nil)
         } else {
-            let stop = AlarmButton(text: LocalizedStringResource(stringLiteral: Copy.stopAlarm), textColor: .white,
+            let stop = AlarmButton(text: "Stop", textColor: .white,
                                    systemImageName: "stop.circle")
             alert = AlarmPresentation.Alert(title: title, stopButton: stop, secondaryButton: focus ? startBreak : nil,
                                             secondaryButtonBehavior: focus ? .custom : nil)

@@ -1,0 +1,42 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "NSAlarmKitUsageDescription": {
+      "comment": "Asked before Clockin rings an alarm at the end of a session.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clockin rings when a session or break is over, even on silent."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Clockin ringer når en økt eller pause er over, også i lydløs modus."
+          }
+        }
+      }
+    },
+    "NSHealthUpdateUsageDescription": {
+      "comment": "Asked before Clockin writes Mindful Minutes to Health.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clockin saves finished focus sessions to Health as Mindful Minutes."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Clockin lagrer fullførte fokusøkter i Helse som oppmerksomhetsminutter."
+          }
+        }
+      }
+    }
+  }
+}

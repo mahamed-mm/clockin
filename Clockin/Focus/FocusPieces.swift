@@ -405,6 +405,7 @@ struct DialFace: View {
                 let text = guide.status(at: context.date) ?? status(session)
                 VStack(spacing: size * 0.02) {
                     Text(text).retroLabel()
+                        .modifier(FitsTheDial())
                         .contentTransition(.opacity)
                     if let step = guide.step(at: context.date) {
                         StepDots(index: step.index, count: step.count, size: size)
@@ -415,6 +416,7 @@ struct DialFace: View {
             }
         } else {
             Text(status(session)).retroLabel()
+                .modifier(FitsTheDial())
                 .contentTransition(.opacity)
         }
     }
@@ -830,6 +832,18 @@ private struct BreathHalo: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+}
+
+/// The dial's label on one line, shrinking to fit inside the dial at
+/// large text sizes and with longer words, rather than cut short. The
+/// dial's value says the same to VoiceOver.
+private struct FitsTheDial: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .lineLimit(1)
+            .minimumScaleFactor(0.4)
+            .allowsTightening(true)
     }
 }
 
@@ -1324,7 +1338,7 @@ struct CompletionSummary: View {
         Rectangle().fill(Retro.ink.opacity(0.12)).frame(width: 1, height: 34)
     }
 
-    private func stat(_ value: String, _ caption: String, index: Int) -> some View {
+    private func stat(_ value: String, _ caption: LocalizedStringKey, index: Int) -> some View {
         VStack(spacing: Space.xxs) {
             Text(value)
                 .retroFont(.headline)

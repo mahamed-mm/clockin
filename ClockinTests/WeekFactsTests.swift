@@ -71,7 +71,10 @@ struct WeekSentenceTests {
     private struct FakeWriter: WeekSentenceWriting {
         var isAvailable = true
         var reply: Result<String, Error> = .success("A quiet week, mostly mornings.")
-        func write(prompt: String, instructions: String) async throws -> String { try reply.get() }
+        func write(prompt: String, instructions: String) async throws -> String {
+            // Asked for Norwegian, it answers in Norwegian.
+            instructions.contains("Norwegian") ? "En rolig uke, mest morgener." : try reply.get()
+        }
     }
 
     private struct Unavailable: Error {}
@@ -124,5 +127,18 @@ struct WeekSentenceTests {
                                         writer: FakeWriter(reply: .failure(Unavailable())), enabled: true) == fixed)
         #expect(await WeekSentence.line(for: facts, calendar: calendar,
                                         writer: FakeWriter(reply: .success("Amazing work!!")), enabled: true) == fixed)
+    }
+
+    @Test func aNorwegianAppGetsANorwegianLine() async {
+        #expect(WeekSentence.instructions(language: "nb").hasSuffix("Write the sentence in Norwegian Bokmål."))
+        #expect(WeekSentence.instructions(language: "en") == WeekSentence.instructions)
+        let line = await WeekSentence.line(for: facts, calendar: calendar, writer: FakeWriter(), enabled: true,
+                                           language: "nb", recognize: { _ in "nb" })
+        #expect(line == "En rolig uke, mest morgener.")
+        // A line that comes back in another language gives way to the fixed one.
+        let fixed = Copy.weekSentence(facts, calendar: calendar)
+        let english = await WeekSentence.line(for: facts, calendar: calendar, writer: FakeWriter(), enabled: true,
+                                              language: "nb", recognize: { _ in "en" })
+        #expect(english == fixed)
     }
 }

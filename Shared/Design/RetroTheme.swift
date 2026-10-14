@@ -200,7 +200,7 @@ enum TimeFormat {
         formatter.unitsStyle = .full
         formatter.allowedUnits = [.minute]
         formatter.zeroFormattingBehavior = .pad
-        return formatter.string(from: 0) ?? "0 minutes"
+        return formatter.string(from: 0) ?? String(localized: "0 minutes")
     }
 
     /// Time left in words, changing about once a minute so VoiceOver isn't

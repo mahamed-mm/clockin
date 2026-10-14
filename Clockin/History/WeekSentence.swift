@@ -1,4 +1,5 @@
 import FoundationModels
+import NaturalLanguage
 import SwiftUI
 
 /// Something that can write the week's line: Apple's on-device model, or a
@@ -17,6 +18,25 @@ enum WeekSentence {
         At most 15 words. Plain and warm. No advice, no praise, no exclamation marks, no emoji, \
         no streaks or comparisons. Don't invent anything.
         """
+
+    /// The instructions for a line in `language` (the app's, such as "en"
+    /// or "nb"): the facts stay in plain English, the line comes back in the
+    /// language the rest of the screen is in.
+    static func instructions(language: String) -> String {
+        switch language {
+        case "en": instructions
+        case "nb": instructions + " Write the sentence in Norwegian Bokmål."
+        default: instructions
+        }
+    }
+
+    /// The language the app is showing: one Clockin has, picked from the phone's.
+    static var appLanguage: String { Bundle.main.preferredLocalizations.first ?? "en" }
+
+    /// The language a line reads as, by Apple's on-device recognizer.
+    static func dominantLanguage(of text: String) -> String? {
+        NLLanguageRecognizer.dominantLanguage(for: text)?.rawValue
+    }
 
     /// The facts as the model reads them.
     static func prompt(for facts: WeekFacts, calendar: Calendar) -> String {
@@ -60,22 +80,31 @@ enum WeekSentence {
     /// What the line says: the model's sentence when it's allowed, able and
     /// sensible, or the fixed one.
     static func line(for facts: WeekFacts, calendar: Calendar, writer: any WeekSentenceWriting,
-                     enabled: Bool) async -> String {
-        guard enabled, let written = await written(for: facts, calendar: calendar, writer: writer) else {
+                     enabled: Bool, language: String = "en",
+                     recognize: (String) -> String? = dominantLanguage(of:)) async -> String {
+        guard enabled, let written = await written(for: facts, calendar: calendar, writer: writer, language: language,
+                                                   recognize: recognize) else {
             return Copy.weekSentence(facts, calendar: calendar)
         }
         return written
     }
 
-    /// The model's sentence, or nil when it can't write one or writes
-    /// something that isn't one calm sentence.
-    static func written(for facts: WeekFacts, calendar: Calendar, writer: any WeekSentenceWriting) async -> String? {
+    /// The model's sentence, or nil when it can't write one, or writes
+    /// something that isn't one calm sentence in the app's language.
+    static func written(for facts: WeekFacts, calendar: Calendar, writer: any WeekSentenceWriting,
+                        language: String = "en",
+                        recognize: (String) -> String? = dominantLanguage(of:)) async -> String? {
         guard writer.isAvailable else { return nil }
         do {
             let written = try await writer.write(prompt: prompt(for: facts, calendar: calendar),
-                                                 instructions: instructions)
+                                                 instructions: instructions(language: language))
             guard let line = validate(written) else {
                 Log.store.info("Week line not one calm sentence; using the fixed one: \(written, privacy: .private)")
+                return nil
+            }
+            // Not in English, it must read as the app's language; otherwise the fixed line, translated.
+            if language != "en", recognize(line) != language {
+                Log.store.info("Week line not in \(language, privacy: .public); using the fixed one")
                 return nil
             }
             return line
@@ -119,7 +148,8 @@ struct WeekSentenceLine: View {
     @MainActor private static var cache: [String: String] = [:]
 
     var body: some View {
-        let key = WeekSentence.prompt(for: facts, calendar: calendar)
+        let language = WeekSentence.appLanguage
+        let key = language + "|" + WeekSentence.prompt(for: facts, calendar: calendar)
         Text(written ?? Copy.weekSentence(facts, calendar: calendar))
             .font(.retro(.meta))
             .foregroundStyle(Retro.inkSoft)
@@ -139,7 +169,7 @@ struct WeekSentenceLine: View {
                 // Only a written line is kept, so a model that wasn't ready yet
                 // gets another go next time.
                 guard let line = await WeekSentence.written(for: facts, calendar: calendar,
-                                                            writer: services.weekWriter),
+                                                            writer: services.weekWriter, language: language),
                       !Task.isCancelled else { return }
                 Self.cache[key] = line
                 withAnimation(Motion.calm(reduceMotion)) { written = line }

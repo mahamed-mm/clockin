@@ -2,7 +2,14 @@
   "sourceLanguage" : "en",
   "strings" : {
     "%@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@"
+          }
+        }
+      }
     },
     "%@ focus · %@ break" : {
       "localizations" : {
@@ -11,23 +18,64 @@
             "state" : "new",
             "value" : "%1$@ focus · %2$@ break"
           }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@ fokus · %2$@ pause"
+          }
         }
       }
     },
     "%@ left" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ igjen"
+          }
+        }
+      }
     },
     "%@ of focus today" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ fokus i dag"
+          }
+        }
+      }
     },
     "%@ over" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ over tiden"
+          }
+        }
+      }
     },
     "%@ remaining" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ igjen"
+          }
+        }
+      }
     },
     "%@ session" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@-økt"
+          }
+        }
+      }
     },
     "%@, %@ focus, %@ break" : {
       "localizations" : {
@@ -35,6 +83,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@, %2$@ focus, %3$@ break"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@, %2$@ fokus, %3$@ pause"
           }
         }
       }
@@ -46,6 +100,12 @@
             "state" : "new",
             "value" : "%1$@, %2$@ to %3$@"
           }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@, %2$@ til %3$@"
+          }
         }
       }
     },
@@ -55,6 +115,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@, %2$@, finished at %3$@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@, %2$@, ferdig %3$@"
           }
         }
       }
@@ -67,7 +133,8 @@
             "value" : "%1$@, %2$lld points, %3$@"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "%@, energy %@" : {
       "localizations" : {
@@ -77,10 +144,18 @@
             "value" : "%1$@, energy %2$@"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "%@, one in progress" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@, én pågår"
+          }
+        }
+      }
     },
     "%@, today: %@, %@" : {
       "localizations" : {
@@ -89,11 +164,24 @@
             "state" : "new",
             "value" : "%1$@, today: %2$@, %3$@"
           }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@, i dag: %2$@, %3$@"
+          }
         }
       }
     },
     "%@, upcoming" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@, kommer"
+          }
+        }
+      }
     },
     "%@: %@, %@" : {
       "localizations" : {
@@ -102,11 +190,24 @@
             "state" : "new",
             "value" : "%1$@: %2$@, %3$@"
           }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@: %2$@, %3$@"
+          }
         }
       }
     },
     "%lld already here" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld finnes allerede"
+          }
+        }
+      }
     },
     "%lld focus sessions today" : {
       "localizations" : {
@@ -127,11 +228,36 @@
               }
             }
           }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld fokusøkt i dag"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld fokusøkter i dag"
+                }
+              }
+            }
+          }
         }
       }
     },
     "%lld h" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld t"
+          }
+        }
+      }
     },
     "%lld h %lld min" : {
       "localizations" : {
@@ -140,11 +266,24 @@
             "state" : "new",
             "value" : "%1$lld h %2$lld min"
           }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$lld t %2$lld min"
+          }
         }
       }
     },
     "%lld min" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld min"
+          }
+        }
+      }
     },
     "%lld new sessions" : {
       "localizations" : {
@@ -165,6 +304,24 @@
               }
             }
           }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld ny økt"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld nye økter"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -174,6 +331,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld of %2$lld today"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$lld av %2$lld i dag"
           }
         }
       }
@@ -185,11 +348,24 @@
             "state" : "new",
             "value" : "%1$lld of %2$lld · +%3$lld"
           }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$lld av %2$lld · +%3$lld"
+          }
         }
       }
     },
     "%lld s" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld s"
+          }
+        }
+      }
     },
     "%lld sessions" : {
       "localizations" : {
@@ -206,6 +382,24 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld sessions"
+                }
+              }
+            }
+          }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld økt"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld økter"
                 }
               }
             }
@@ -232,116 +426,382 @@
               }
             }
           }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld økt oppdatert"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld økter oppdatert"
+                }
+              }
+            }
+          }
         }
       }
     },
     "%lld skipped as unreadable" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld hoppet over fordi de ikke kunne leses"
+          }
+        }
+      }
     },
     "%lld×" : {
-
+      "shouldTranslate" : false
     },
     "+%lld min" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "+%lld min"
+          }
+        }
+      }
+    },
+    "0 minutes" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "0 minutter"
+          }
+        }
+      }
     },
     "A dimmed landscape clock for the nightstand. Show it during a session, even with orientation lock on." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En dempet liggende klokke for nattbordet. Vis den under en økt, også med retningslås på."
+          }
+        }
+      }
     },
     "A set of four done" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Et sett på fire fullført"
+          }
+        }
+      }
     },
     "About" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Om"
+          }
+        }
+      }
     },
     "Add %@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Legg til %@"
+          }
+        }
+      }
     },
     "Alarm ringing" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alarmen ringer"
+          }
+        }
+      }
     },
     "Alarms are off, so Clockin can only notify you. Turn on" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alarmer er av, så Clockin kan bare varsle deg. Slå på"
+          }
+        }
+      }
     },
     "Alarms off" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alarmer av"
+          }
+        }
+      }
     },
     "Alerts & Live Activities" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Varsler og Live Activities"
+          }
+        }
+      }
     },
     "Alerts are off, so the timer can't ring. Turn on" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Varsler er av, så tidtakeren kan ikke ringe. Slå på"
+          }
+        }
+      }
     },
     "Alerts off" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Varsler av"
+          }
+        }
+      }
     },
     "All done." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ferdig."
+          }
+        }
+      }
     },
     "All on %@ this week." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alt på %@ denne uken."
+          }
+        }
+      }
     },
     "All states" : {
-
+      "shouldTranslate" : false
     },
     "Already focusing. %@." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fokuserer allerede. %@."
+          }
+        }
+      }
     },
     "App icon: %@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Appsymbol: %@"
+          }
+        }
+      }
     },
     "Appearance" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Utseende"
+          }
+        }
+      }
     },
     "Apple Intelligence writes History's line about your week on this iPhone, from session times only. Nothing leaves the phone." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Apple Intelligence skriver Historikkens linje om uken din på denne iPhonen, bare ut fra tidspunktene for øktene. Ingenting forlater telefonen."
+          }
+        }
+      }
     },
     "Applies from the next session. Or drag the dial on the Focus screen." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gjelder fra neste økt. Eller dra skiven på Fokus-skjermen."
+          }
+        }
+      }
     },
     "Asked on your first start" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Spørres første gang du starter"
+          }
+        }
+      }
     },
     "Asleep" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sover"
+          }
+        }
+      }
     },
     "At work" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "På jobb"
+          }
+        }
+      }
     },
     "Back to it. %@." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tilbake til det. %@."
+          }
+        }
+      }
     },
     "Back up History" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sikkerhetskopier historikken"
+          }
+        }
+      }
     },
     "Bedside clock" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nattbordsklokke"
+          }
+        }
+      }
     },
     "Break" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pause"
+          }
+        }
+      }
     },
     "Break after %@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pause etter %@"
+          }
+        }
+      }
     },
     "Break ended." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pausen er avsluttet."
+          }
+        }
+      }
     },
     "Break started: %@." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pausen har startet: %@."
+          }
+        }
+      }
     },
     "Break until %@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pause til %@"
+          }
+        }
+      }
     },
     "Break's over" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pausen er over"
+          }
+        }
+      }
     },
     "Breathe" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pust"
+          }
+        }
+      }
     },
     "Breathe in" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pust inn"
+          }
+        }
+      }
     },
     "Breathe out" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pust ut"
+          }
+        }
+      }
     },
     "Breathe, in for %lld seconds, out for %lld" : {
       "localizations" : {
@@ -350,137 +810,423 @@
             "state" : "new",
             "value" : "Breathe, in for %1$lld seconds, out for %2$lld"
           }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pust, inn i %1$lld sekunder, ut i %2$lld"
+          }
         }
       }
     },
     "Brings the session back" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Henter økten tilbake"
+          }
+        }
+      }
     },
     "CSV opens in Numbers or Excel. A backup restores here, keeping the sessions you already have." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "CSV åpnes i Numbers eller Excel. En sikkerhetskopi gjenopprettes her, og øktene du allerede har, beholdes."
+          }
+        }
+      }
     },
     "Calm" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Rolig"
+          }
+        }
+      }
     },
     "Can't restore" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kan ikke gjenopprette"
+          }
+        }
+      }
     },
     "Cancel" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avbryt"
+          }
+        }
+      }
     },
     "Cancel session" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avbryt økten"
+          }
+        }
+      }
     },
     "Carries on with a paused session or break." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fortsetter en pauset økt eller pause."
+          }
+        }
+      }
     },
     "Classic" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Klassisk"
+          }
+        }
+      }
     },
     "Clockin will ask once to alert you when time's up." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Clockin spør én gang om å varsle deg når tiden er ute."
+          }
+        }
+      }
     },
     "Close" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lukk"
+          }
+        }
+      }
     },
     "Combos" : {
-
+      "shouldTranslate" : false
     },
     "Complete" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fullført"
+          }
+        }
+      }
     },
     "Count %@ more as focus" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Regn %@ til som fokus"
+          }
+        }
+      }
     },
     "Counts" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Teller"
+          }
+        }
+      }
     },
     "Custom" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Egendefinert"
+          }
+        }
+      }
     },
     "Dark" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mørk"
+          }
+        }
+      }
     },
     "Deep" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dyp"
+          }
+        }
+      }
     },
     "Delete" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Slett"
+          }
+        }
+      }
     },
     "Delete session" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Slett økten"
+          }
+        }
+      }
     },
     "Developer options" : {
-
+      "shouldTranslate" : false
     },
     "Dismiss" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lukk"
+          }
+        }
+      }
     },
     "Done" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ferdig"
+          }
+        }
+      }
     },
     "Done for now" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ferdig for nå"
+          }
+        }
+      }
     },
     "Drag the knob to set the time" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dra knotten for å stille tiden"
+          }
+        }
+      }
     },
     "During breaks" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "I pausene"
+          }
+        }
+      }
     },
     "During this break" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "I denne pausen"
+          }
+        }
+      }
     },
     "Early, with Finish now" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tidlig, med Avslutt nå"
+          }
+        }
+      }
     },
     "Ended" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avsluttet"
+          }
+        }
+      }
     },
     "Ended early" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avsluttet tidlig"
+          }
+        }
+      }
     },
     "Ends %@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Slutter %@"
+          }
+        }
+      }
     },
     "Ends the session and keeps the minutes" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avslutter økten og beholder minuttene"
+          }
+        }
+      }
     },
     "Ends the session and keeps the minutes done, or ends the break. Under a minute in, nothing is kept." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avslutter økten og beholder minuttene som er gjort, eller avslutter pausen. Under ett minutt inn beholdes ingenting."
+          }
+        }
+      }
     },
     "Energy" : {
-
+      "shouldTranslate" : false
     },
     "Erase All" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Slett alt"
+          }
+        }
+      }
     },
     "Erase all history?" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Slette all historikk?"
+          }
+        }
+      }
     },
     "Erase all history…" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Slett all historikk …"
+          }
+        }
+      }
     },
     "Every saved session is deleted from this iPhone. This can't be undone." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle lagrede økter slettes fra denne iPhonen. Dette kan ikke angres."
+          }
+        }
+      }
     },
     "Every session in this backup is already here." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle øktene i denne sikkerhetskopien finnes allerede her."
+          }
+        }
+      }
     },
     "Everything stays on this iPhone." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alt blir på denne iPhonen."
+          }
+        }
+      }
     },
     "Export as CSV" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Eksporter som CSV"
+          }
+        }
+      }
     },
     "Extra" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ekstra"
+          }
+        }
+      }
     },
     "Finish a focus session and it will show up here." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fullfør en fokusøkt, så dukker den opp her."
+          }
+        }
+      }
     },
     "Finish now" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avslutt nå"
+          }
+        }
+      }
     },
     "Finished %@ at %@" : {
       "localizations" : {
@@ -489,32 +1235,94 @@
             "state" : "new",
             "value" : "Finished %1$@ at %2$@"
           }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ferdig %1$@ kl. %2$@"
+          }
         }
       }
     },
     "Finished at %@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ferdig kl. %@"
+          }
+        }
+      }
     },
     "Finished focus sessions appear in Health as Mindful Minutes. Clockin doesn't read anything from Health." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fullførte fokusøkter vises i Helse som oppmerksomhetsminutter. Clockin leser ingenting fra Helse."
+          }
+        }
+      }
     },
     "Finished yesterday at %@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ferdig i går kl. %@"
+          }
+        }
+      }
     },
     "Focus" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fokus"
+          }
+        }
+      }
     },
     "Focus Button" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fokusknapp"
+          }
+        }
+      }
     },
     "Focus complete" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fokus fullført"
+          }
+        }
+      }
     },
     "Focus session" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fokusøkt"
+          }
+        }
+      }
     },
     "Focused" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fokusert"
+          }
+        }
+      }
     },
     "Focused %@, %@, today %@" : {
       "localizations" : {
@@ -523,110 +1331,305 @@
             "state" : "new",
             "value" : "Focused %1$@, %2$@, today %3$@"
           }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fokusert %1$@, %2$@, i dag %3$@"
+          }
         }
       }
     },
     "Focusing" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fokuserer"
+          }
+        }
+      }
     },
     "Focusing for %@." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fokuserer i %@."
+          }
+        }
+      }
     },
     "Haptics lab" : {
-
+      "shouldTranslate" : false
     },
     "Health access is off for Clockin. Turn it on in the Health app: your profile › Apps › Clockin." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Helse-tilgang er av for Clockin. Slå den på i Helse-appen: profilen din › Apper › Clockin."
+          }
+        }
+      }
     },
     "History" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Historikk"
+          }
+        }
+      }
     },
     "History couldn't be loaded" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Historikken kunne ikke lastes inn"
+          }
+        }
+      }
     },
     "Into the break" : {
-
+      "shouldTranslate" : false
     },
     "Keep +%lld min" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Behold +%lld min"
+          }
+        }
+      }
     },
     "Kept %lld more min" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Beholdt %lld min til"
+          }
+        }
+      }
     },
     "Last week" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Forrige uke"
+          }
+        }
+      }
     },
     "Leave bedside clock" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gå ut av nattbordsklokken"
+          }
+        }
+      }
     },
     "Length" : {
-
+      "shouldTranslate" : false
     },
     "Light" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lys"
+          }
+        }
+      }
     },
     "Live Activities are off for Clockin. Turn on" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Live Activities er av for Clockin. Slå på"
+          }
+        }
+      }
     },
     "Live Activities off" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Live Activities av"
+          }
+        }
+      }
     },
     "Live break" : {
-
+      "shouldTranslate" : false
     },
     "Live session" : {
-
+      "shouldTranslate" : false
     },
     "Long break" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lang pause"
+          }
+        }
+      }
     },
     "Long break after four" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lang pause etter fire"
+          }
+        }
+      }
     },
     "Look far away" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se langt bort"
+          }
+        }
+      }
     },
     "Mascot during focus" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Maskot under fokus"
+          }
+        }
+      }
     },
     "Minutes" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Minutter"
+          }
+        }
+      }
     },
     "Minutes of focus you've finished today." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Minutter med fokus du har fullført i dag."
+          }
+        }
+      }
     },
     "Mostly afternoons this week, all on %@." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mest ettermiddager denne uken, alt på %@."
+          }
+        }
+      }
     },
     "Mostly afternoons this week; %@ was your longest day." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mest ettermiddager denne uken; %@ var den lengste dagen din."
+          }
+        }
+      }
     },
     "Mostly evenings this week, all on %@." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mest kvelder denne uken, alt på %@."
+          }
+        }
+      }
     },
     "Mostly evenings this week; %@ was your longest day." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mest kvelder denne uken; %@ var den lengste dagen din."
+          }
+        }
+      }
     },
     "Mostly mornings this week, all on %@." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mest morgener denne uken, alt på %@."
+          }
+        }
+      }
     },
     "Mostly mornings this week; %@ was your longest day." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mest morgener denne uken; %@ var den lengste dagen din."
+          }
+        }
+      }
     },
     "Moves" : {
-
+      "shouldTranslate" : false
     },
     "Name" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Navn"
+          }
+        }
+      }
     },
     "Neck roll" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nakkerulling"
+          }
+        }
+      }
     },
     "Next" : {
-
+      "shouldTranslate" : false
     },
     "Next week" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Neste uke"
+          }
+        }
+      }
     },
     "Next: %@ · session %lld of %lld" : {
       "localizations" : {
@@ -635,305 +1638,913 @@
             "state" : "new",
             "value" : "Next: %1$@ · session %2$lld of %3$lld"
           }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Neste: %1$@ · økt %2$lld av %3$lld"
+          }
         }
       }
     },
     "No sessions this week." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingen økter denne uken."
+          }
+        }
+      }
     },
     "No sessions yet" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingen økter ennå"
+          }
+        }
+      }
     },
     "Nothing to restore" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingenting å gjenopprette"
+          }
+        }
+      }
     },
     "Nothing was restored. Try again." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingenting ble gjenopprettet. Prøv igjen."
+          }
+        }
+      }
     },
     "Nothing's running in Clockin." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingenting går i Clockin."
+          }
+        }
+      }
     },
     "OK" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "OK"
+          }
+        }
+      }
     },
     "Off" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Av"
+          }
+        }
+      }
     },
     "Off, a notification plays the chime, and Silent mode or a Focus can hush it." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Når det er av, spiller et varsel klokkespillet, og lydløs modus eller en fokusmodus kan dempe det."
+          }
+        }
+      }
     },
     "On" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "På"
+          }
+        }
+      }
     },
     "On a break" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "På pause"
+          }
+        }
+      }
     },
     "On a break. %@." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "På pause. %@."
+          }
+        }
+      }
     },
     "One session this week, on %@ afternoon." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Én økt denne uken, %@ ettermiddag."
+          }
+        }
+      }
     },
     "One session this week, on %@ evening." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Én økt denne uken, %@ kveld."
+          }
+        }
+      }
     },
     "One session this week, on %@ morning." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Én økt denne uken, %@ morgen."
+          }
+        }
+      }
     },
     "Open Settings" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Åpne Innstillinger"
+          }
+        }
+      }
     },
     "Opens Focus" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Åpner Fokus"
+          }
+        }
+      }
     },
     "Opens Settings" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Åpner Innstillinger"
+          }
+        }
+      }
     },
     "Pause" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sett på pause"
+          }
+        }
+      }
     },
     "Pause Focus" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sett fokus på pause"
+          }
+        }
+      }
     },
     "Pause or Resume Focus" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pause eller fortsett fokus"
+          }
+        }
+      }
     },
     "Pause, +5 and History are there when you need them." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pause, +5 og Historikk er der når du trenger dem."
+          }
+        }
+      }
     },
     "Paused" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pauset"
+          }
+        }
+      }
     },
     "Paused at %@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pauset kl. %@"
+          }
+        }
+      }
     },
     "Paused · %@ left" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pauset · %@ igjen"
+          }
+        }
+      }
     },
     "Paused, %@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pauset, %@"
+          }
+        }
+      }
     },
     "Paused. %@." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pauset. %@."
+          }
+        }
+      }
     },
     "Pauses the running session or break." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Setter økten eller pausen som går, på pause."
+          }
+        }
+      }
     },
     "Planned" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Planlagt"
+          }
+        }
+      }
     },
     "Previous" : {
-
+      "shouldTranslate" : false
     },
     "Previous week" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Forrige uke"
+          }
+        }
+      }
     },
     "Puts the session back" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Legger økten tilbake"
+          }
+        }
+      }
     },
     "Reach up" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Strekk opp"
+          }
+        }
+      }
     },
     "Ready" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Klar"
+          }
+        }
+      }
     },
     "Ready when you are." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Klar når du er."
+          }
+        }
+      }
     },
     "Ready, %@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Klar, %@"
+          }
+        }
+      }
     },
     "Recent names" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nylige navn"
+          }
+        }
+      }
     },
     "Reduce Motion" : {
-
+      "shouldTranslate" : false
     },
     "Rename" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gi nytt navn"
+          }
+        }
+      }
     },
     "Replay celebration" : {
-
+      "shouldTranslate" : false
     },
     "Rest" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hvil"
+          }
+        }
+      }
     },
     "Rest with Tick, stretch along with it, or breathe in time with the dial. You can change it on the break screen for that break. Every fourth full session of the day earns a %@ break." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hvil med Tick, strekk deg sammen med den, eller pust i takt med skiven. Du kan endre det på pauseskjermen for den pausen. Hver fjerde hele økt i løpet av dagen gir en pause på %@."
+          }
+        }
+      }
     },
     "Restore" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gjenopprett"
+          }
+        }
+      }
     },
     "Restore from a backup…" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gjenopprett fra en sikkerhetskopi …"
+          }
+        }
+      }
     },
     "Restore this backup?" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gjenopprette denne sikkerhetskopien?"
+          }
+        }
+      }
     },
     "Resume" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fortsett"
+          }
+        }
+      }
     },
     "Resume Focus" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fortsett fokus"
+          }
+        }
+      }
     },
     "Ring from the sheet" : {
-
+      "shouldTranslate" : false
     },
     "Ring when time's up" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ring når tiden er ute"
+          }
+        }
+      }
     },
     "Ringing" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ringer"
+          }
+        }
+      }
     },
     "Rings like an alarm, even on silent and in a Focus, until you stop it." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ringer som en alarm, også i lydløs modus og i en fokusmodus, til du stopper den."
+          }
+        }
+      }
     },
     "Running" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Går"
+          }
+        }
+      }
     },
     "Save name" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lagre navn"
+          }
+        }
+      }
     },
     "Save to Apple Health" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lagre i Apple Helse"
+          }
+        }
+      }
     },
     "Saying hello" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sier hei"
+          }
+        }
+      }
     },
     "Session" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Økt"
+          }
+        }
+      }
     },
     "Session cancelled" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Økten er avbrutt"
+          }
+        }
+      }
     },
     "Session cancelled. Undo is available for a few seconds." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Økten er avbrutt. Du kan angre i noen sekunder."
+          }
+        }
+      }
     },
     "Session deleted" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Økten er slettet"
+          }
+        }
+      }
     },
     "Session deleted. Undo is available for a few seconds." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Økten er slettet. Du kan angre i noen sekunder."
+          }
+        }
+      }
     },
     "Session length" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Øktlengde"
+          }
+        }
+      }
     },
     "Session name" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Øktnavn"
+          }
+        }
+      }
     },
     "Set of four" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sett på fire"
+          }
+        }
+      }
     },
     "Set the energy instead" : {
-
+      "shouldTranslate" : false
     },
     "Settings" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Innstillinger"
+          }
+        }
+      }
     },
     "Short" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kort"
+          }
+        }
+      }
     },
     "Short timers (10s / 5s)" : {
-
+      "shouldTranslate" : false
     },
     "Shoulder shrug" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Skuldertrekk"
+          }
+        }
+      }
     },
     "Show bedside clock" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vis nattbordsklokke"
+          }
+        }
+      }
     },
     "Show first-launch hints again" : {
-
+      "shouldTranslate" : false
     },
     "Show the envelope" : {
-
+      "shouldTranslate" : false
     },
     "Shows the session, to rename or delete it" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Viser økten, så du kan gi den nytt navn eller slette den"
+          }
+        }
+      }
     },
     "Side stretch" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sidestrekk"
+          }
+        }
+      }
     },
     "Silent mode mutes them." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lydløs modus demper dem."
+          }
+        }
+      }
     },
     "Skip break" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hopp over pausen"
+          }
+        }
+      }
     },
     "Slow animations ×4" : {
-
+      "shouldTranslate" : false
     },
     "Slow motion ×4" : {
-
+      "shouldTranslate" : false
     },
     "Sounds" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lyder"
+          }
+        }
+      }
     },
     "Sounds lab" : {
-
+      "shouldTranslate" : false
     },
     "Speed" : {
-
+      "shouldTranslate" : false
     },
     "Spread across the day this week; %@ was your longest day." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Spredt utover dagen denne uken; %@ var den lengste dagen din."
+          }
+        }
+      }
     },
     "Start %lld-min break" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Start %lld min pause"
+          }
+        }
+      }
     },
     "Start %lld-sec break" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Start %lld s pause"
+          }
+        }
+      }
     },
     "Start Break" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Start pause"
+          }
+        }
+      }
     },
     "Start Focus" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Start fokus"
+          }
+        }
+      }
     },
     "Start a focus of ${minutes} minutes called ${name}" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Start et fokus på ${minutes} minutter kalt ${name}"
+          }
+        }
+      }
     },
     "Start break" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Start pause"
+          }
+        }
+      }
     },
     "Start focus" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Start fokus"
+          }
+        }
+      }
     },
     "Start focus, pause or resume it, or start the break." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Start fokus, sett det på pause eller fortsett, eller start pausen."
+          }
+        }
+      }
     },
     "Starts a focus session. Without a length, it uses the one set on the dial." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Starter en fokusøkt. Uten lengde brukes den som er stilt inn på skiven."
+          }
+        }
+      }
     },
     "Starts focus, pauses or resumes it, or starts the break." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Starter fokus, setter det på pause eller fortsetter, eller starter pausen."
+          }
+        }
+      }
     },
     "State" : {
-
+      "shouldTranslate" : false
     },
     "Stop" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stopp"
+          }
+        }
+      }
     },
     "Stop Focus" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stopp fokus"
+          }
+        }
+      }
     },
     "Stop alarm" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stopp alarmen"
+          }
+        }
+      }
     },
     "Stopped" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stoppet"
+          }
+        }
+      }
     },
     "Stopped early" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stoppet tidlig"
+          }
+        }
+      }
     },
     "Stopped. %@ of focus kept." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stoppet. %@ fokus beholdt."
+          }
+        }
+      }
     },
     "Stopped. It was under a minute, so nothing was kept." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stoppet. Det var under ett minutt, så ingenting ble beholdt."
+          }
+        }
+      }
     },
     "Stretch" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Strekk"
+          }
+        }
+      }
     },
     "Stretch, %lld of %lld, %@" : {
       "localizations" : {
@@ -942,131 +2553,389 @@
             "state" : "new",
             "value" : "Stretch, %1$lld of %2$lld, %3$@"
           }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Strekk, %1$lld av %2$lld, %3$@"
+          }
         }
       }
     },
     "Stretches" : {
-
+      "shouldTranslate" : false
     },
     "Style" : {
-
+      "shouldTranslate" : false
     },
     "System" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "System"
+          }
+        }
+      }
     },
     "Test timers" : {
-
+      "shouldTranslate" : false
     },
     "That's the whole app." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Det er hele appen."
+          }
+        }
+      }
     },
     "The file couldn't be read." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Filen kunne ikke leses."
+          }
+        }
+      }
     },
     "The widget and Lock Screen follow your iPhone's setting. The app icon is Tick at work or on a break." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Widgeten og låseskjermen følger innstillingen på iPhonen. Appsymbolet er Tick på jobb eller på pause."
+          }
+        }
+      }
     },
     "This backup is from a newer version of Clockin." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Denne sikkerhetskopien er fra en nyere versjon av Clockin."
+          }
+        }
+      }
     },
     "This file isn't a Clockin backup." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Denne filen er ikke en sikkerhetskopi fra Clockin."
+          }
+        }
+      }
     },
     "This week" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Denne uken"
+          }
+        }
+      }
     },
     "Tick" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tick"
+          }
+        }
+      }
     },
     "Tick boxes through a session in short bursts and tires as the time runs out. Calm keeps it in guard. Reduce Motion and Low Power Mode keep it calm and still." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tick bokser seg gjennom en økt i korte runder og blir sliten når tiden renner ut. Rolig holder den i garde. Reduser bevegelse og strømsparingsmodus holder den rolig og stille."
+          }
+        }
+      }
     },
     "Tick gallery" : {
-
+      "shouldTranslate" : false
     },
     "Time for a %lld-minute break." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tid for en pause på %lld minutter."
+          }
+        }
+      }
     },
     "Time for a %lld-second break." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tid for en pause på %lld sekunder."
+          }
+        }
+      }
     },
     "Time left" : {
-
+      "shouldTranslate" : false
     },
     "Time's up" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tiden er ute"
+          }
+        }
+      }
     },
     "Timer" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tidtaker"
+          }
+        }
+      }
     },
     "Timer sounds" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tidtakerlyder"
+          }
+        }
+      }
     },
     "Today" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "I dag"
+          }
+        }
+      }
     },
     "Today %@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "I dag %@"
+          }
+        }
+      }
     },
     "Today's Focus" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dagens fokus"
+          }
+        }
+      }
     },
     "Today: %@ of focus" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "I dag: %@ fokus"
+          }
+        }
+      }
     },
     "Turn on" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Slå på"
+          }
+        }
+      }
     },
     "Turn sideways for the bedside clock" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Snu telefonen for nattbordsklokken"
+          }
+        }
+      }
     },
     "Under half its plan" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Under halvparten av planen"
+          }
+        }
+      }
     },
     "Undo" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Angre"
+          }
+        }
+      }
     },
     "Until %@" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Til %@"
+          }
+        }
+      }
     },
     "Uses this name" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bruker dette navnet"
+          }
+        }
+      }
     },
     "Version" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Versjon"
+          }
+        }
+      }
     },
     "Week summaries" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ukesammendrag"
+          }
+        }
+      }
     },
     "What are you focusing on" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hva fokuserer du på"
+          }
+        }
+      }
     },
     "What are you focusing on?" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hva fokuserer du på?"
+          }
+        }
+      }
     },
     "When time was up" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Da tiden var ute"
+          }
+        }
+      }
     },
     "When time's up" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Når tiden er ute"
+          }
+        }
+      }
     },
     "Workout" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trening"
+          }
+        }
+      }
     },
     "Wrist circles" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Håndleddsrulling"
+          }
+        }
+      }
     },
     "Yesterday" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "I går"
+          }
+        }
+      }
     },
     "You focused %@ today." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Du har fokusert %@ i dag."
+          }
+        }
+      }
     },
     "Your data" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dataene dine"
+          }
+        }
+      }
     },
     "Your saved sessions haven't been deleted. Timers still work, and new sessions are kept until History opens again." : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "De lagrede øktene dine er ikke slettet. Tidtakere virker fortsatt, og nye økter tas vare på til historikken åpnes igjen."
+          }
+        }
+      }
     },
     "bounce %@ · breath %@ · sweat %@/s · hunch %@°" : {
       "localizations" : {
@@ -1076,16 +2945,31 @@
             "value" : "bounce %1$@ · breath %2$@ · sweat %3$@/s · hunch %4$@°"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "knob" : {
-
+      "shouldTranslate" : false
     },
     "look at something far away" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "se på noe langt borte"
+          }
+        }
+      }
     },
     "min" : {
-
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "min"
+          }
+        }
+      }
     },
     "tempo %@ · reach %@ · rest %@–%@ s" : {
       "localizations" : {
@@ -1095,7 +2979,8 @@
             "value" : "tempo %1$@ · reach %2$@ · rest %3$@–%4$@ s"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     }
   },
   "version" : "1.0"
