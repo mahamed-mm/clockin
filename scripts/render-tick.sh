@@ -13,5 +13,5 @@ plutil -create xml1 "$t/Assets.bundle/Contents/Info.plist"
 plutil -insert CFBundleIdentifier -string com.moha.clockin.render-tick "$t/Assets.bundle/Contents/Info.plist"
 xcrun actool Clockin/Assets.xcassets --compile "$t/Assets.bundle/Contents/Resources" --platform macosx \
     --minimum-deployment-target 14.0 --output-partial-info-plist "$t/assets.plist" > /dev/null
-xcrun swiftc -parse-as-library -O Shared/Mascot/*.swift scripts/render-tick.swift -o "$t/render-tick"
+xcrun swiftc -parse-as-library -O Shared/Mascot/**/*.swift scripts/render-tick.swift -o "$t/render-tick"
 TICK_ASSETS="$t/Assets.bundle" "$t/render-tick" "$@"

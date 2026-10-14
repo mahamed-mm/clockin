@@ -96,7 +96,7 @@ struct TickMotion: Equatable, Sendable {
 
 /// How much detail fits: hand-made touches only when large, the full pose
 /// simplified in between, and just the head when tiny.
-enum TickDetail: Sendable {
+enum TickDetail: Equatable, Sendable {
     /// 120 pt and up: an outline a little heavier on one side, the crown
     /// a touch off centre, a faint grain on the face.
     case handmade
