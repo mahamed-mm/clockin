@@ -43,6 +43,16 @@ A focus session is a workout (Settings › Mascot during focus: Workout, Calm or
 - **Around the session:** gloves pop on and tap together at the start; a pause drops to guard in 0.3 s and waits with gloves on (still panting and sweating once tired); resume goes straight back; a cancel gets a shrug for 3 s; Finish now and the bell end on the champion, gloves raised; the gloves come off for the break.
 - **Calm and still:** Calm stays in guard with the tiring face and no punches. Reduce Motion and Low Power Mode show calm stills that cross-fade at each face change. The bedside clock is always calm, and so is working on past the bell.
 
+## The break
+
+A break is rest, a stretch or breathing (Settings › Break › During breaks, or the chips on the break screen for one break). Everything lives in `Shared/Mascot/Break` and, like the workout, is worked out from the break's own clock: `TickBreak` holds its length, end and the style with when it began, in the break's time, so a pause doesn't count and a relaunch lands on the same moment.
+
+- **Stretch:** `StretchMove` is a set of slow `KeyframeTimeline`s on the standing Tick (neck roll, shoulder shrug, reach up, side stretch, wrist circles, eye rest), each about 20 seconds with holds, starting and ending on the stance; hands going up high swing their elbows out round the ring. `StretchRoutine` fits them to what's left of the break: as many as fit in 60% of it, chosen eyes first, done in an order that flows, 2 s apart. `BreakLoops` eases Tick up off the ground as the mug goes, plays the routine, then eases it back down to the mug. Each stretch has a still pose for Reduce Motion and Low Power Mode.
+- **Breathe:** `BreathCycle` is 4 s in, 6 s out from when Breathe began. The halo and Tick's breath are one number that the render server animates from turn to turn (`BreathFollower`), so the app itself wakes only at the turns, for the words on the dial and a soft tap. Still, they hold at half.
+- **The dial's words:** `BreakGuide` gives the label ("Breathe in", "Neck roll"), the dots and the VoiceOver value, and the moments they change, so the dial redraws only then.
+- **Break's over:** after a break runs out, `TickDirector` keeps Tick ready (even at night) for the ten minutes "Break's over" shows, and its entrance is a quick reach up and a yawn (`StretchMove.backToWork`), seen only if the change happened on screen.
+- **Live Activity, island, widget, bedside:** unchanged. They can't follow breaths or stretches without push updates (the same limit as the workout), and the bedside clock always rests.
+
 ## Where Tick can move
 
 | Surface | Tick | Not possible |
@@ -83,6 +93,18 @@ The running screen's cost is its countdown; Tick adds nothing measurable there. 
 
 So the workout adds 2–5 points in the simulator.
 
+**Breaks (same simulator, a 5-minute break, 30 s averages after settling):**
+
+| During breaks | App CPU |
+|---|---|
+| Rest (the mug's steam, 15 frames a second throughout) | about 29% |
+| Stretch (frames only while a stretch moves; holds, gaps and eye rest draw nothing) | about 28% |
+| Breathe (the app wakes at each turn; the render server moves the halo and Tick) | about 25% |
+
+So stretching and breathing cost no more than resting.
+
+**Sounds and paper:** the timer's sounds are system sounds (`SystemTimerSounds`): loaded once, no audio session, nothing running between them. The paper grain is a Metal `colorEffect` (`Clockin/Design/PaperGrain.metal`) with no time input, so it's drawn with the page and never on its own; the dial's Bakelite shine is one static stroke on its track. The widget and Live Activity keep plain paper: they're drawn by the system from an archived view, often tinted or clear, where a grain would be flattened or lost.
+
 ## Checking on a phone
 
 1. **Instruments, SwiftUI template:** during a focus session, body updates should come only from the dial's once-a-second step, plus Tick's blinks.
@@ -96,3 +118,12 @@ So the workout adds 2–5 points in the simulator.
 2. **Animation Hitches:** under 1% through a session; the gallery's workout simulator at 10× runs through every phase quickly.
 3. **Time Profiler:** under 2 ms of main-thread work per frame during combos.
 4. **Power Profiler:** a 50-minute session with the screen on, Workout against Off. Aim for under 10% more energy; if it's over, longer rests between rounds come first.
+
+**For breaks** (a 5-minute break in each style, Rest to compare):
+
+1. **SwiftUI:** while breathing, `DialFace` and `TickView` update only at the turns and blinks; while stretching, `TickView` updates at 30 a second or less during a stretch and not at all in holds; `FocusView` doesn't update for either.
+2. **Animation Hitches:** under 1% across each style, including switching chips mid-break.
+3. **Time Profiler:** under 2 ms of main-thread work per frame while stretching, and almost none between breaths.
+4. **Power Profiler:** each style against Rest, screen on. Aim for under 10% more energy than Rest; if the breathing halo keeps the display at a high refresh rate, move it to a 15-frame timeline.
+
+**For the paper:** the SwiftUI template shows no `PaperBackground` updates during a running countdown, Time Profiler shows no shader work once a screen has appeared, and History scrolls with under 1% hitches.
