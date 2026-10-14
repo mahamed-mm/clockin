@@ -112,7 +112,9 @@ private struct HistoryHeader: View {
     private let day: Date
     @Query private var records: [FocusRecord]
     @Environment(SessionEngine.self) private var engine
+    @Environment(AppServices.self) private var services
     @Environment(\.legibilityWeight) private var legibilityWeight
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     init(day: Date, calendar: Calendar, showsTotals: Bool) {
         self.day = day
@@ -126,10 +128,22 @@ private struct HistoryHeader: View {
             .font(.retro(.headline, bold: legibilityWeight == .bold))
             .foregroundStyle(Retro.orangeText)
         VStack(alignment: .leading, spacing: Space.xs) {
-            Text("History")
-                .retroFont(.title)
-                .foregroundStyle(Retro.ink)
-                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .top) {
+                Text("History")
+                    .retroFont(.title)
+                    .foregroundStyle(Retro.ink)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: Space.s)
+                // Small and still, for company; large text needs the room more.
+                if !dynamicTypeSize.isAccessibilitySize {
+                    let pose = TickPose.forHistory(engine.stage, fullToday: today.fullCount,
+                                                   hour: services.calendar.component(.hour, from: .now))
+                    TickView(pose: pose, progress: .fixed(TickPose.ringProgress(for: engine.stage, at: .now)))
+                        .environment(\.tickReduceMotion, true)
+                        .frame(width: 56, height: 56)
+                        .padding(.top, -Space.xxs)
+                }
+            }
             if showsTotals {
                 Text("You focused \(total) today.")
                     .font(.retro(.headline, bold: legibilityWeight == .bold))

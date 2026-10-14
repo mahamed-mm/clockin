@@ -55,4 +55,21 @@ struct TickPoseTests {
         if case .glyph(let mouth) = TickDetail.fitting(points: 20) { #expect(mouth) } else { Issue.record("20 pt is a glyph") }
         if case .glyph(let mouth) = TickDetail.fitting(points: 8) { #expect(!mouth) } else { Issue.record("8 pt is a glyph") }
     }
+
+    @Test func historysTickFollowsTheDay() {
+        let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        func session(_ phase: SessionPhase) -> SessionStage {
+            .active(ActiveSession(id: UUID(), name: "", phase: phase, plannedDuration: 300, focusStartedAt: start,
+                                  state: .running(endDate: start.addingTimeInterval(300))))
+        }
+        #expect(TickPose.forHistory(session(.focus), fullToday: 2, hour: 14) == .working)
+        #expect(TickPose.forHistory(session(.rest), fullToday: 2, hour: 23) == .onBreak)
+        // The set of four done: proud, even at night.
+        #expect(TickPose.forHistory(.idle, fullToday: 4, hour: 14) == .streak)
+        #expect(TickPose.forHistory(.idle, fullToday: 6, hour: 23) == .streak)
+        // Night with nothing done: asleep; something done: ready.
+        #expect(TickPose.forHistory(.idle, fullToday: 0, hour: 23) == .sleeping)
+        #expect(TickPose.forHistory(.idle, fullToday: 1, hour: 23) == .ready)
+        #expect(TickPose.forHistory(.idle, fullToday: 0, hour: 9) == .ready)
+    }
 }

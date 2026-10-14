@@ -22,6 +22,16 @@ extension TickPose {
         }
     }
 
+    /// Tick in History's header: at work or on a break while a session runs,
+    /// proud once today's set of four is done, asleep at night with nothing
+    /// done yet, and ready otherwise.
+    static func forHistory(_ stage: SessionStage, fullToday: Int, hour: Int) -> TickPose {
+        if case .active(let session) = stage { return session.phase == .focus ? .working : .onBreak }
+        if fullToday >= TimerPlan.sessionsPerSet { return .streak }
+        if isNight(hour: hour) && fullToday == 0 { return .sleeping }
+        return .ready
+    }
+
     /// Tick on the Lock Screen and in the Dynamic Island.
     static func forLive(phase: SessionPhase, paused: Bool, done: Bool) -> TickPose {
         if done { return phase == .focus ? .done : .ready }
