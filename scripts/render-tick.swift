@@ -26,6 +26,7 @@ struct RenderTick {
         case "sheet": try write(ContactSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "shapes": try write(Silhouettes(), scale: 2, to: URL(fileURLWithPath: out))
         case "workout": try write(WorkoutSheet(), scale: 2, to: URL(fileURLWithPath: out))
+        case "moves": try write(MoveSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "hero":
             // The README's banner: the name in Fraunces, Tick working, resting, done.
             for font in ["Display", "Title", "Text"] {
@@ -121,6 +122,35 @@ struct WorkoutSheet: View {
             }
         }
         .padding(24)
+        .background(Color(white: 0.97))
+        .foregroundStyle(Color(white: 0.15))
+    }
+}
+
+/// Every move as a strip of frames, on the strong stance (worn-out moves
+/// on the exhausted one), with Tick's square outlined.
+struct MoveSheet: View {
+    var body: some View {
+        let palette = TickPalette.assets(in: assets)
+        let paper = Color("Paper", bundle: assets)
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(WorkoutMove.allCases, id: \.self) { move in
+                let params = WorkoutSamples.params(left: [.wipe, .weakJab].contains(move) ? 30 : 900)
+                let frames = 12
+                HStack(spacing: 6) {
+                    Text(move.rawValue).font(.system(size: 13, weight: .semibold)).frame(width: 90, alignment: .leading)
+                    ForEach(0..<frames, id: \.self) { i in
+                        let t = move.duration * Double(i) / Double(frames - 1)
+                        let frame = WorkoutFrame(params: params, move: move, at: t)
+                        TickFigure(rig: frame.rig, face: frame.face, palette: palette, motion: frame.motion, progress: 0.6)
+                            .frame(width: 96, height: 96)
+                            .border(Color.red.opacity(0.25), width: 0.5)
+                            .background(paper)
+                    }
+                }
+            }
+        }
+        .padding(20)
         .background(Color(white: 0.97))
         .foregroundStyle(Color(white: 0.15))
     }

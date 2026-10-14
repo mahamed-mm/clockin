@@ -110,6 +110,10 @@ struct TickMotion: Equatable, Sendable {
     var alarmFlash: Double = 0
     /// 0...1 of a shrug: hands and shoulders up.
     var shrug: Double = 0
+    /// 0...1 of a punch or kick landing: lines burst from where it lands.
+    var impact: Double = 0
+    /// Where it lands, relative to the body's centre (Tick units).
+    var impactAt: CGPoint = .zero
 
     // Entries, each 0 at rest.
     /// Smaller than full size, as a fraction (0.2 is 80%): popping in.

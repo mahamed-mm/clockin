@@ -120,7 +120,30 @@ struct TickEffectsPart: View {
             star
                 .offset(y: -16 * look.motion.starAbove)
                 .opacity(rig.star * (1 - look.motion.starAbove))
+            if look.motion.impact > 0 {
+                Ink(impactLines)
+                    .stroke(look.palette.limbs.opacity(0.75),
+                            style: StrokeStyle(lineWidth: look.handmade ? 1.8 : 2.4, lineCap: .round))
+                    .opacity(look.motion.impact)
+            }
         }
+    }
+
+    /// A burst of short lines fanning out round where a punch or kick lands,
+    /// away from the body: four when there's room, two bolder ones when small.
+    private var impactLines: Path {
+        let at = look.motion.impactAt
+        let hit = look.body(at)
+        let away = atan2(at.y, at.x)
+        let spread = look.handmade ? [-1.3, -0.7, 0.7, 1.3] : [-0.75, 0.75]
+        let start = 8.5 + 1.5 * (1 - look.motion.impact), length = look.handmade ? 4.5 : 5
+        var path = Path()
+        for offset in spread {
+            let a = away + offset
+            path.addPath(TickPath.line(CGPoint(x: hit.x + start * cos(a), y: hit.y + start * sin(a)),
+                                       CGPoint(x: hit.x + (start + length) * cos(a), y: hit.y + (start + length) * sin(a))))
+        }
+        return path
     }
 
     /// Fanning out from the crown.

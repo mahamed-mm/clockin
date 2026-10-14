@@ -17,7 +17,7 @@ extension TickRig {
             lean = 4 + params.hunch
             // The rear glove guards the chin; the lead glove is out front, to the right.
             leftArm = Limb(root: l, bend: CGPoint(x: -38, y: 20 + 0.5 * drop), end: CGPoint(x: -11, y: 16 + drop))
-            rightArm = Limb(root: r, bend: CGPoint(x: 41, y: 17 + 0.5 * drop), end: CGPoint(x: 25, y: 5 + drop))
+            rightArm = Limb(root: r, bend: CGPoint(x: 40, y: 18 + 0.5 * drop), end: CGPoint(x: 21, y: 6 + drop))
             // A boxer's stance: feet apart, the lead foot forward.
             leftLeg = .straight(CGPoint(x: -7, y: Self.hipY), CGPoint(x: -13, y: 38 - 0.25 * params.hunch))
             rightLeg = .straight(CGPoint(x: 7, y: Self.hipY), CGPoint(x: 13, y: 38 - 0.25 * params.hunch))

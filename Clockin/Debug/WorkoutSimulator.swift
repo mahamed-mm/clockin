@@ -11,6 +11,8 @@ struct WorkoutSimulator: View {
     @State private var setsEnergy = false
     @State private var energyValue = 1.0
     @State private var showsEnvelope = false
+    /// A move playing, and when it started.
+    @State private var playing: (move: WorkoutMove, start: Date)?
 
     /// The moment shown: from the scrubber, or the time left that gives the chosen energy.
     private var energy: WorkoutEnergy {
@@ -22,11 +24,19 @@ struct WorkoutSimulator: View {
         let params = WorkoutParams(energy)
         VStack(alignment: .leading, spacing: Space.s) {
             Text("Workout").retroLabel()
-            TickFigure(rig: TickRig(workout: params), face: TickFace(workout: params.face, flush: params.flush),
-                       palette: .standard, progress: energy.elapsed >= planned ? 0 : 1 - energy.elapsed / planned)
-                .frame(width: 200, height: 200)
-                .overlay { if showsEnvelope { WorkoutEnvelope() } }
-                .frame(maxWidth: .infinity)
+            TimelineView(.animation(paused: playing == nil)) { context in
+                let frame = frame(at: context.date, params: params)
+                TickFigure(rig: frame.rig, face: frame.face, palette: .standard, motion: frame.motion,
+                           progress: energy.elapsed >= planned ? 0 : 1 - energy.elapsed / planned)
+            }
+            .frame(width: 200, height: 200)
+            .overlay { if showsEnvelope { WorkoutEnvelope() } }
+            .frame(maxWidth: .infinity)
+            .task(id: playing?.start) {
+                guard let playing else { return }
+                try? await Task.sleep(for: .seconds(playing.move.duration * Motion.speed))
+                self.playing = nil
+            }
             readout(energy, params)
             Picker("Session", selection: $planned) {
                 ForEach([900.0, 1500, 3000], id: \.self) { Text("\(Int($0 / 60)) min").tag($0) }
@@ -47,10 +57,25 @@ struct WorkoutSimulator: View {
             }
             .disabled(!setsEnergy)
             Toggle("Show the envelope", isOn: $showsEnvelope)
+            Text("Moves").retroLabel()
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: Space.xs)], spacing: Space.xs) {
+                ForEach(WorkoutMove.allCases, id: \.self) { move in
+                    Button(move.rawValue) { playing = (move, .now) }
+                        .buttonStyle(.bordered)
+                        .font(.system(size: 12))
+                }
+            }
         }
         .font(.retro(.meta))
         .padding(Space.m)
         .background(Retro.paperDeep, in: .rect(cornerRadius: Radius.card))
+    }
+
+    /// The playing move's moment (in slow motion if that's on), or the stance.
+    private func frame(at date: Date, params: WorkoutParams) -> WorkoutFrame {
+        guard let playing else { return WorkoutFrame(params: params) }
+        let t = date.timeIntervalSince(playing.start) / Motion.speed
+        return WorkoutFrame(params: params, move: playing.move, at: t)
     }
 
     private func readout(_ energy: WorkoutEnergy, _ params: WorkoutParams) -> some View {
