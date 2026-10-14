@@ -10,12 +10,19 @@ struct RenderTick {
     static func main() throws {
         let arguments = CommandLine.arguments.dropFirst()
         guard let mode = arguments.first, let out = arguments.dropFirst().first else {
-            print("usage: render-tick sheet|shapes <file.png> | icon <directory>")
+            print("usage: render-tick sheet|shapes|hero <file.png> | icon <directory>")
             exit(2)
         }
         switch mode {
         case "sheet": try write(ContactSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "shapes": try write(Silhouettes(), scale: 2, to: URL(fileURLWithPath: out))
+        case "hero":
+            // The README's banner: the name in Fraunces, Tick working, resting, done.
+            for font in ["Display", "Title", "Text"] {
+                let url = URL(fileURLWithPath: "Shared/Fonts/FrauncesClockin-\(font).ttf")
+                CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+            }
+            try write(Hero(), scale: 2, to: URL(fileURLWithPath: out))
         case "icon":
             // The icon's Tick layers: 1024 px, transparent, for Icon Composer bundles.
             let directory = URL(fileURLWithPath: out)
@@ -111,5 +118,56 @@ struct IconLayer: View {
             .frame(width: 860, height: 860)
             .offset(y: 30)
             .frame(width: 1024, height: 1024)
+    }
+}
+
+/// The README's banner, 1600 x 933: the name, the line, the set of four,
+/// and Tick at work, on a break and done.
+struct Hero: View {
+    let ink = Color(red: 0.165, green: 0.129, blue: 0.106)
+    let soft = Color(red: 0.404, green: 0.345, blue: 0.294)
+    let stripes = [Color(red: 0.612, green: 0.239, blue: 0.133), Color(red: 0.824, green: 0.376, blue: 0.165),
+                   Color(red: 0.890, green: 0.655, blue: 0.184)]
+
+    var body: some View {
+        let palette = TickPalette.fixed(dark: false)
+        HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("Clockin")
+                    .font(.custom("FrauncesClockin-Display", size: 150))
+                    .foregroundStyle(ink)
+                Text("One thing at a time.")
+                    .font(.custom("FrauncesClockin-Title", size: 46))
+                    .foregroundStyle(soft)
+                Text("A retro focus timer for iPhone")
+                    .font(.custom("FrauncesClockin-Text", size: 32))
+                    .foregroundStyle(soft)
+                HStack(spacing: 12) {
+                    ForEach(0..<3, id: \.self) { i in
+                        Capsule().fill(stripes[i]).frame(width: 60, height: 16)
+                    }
+                    Capsule().strokeBorder(Color(red: 0.31, green: 0.435, blue: 0.369), lineWidth: 3)
+                        .frame(width: 60, height: 16)
+                }
+                .padding(.top, 28)
+            }
+            .padding(.leading, 104)
+            Spacer(minLength: 0)
+            ZStack {
+                TickFigure(pose: .working, palette: palette, detail: .handmade)
+                    .frame(width: 330, height: 330)
+                    .offset(x: -190, y: 90)
+                TickFigure(pose: .onBreak, palette: palette, detail: .handmade)
+                    .frame(width: 300, height: 300)
+                    .offset(x: 170, y: 110)
+                TickFigure(pose: .done, palette: palette, detail: .handmade)
+                    .frame(width: 400, height: 400)
+                    .offset(x: -10, y: -110)
+            }
+            .frame(width: 760)
+            .padding(.trailing, 40)
+        }
+        .frame(width: 1600, height: 933)
+        .background(Color(red: 0.91, green: 0.83, blue: 0.68))
     }
 }

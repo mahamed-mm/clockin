@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/screenshots/hero.jpg" alt="Clockin: Focus, completion and History screens" width="100%">
+  <img src="docs/screenshots/hero.jpg" alt="Clockin: Tick, the kitchen-timer mascot, at work, done and on a break" width="100%">
 </p>
 
 # Clockin
@@ -8,6 +8,7 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 
 ## Features
 
+- **Tick:** Clockin's mascot, a little kitchen timer whose ring is its own timer and whose crown is the start button. It leans on the dial and shows how things stand: ready (asleep at night), headphones on while you focus, arms crossed and a foot tapping when paused, a jump when a session's done (proud for the fourth of a set), a kind shrug after Finish now, back to work if you keep going past the bell, and feet up with a mug on a break. It moves for a moment when things change and then holds still. It never sulks, dies or nags, and there's nothing to earn. Tick is on the Lock Screen, in the Dynamic Island, in StandBy, on the widget and on the ringing alarm too, and it's the app icon: at work, or on a break if you pick that in Settings.
 - **One session at a time:** focus, pause and resume, or cancel without recording (and undo the cancel for a few seconds). The break starts manually and never counts as focus time.
 - **Your rhythm:** Classic 25/5, Deep 50/10 or Short 15/3, and a 15-minute long break after every fourth full session of the day. "+5 min" in the last five minutes, and "Finish now" to stop early and keep the minutes. Pick the length from chips under the dial or in Settings, or drag the dial's knob like a kitchen timer to any length from 5 to 60 minutes, one detent per five minutes (its break is a fifth of it, 3 to 15 minutes). It applies from the next session.
 - **Keeps going after the bell:** if you carry on past time's up, the dial keeps time in a thin rust lap round its rim, "+3 min" under the seal, once a minute for up to an hour. "Keep +3 min" adds the whole minutes to the session; starting the break or Done leaves it as it rang.
@@ -39,7 +40,7 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 
 | Focus | Running | Kept going |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/focus-idle.png" width="250" alt="Focus screen with the dial set to 35 minutes and the length chips"> | <img src="docs/screenshots/focus-running.png" width="250" alt="A focus session running"> | <img src="docs/screenshots/focus-complete.png" width="250" alt="Session complete, four minutes past the bell, with the overtime lap and Keep +4 min"> |
+| <img src="docs/screenshots/focus-idle.png" width="250" alt="Focus screen, ready, with Tick leaning on the dial"> | <img src="docs/screenshots/focus-running.png" width="250" alt="A focus session running"> | <img src="docs/screenshots/focus-complete.png" width="250" alt="Session complete, four minutes past the bell, with the overtime lap and Keep +4 min"> |
 
 | History | Session card | Settings |
 |:---:|:---:|:---:|
@@ -47,13 +48,17 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 
 | Lock Screen | Home Screen widget |
 |:---:|:---:|
-| <img src="docs/screenshots/lock-screen.png" width="250" alt="Live Activity on the Lock Screen"> | <img src="docs/screenshots/widget.png" width="250" alt="Medium widget on the Home Screen"> |
+| <img src="docs/screenshots/lock-screen.png" width="250" alt="Live Activity on the Lock Screen, with Tick on the dial"> | <img src="docs/screenshots/widget.png" width="250" alt="Medium widget on the Home Screen"> |
 
 | Bedside clock | Dynamic Island |
 |:---:|:---:|
 | <img src="docs/screenshots/bedside.png" width="420" alt="The bedside clock in landscape"> | <img src="docs/screenshots/dynamic-island.png" width="380" alt="Expanded Dynamic Island"> |
 
 ## Design
+
+<p align="center"><img src="docs/screenshots/app-icons.png" width="260" alt="The two app icons: Tick at work with headphones, and Tick on a break with a mug"></p>
+
+- **Tick:** a round Bakelite timer in the palette (cream face, terracotta ring, mustard crown) with a clock hand for an eyebrow. One silhouette per pose, so each reads even as a solid shape. Drawn with SwiftUI shapes in layers, so the same code draws it in the app, the widgets, the icon (`scripts/render-tick.sh`) and this README's banner; the detail follows the size, down to a head-only glyph in the Dynamic Island.
 
 - **Warm 70s palette:** paper, ink, rust, burnt orange, mustard and avocado, with full light and dark modes.
 - **One progress language:** every ring and bar shows time left and drains as it runs. The app's dial is a 60-minute kitchen-timer face, so a session unwinds from where you set the knob; the widget, Lock Screen, StandBy and Dynamic Island rings start full. A finished phase is a full mustard ring everywhere. Pills show focus sessions (four per set, filling rust → orange → mustard → avocado), the same everywhere.
@@ -66,6 +71,8 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 Fraunces by Undercase Type, under the SIL Open Font License 1.1 (`Shared/Fonts/OFL.txt`). Clockin bundles modified cuts named Fraunces Clockin.
 
 The chime (`Clockin/Sounds/clockin-ding.caf`) is synthesised from scratch by `scripts/make-chime.sh`: a two-note bell, 24 seconds, so it fits the 30-second limit for notification sounds.
+
+Tick, the app icons and the banner are drawn in code in this repository (`Shared/Mascot`, `scripts/render-tick.sh`); no generated or licensed art.
 
 ## Requirements
 
@@ -123,6 +130,8 @@ CI (`.github/workflows/ci.yml`) generates the project, runs the tests on an iPho
 Copy lives in `Shared/Design/Copy.swift` (one phrase per moment) and `Shared/Localizable.xcstrings`, which holds the plural forms. Xcode adds new strings to the catalog when it builds; after a command-line build, run `scripts/sync-strings.sh`.
 
 README screenshots come from a simulator launched with `-DemoData`, captured with `xcrun simctl io <device> screenshot --mask=alpha` and framed by `scripts/frame-screenshot.sh`.
+
+`scripts/render-tick.sh` draws Tick on the Mac from the app's own code: `sheet` and `shapes` for contact sheets of every pose, `icon` for the app icons' layers (`Clockin/AppIcon.icon`, `Clockin/AppIconBreak.icon`) and `hero` for the banner.
 
 Logs go to the unified log under the subsystem `com.moha.clockin` (categories `store`, `live-activity`, `notifications`). Filter for it in Console.app. Errors are logged in full, and session names are never logged.
 
