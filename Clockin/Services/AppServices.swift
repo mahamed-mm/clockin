@@ -89,6 +89,12 @@ final class AppServices: SessionEffects {
     private(set) var appIconChoice: AppIconChoice
     @ObservationIgnored private let widgets: WidgetReloading
     @ObservationIgnored private let haptics: CompletionFeedback
+    @ObservationIgnored private let sounds: TimerSounds
+    /// Whether the app is on screen: timer sounds play only then.
+    @ObservationIgnored private let isForeground: @MainActor () -> Bool
+    /// Above 0 while Siri, Shortcuts, the control or a Lock Screen or alarm
+    /// button is acting: those changes make no sound.
+    @ObservationIgnored private var soundsMuted = 0
     @ObservationIgnored private let announce: @MainActor (String) -> Void
     @ObservationIgnored private let settingsStore: SettingsStoring
     /// Low Power Mode and heat: when set, decoration stops.
@@ -119,6 +125,8 @@ final class AppServices: SessionEffects {
          appIcon: AppIconSwitching = SystemAppIcon(),
          widgets: WidgetReloading,
          haptics: CompletionFeedback,
+         sounds: TimerSounds = NoSounds(),
+         isForeground: @escaping @MainActor () -> Bool = { true },
          announce: @escaping @MainActor (String) -> Void) {
         self.container = container
         self.historyUnavailable = historyUnavailable
@@ -130,6 +138,8 @@ final class AppServices: SessionEffects {
         appIconChoice = appIcon.current
         self.widgets = widgets
         self.haptics = haptics
+        self.sounds = sounds
+        self.isForeground = isForeground
         self.announce = announce
         self.calendar = calendar
         self.settingsStore = settingsStore
@@ -163,7 +173,8 @@ final class AppServices: SessionEffects {
                                    power: PowerState(),
                                    liveActivity: LiveActivityController(), notifications: EndNotifier(),
                                    alarm: EndAlarm(), mindful: MindfulMinutes(), widgets: SystemWidgets(),
-                                   haptics: CompletionHaptics(),
+                                   haptics: CompletionHaptics(), sounds: SystemTimerSounds(),
+                                   isForeground: { UIApplication.shared.applicationState == .active },
                                    announce: { AccessibilityNotification.Announcement($0).post() })
         IntentBridge.setPaused = { [weak services] paused, sessionID in
             await services?.lockScreenSetPaused(paused, sessionID: sessionID)
@@ -225,6 +236,7 @@ final class AppServices: SessionEffects {
     // MARK: Effects
 
     func sessionEngine(_ engine: SessionEngine, didEmit event: SessionEvent) {
+        if let sound = TimerSound.for(event) { playSound(sound) }
         switch event {
         case .started, .resumed, .breakStarted, .restored, .extended:
             if let session = engine.active {
@@ -275,6 +287,27 @@ final class AppServices: SessionEffects {
         }
         lastEvent = EventStamp(event: event, serial: lastEvent.serial + 1)
         refreshWidgets()
+    }
+
+    // MARK: Sounds
+
+    /// One detent of the dial while the knob is dragged.
+    func playRatchet() {
+        playSound(.ratchet)
+    }
+
+    /// Only for a change made in the app, on screen, with sounds on.
+    private func playSound(_ sound: TimerSound) {
+        guard settings.timerSounds, soundsMuted == 0, isForeground() else { return }
+        sounds.play(sound)
+    }
+
+    /// Runs a change made from outside the app (Siri, Shortcuts, the control,
+    /// a Lock Screen or alarm button) without its sound.
+    private func withoutSounds<T>(_ body: () async -> T) async -> T {
+        soundsMuted += 1
+        defer { soundsMuted -= 1 }
+        return await body()
     }
 
     // MARK: History changes
@@ -401,16 +434,18 @@ final class AppServices: SessionEffects {
     /// The Lock Screen pause button. If it changes nothing (a second tap, or
     /// a card that's out of date) the card is redrawn to match the timer.
     func lockScreenSetPaused(_ paused: Bool?, sessionID: UUID?) async {
-        let before = engine.stage
-        if let paused {
-            engine.setPaused(paused, sessionID: sessionID)
-        } else {
-            engine.togglePause()
+        await withoutSounds {
+            let before = engine.stage
+            if let paused {
+                engine.setPaused(paused, sessionID: sessionID)
+            } else {
+                engine.togglePause()
+            }
+            if engine.stage == before {
+                if let session = engine.active { syncLiveActivity(session) } else { endOrphanedActivities() }
+            }
+            await settle()
         }
-        if engine.stage == before {
-            if let session = engine.active { syncLiveActivity(session) } else { endOrphanedActivities() }
-        }
-        await settle()
     }
 
     /// When idle nothing should be on the Lock Screen or in the Dynamic Island,
@@ -526,11 +561,13 @@ final class AppServices: SessionEffects {
     /// "Start break" on the end-of-focus alarm: starts that session's break,
     /// if it's still the one waiting for it.
     func alarmStartBreak(after sessionID: UUID?) async {
-        engine.reconcile()
-        if let focus = engine.stage.completedFocus, sessionID == nil || sessionID == focus.id {
-            engine.startBreak()
+        await withoutSounds {
+            engine.reconcile()
+            if let focus = engine.stage.completedFocus, sessionID == nil || sessionID == focus.id {
+                engine.startBreak()
+            }
+            await settle()
         }
-        await settle()
     }
 
     // MARK: Siri, Shortcuts and the control
@@ -543,77 +580,87 @@ final class AppServices: SessionEffects {
     /// Each intent may wake the app in the background: catch up with the
     /// clock first, act, then wait for the alerts and Live Activity to land.
     func intentStart(minutes: Int?, name: String?) async -> IntentOutcome {
-        engine.reconcile()
-        let outcome: IntentOutcome
-        if let session = engine.active {
-            outcome = .alreadyRunning(phase: session.phase, remaining: session.remaining(at: engine.now()))
-        } else {
-            let length = minutes.map(SessionLength.init(minutes:))
-            engine.start(name: name ?? lastSessionName(), length: length)
-            outcome = .started(focus: engine.active?.plannedDuration ?? plan.focus)
+        await withoutSounds {
+            engine.reconcile()
+            let outcome: IntentOutcome
+            if let session = engine.active {
+                outcome = .alreadyRunning(phase: session.phase, remaining: session.remaining(at: engine.now()))
+            } else {
+                let length = minutes.map(SessionLength.init(minutes:))
+                engine.start(name: name ?? lastSessionName(), length: length)
+                outcome = .started(focus: engine.active?.plannedDuration ?? plan.focus)
+            }
+            await settle()
+            return outcome
         }
-        await settle()
-        return outcome
     }
 
     func intentPause() async -> IntentOutcome {
-        engine.reconcile()
-        engine.pause()
-        let outcome: IntentOutcome = engine.active.map { .paused(remaining: $0.remaining(at: engine.now())) }
-            ?? .nothingRunning
-        await settle()
-        return outcome
+        await withoutSounds {
+            engine.reconcile()
+            engine.pause()
+            let outcome: IntentOutcome = engine.active.map { .paused(remaining: $0.remaining(at: engine.now())) }
+                ?? .nothingRunning
+            await settle()
+            return outcome
+        }
     }
 
     func intentResume() async -> IntentOutcome {
-        engine.reconcile()
-        engine.resume()
-        let outcome: IntentOutcome = engine.active.map { .resumed(remaining: $0.remaining(at: engine.now())) }
-            ?? .nothingRunning
-        await settle()
-        return outcome
+        await withoutSounds {
+            engine.reconcile()
+            engine.resume()
+            let outcome: IntentOutcome = engine.active.map { .resumed(remaining: $0.remaining(at: engine.now())) }
+                ?? .nothingRunning
+            await settle()
+            return outcome
+        }
     }
 
     /// Never throws work away: focus past its first minute ends and keeps
     /// its minutes; a break ends; a finished session is put away.
     func intentStop() async -> IntentOutcome {
-        engine.reconcile()
-        let outcome: IntentOutcome
-        switch engine.stage {
-        case .active(let session) where session.phase == .focus:
-            if engine.canFinishEarly(at: engine.now()) {
-                engine.finishEarly()
-                outcome = .finished(kept: engine.stage.completedFocus?.focusSeconds ?? 0)
-            } else {
-                engine.cancel()
-                outcome = .cancelled
+        await withoutSounds {
+            engine.reconcile()
+            let outcome: IntentOutcome
+            switch engine.stage {
+            case .active(let session) where session.phase == .focus:
+                if engine.canFinishEarly(at: engine.now()) {
+                    engine.finishEarly()
+                    outcome = .finished(kept: engine.stage.completedFocus?.focusSeconds ?? 0)
+                } else {
+                    engine.cancel()
+                    outcome = .cancelled
+                }
+            case .active:
+                engine.skipBreak()
+                outcome = .breakEnded
+            case .focusComplete:
+                engine.skipBreak()
+                outcome = .dismissed
+            case .idle:
+                outcome = .nothingRunning
             }
-        case .active:
-            engine.skipBreak()
-            outcome = .breakEnded
-        case .focusComplete:
-            engine.skipBreak()
-            outcome = .dismissed
-        case .idle:
-            outcome = .nothingRunning
+            await settle()
+            return outcome
         }
-        await settle()
-        return outcome
     }
 
     /// What the app's big button would do right now.
     func intentPrimary() async -> IntentOutcome {
-        engine.reconcile()
-        switch engine.stage {
-        case .idle:
-            return await intentStart(minutes: nil, name: nil)
-        case .active(let session):
-            return session.isPaused ? await intentResume() : await intentPause()
-        case .focusComplete(let focus):
-            let length = engine.breakLength(after: focus)
-            engine.startBreak()
-            await settle()
-            return .breakStarted(length)
+        await withoutSounds {
+            engine.reconcile()
+            switch engine.stage {
+            case .idle:
+                return await intentStart(minutes: nil, name: nil)
+            case .active(let session):
+                return session.isPaused ? await intentResume() : await intentPause()
+            case .focusComplete(let focus):
+                let length = engine.breakLength(after: focus)
+                engine.startBreak()
+                await settle()
+                return .breakStarted(length)
+            }
         }
     }
 

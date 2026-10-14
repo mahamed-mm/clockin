@@ -324,6 +324,10 @@ struct DialFace: View {
                     .position(DialLength.knobPoint(minutes: idleMinutes, side: size))
                     .gesture(lengthDrag)
                     .sensoryFeedback(.selection, trigger: draftMinutes)
+                    // A ratchet click with each detent, in step with the tick under the finger.
+                    .onChange(of: draftMinutes) { _, minutes in
+                        if minutes != nil { services.playRatchet() }
+                    }
             }
 
             center(session: session)

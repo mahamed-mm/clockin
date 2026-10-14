@@ -854,6 +854,9 @@
     "Side stretch" : {
 
     },
+    "Silent mode mutes them." : {
+
+    },
     "Skip break" : {
 
     },
@@ -861,6 +864,12 @@
 
     },
     "Slow motion ×4" : {
+
+    },
+    "Sounds" : {
+
+    },
+    "Sounds lab" : {
 
     },
     "Speed" : {
@@ -988,6 +997,9 @@
 
     },
     "Timer" : {
+
+    },
+    "Timer sounds" : {
 
     },
     "Today" : {

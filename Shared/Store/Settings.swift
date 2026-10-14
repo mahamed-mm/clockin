@@ -173,6 +173,8 @@ struct TimerSettings: Codable, Equatable, Sendable {
     var mascotDuringFocus: MascotFocusStyle = .workout
     /// What each break starts as; the break screen can change it for that break.
     var duringBreaks: BreakStyle = .rest
+    /// The kitchen timer's clicks: the dial's ratchet, Start, Pause and Resume.
+    var timerSounds = true
 
     init(preset: Preset = .classic, longBreak: Bool = true, appearance: Appearance = .system,
          bedsideWhenSideways: Bool = true) {
@@ -199,7 +201,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case preset, customMinutes, longBreak, appearance, bedsideWhenSideways, weekSummaries, ringAtEnd, saveToHealth
-        case mascotDuringFocus, duringBreaks
+        case mascotDuringFocus, duringBreaks, timerSounds
     }
 
     init(from decoder: Decoder) throws {
@@ -222,6 +224,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
         mascotDuringFocus = mascot.flatMap(MascotFocusStyle.init(rawValue:)) ?? .workout
         let breaks = try? container.decodeIfPresent(String.self, forKey: .duringBreaks)
         duringBreaks = breaks.flatMap(BreakStyle.init(rawValue:)) ?? .rest
+        timerSounds = (try? container.decodeIfPresent(Bool.self, forKey: .timerSounds)) ?? true
     }
 
     func encode(to encoder: Encoder) throws {
@@ -236,6 +239,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
         try container.encode(saveToHealth, forKey: .saveToHealth)
         try container.encode(mascotDuringFocus.rawValue, forKey: .mascotDuringFocus)
         try container.encode(duringBreaks.rawValue, forKey: .duringBreaks)
+        try container.encode(timerSounds, forKey: .timerSounds)
     }
 
     var plan: TimerPlan {

@@ -18,6 +18,7 @@ struct SettingsSheet: View {
                 appearance
                 mascot
                 longBreak
+                sounds
                 bedside
                 alerts
                 weekSummaries
@@ -150,6 +151,23 @@ struct SettingsSheet: View {
             Text("Break").retroLabel()
         } footer: {
             Text("Rest with Tick, stretch along with it, or breathe in time with the dial. You can change it on the break screen for that break. Every fourth full session of the day earns a \(TimeFormat.duration(TimerPlan.longBreakLength)) break.")
+        }
+    }
+
+    // MARK: Sounds
+
+    private var sounds: some View {
+        @Bindable var services = services
+        return Section {
+            Toggle(isOn: $services.settings.timerSounds) {
+                RowLabel("Timer sounds", symbol: "speaker.wave.2")
+            }
+            .tint(Retro.orange)
+            .listRowBackground(rowBackground)
+        } header: {
+            Text("Sounds").retroLabel()
+        } footer: {
+            Text("Silent mode mutes them.")
         }
     }
 

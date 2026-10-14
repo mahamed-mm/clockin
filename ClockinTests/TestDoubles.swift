@@ -150,3 +150,9 @@ final class SpyHaptics: CompletionFeedback {
 final class SpyAnnouncer {
     var spoken: [String] = []
 }
+
+@MainActor
+final class SpySounds: TimerSounds {
+    var played: [TimerSound] = []
+    func play(_ sound: TimerSound) { played.append(sound) }
+}

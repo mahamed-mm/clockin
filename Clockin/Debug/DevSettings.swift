@@ -47,6 +47,13 @@ struct DevMenu: View {
             } label: {
                 Label("Haptics lab", systemImage: "waveform")
             }
+            Menu {
+                ForEach(TimerSound.allCases, id: \.self) { sound in
+                    Button(sound.rawValue) { SystemTimerSounds.debug.play(sound) }
+                }
+            } label: {
+                Label("Sounds lab", systemImage: "speaker.wave.2")
+            }
         } label: {
             Image(systemName: "ladybug")
         }
