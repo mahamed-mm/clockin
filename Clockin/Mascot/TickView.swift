@@ -24,6 +24,8 @@ struct TickLoopSchedule: TimelineSchedule {
     let paused: Bool
     /// The debug menu's slow motion.
     let speed: Double
+    /// A workout under way: combos move to the session's own clock.
+    var workout: WorkoutLoops? = nil
 
     func entries(from startDate: Date, mode: TimelineScheduleMode) -> AnyIterator<Date> {
         var next: Date? = startDate
@@ -38,7 +40,13 @@ struct TickLoopSchedule: TimelineSchedule {
             // The face swaps behind a blink in the first 0.18 s; a poke lasts 0.6 s.
             let poking = pokedAt.map { date.timeIntervalSince($0) / speed < TickTouch.pokeLength } ?? false
             let soonest = frame < 0.2 || poking ? frame : loops.nextMovement(from: frame)
-            next = since.addingTimeInterval(soonest * speed)
+            var upcoming = since.addingTimeInterval(soonest * speed)
+            if let workout {
+                // The next combo frame, or the next combo's start.
+                let step = date.addingTimeInterval(WorkoutLoops.frameInterval)
+                upcoming = min(upcoming, max(step, workout.nextMovement(from: step)))
+            }
+            next = upcoming
             return date
         }
     }
@@ -67,6 +75,9 @@ struct TickView: View {
     var crown: (label: String, action: () -> Void)? = nil
     /// Stops the alarm, while ringing.
     var onDismiss: (() -> Void)? = nil
+    /// The focus session as a workout: while working, Tick boxes and
+    /// kicks in bursts, tiring as the time runs out.
+    var workout: TickWorkout? = nil
 
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @Environment(\.tickReduceMotion) private var galleryReduceMotion
@@ -89,32 +100,44 @@ struct TickView: View {
     @State private var pokedAt: Date?
     @State private var pokes = 0
     @State private var seed = Double.random(in: 0..<100)
+    @State private var combos = ComboCache()
 
     private var reduceMotion: Bool { systemReduceMotion || galleryReduceMotion }
     private var still: Bool { reduceMotion || services.power.isConstrained }
     private var paused: Bool { !onScreen || scenePhase != .active }
-    private var loops: TickLoops { TickLoops(pose: pose, seed: seed, entering: entering) }
+    private var loops: TickLoops {
+        TickLoops(pose: pose, seed: seed, entering: entering, breathes: workoutLoops == nil)
+    }
+    /// The workout, while working through one.
+    private var workoutLoops: WorkoutLoops? {
+        guard pose == .working, let workout, workout.style == .workout else { return nil }
+        return WorkoutLoops(workout: workout, scheduler: combos.scheduler(for: workout))
+    }
 
     var body: some View {
         Group {
             if still {
                 // Cross-fades between stills; a poke still changes the face.
                 TimelineView(.explicit(pokedAt.map { [$0, $0.addingTimeInterval(TickTouch.pokeLength)] } ?? [])) { context in
-                    figure(motion: .still, face: face(at: context.date).0)
+                    let frame = workoutLoops.map { WorkoutFrame(params: WorkoutParams($0.workout.energy(at: context.date))) }
+                    figure(motion: .still, face: face(at: context.date, base: frame?.face).0, rig: frame?.rig)
                 }
                 .id(pose)
                 .transition(.opacity)
             } else {
                 // Frames only while something moves (30 a second), none between.
-                TimelineView(TickLoopSchedule(loops: loops, since: since, pokedAt: pokedAt, paused: paused, speed: Motion.speed)) { context in
+                let workoutLoops = workoutLoops
+                TimelineView(TickLoopSchedule(loops: loops, since: since, pokedAt: pokedAt, paused: paused,
+                                              speed: Motion.speed, workout: workoutLoops)) { context in
                     let elapsed = context.date.timeIntervalSince(since) / Motion.speed
-                    let motion = paused ? TickMotion.still : withPoke(loops.motion(at: elapsed), at: context.date)
-                    let (face, swapBlink) = face(at: context.date)
+                    let frame = workoutLoops?.frame(at: context.date)
+                    let motion = paused ? TickMotion.still : withPoke(withWorkout(loops.motion(at: elapsed), frame), at: context.date)
+                    let (face, swapBlink) = face(at: context.date, base: frame?.face)
                     GeometryReader { proxy in
                         let side = min(proxy.size.width, proxy.size.height)
                         // Drawn once into a layer, so moving it costs no redraw. The
                         // layer has room round the square for jumps and sparkles.
-                        figure(motion: motion.drawn, face: face, blink: max(swapBlink, motion.blink))
+                        figure(motion: motion.drawn, face: face, blink: max(swapBlink, motion.blink), rig: frame?.rig)
                             .equatable()
                             .frame(width: side, height: side)
                             .padding(side * Self.overflow)
@@ -206,6 +229,15 @@ struct TickView: View {
         }
     }
 
+    /// A punch landing: the lines at the glove.
+    private func withWorkout(_ motion: TickMotion, _ frame: WorkoutFrame?) -> TickMotion {
+        guard let frame else { return motion }
+        var motion = motion
+        motion.impact = frame.motion.impact
+        motion.impactAt = frame.motion.impactAt
+        return motion
+    }
+
     /// A poke adds a quick squish.
     private func withPoke(_ motion: TickMotion, at date: Date) -> TickMotion {
         guard let pokedAt else { return motion }
@@ -222,10 +254,10 @@ struct TickView: View {
     /// Where Tick stands, in the figure's square.
     private static let feet = UnitPoint(x: 0.5, y: 0.92)
 
-    private func figure(motion: TickMotion, face: TickFace, blink: Double = 0) -> TickFigure {
+    private func figure(motion: TickMotion, face: TickFace, blink: Double = 0, rig: TickRig? = nil) -> TickFigure {
         var face = face
         face.blink = blink
-        var rig = TickRig(pose)
+        var rig = rig ?? TickRig(pose)
         rig.crownPress = pressing ? 1 : 0
         return TickFigure(rig: rig, face: face, palette: .standard, motion: motion, progress: ringLeft)
     }
@@ -239,8 +271,8 @@ struct TickView: View {
 
     /// The face for now: the new state's numbers (they spring), with the
     /// old state's eyes, brows and mouth until the blink has shut.
-    private func face(at date: Date) -> (TickFace, Double) {
-        var face = TickFace(pose)
+    private func face(at date: Date, base: TickFace? = nil) -> (TickFace, Double) {
+        var face = base ?? TickFace(pose)
         if let pokedAt, date.timeIntervalSince(pokedAt) / Motion.speed < TickTouch.pokeLength,
            date >= pokedAt, pose != .ringing {
             // A giggle.
@@ -259,6 +291,19 @@ struct TickView: View {
             return (face, into / 0.07)
         }
         return (face, 1 - (into - 0.07) / 0.11)
+    }
+}
+
+/// The session's combos, worked out once for its length and seed rather
+/// than on every frame.
+private final class ComboCache {
+    private var scheduler: ComboScheduler?
+
+    func scheduler(for workout: TickWorkout) -> ComboScheduler {
+        if let scheduler, scheduler.planned == workout.planned, scheduler.seed == workout.seed { return scheduler }
+        let made = ComboScheduler(planned: workout.planned, seed: workout.seed)
+        scheduler = made
+        return made
     }
 }
 

@@ -11,6 +11,8 @@ struct TickLoops {
     /// Whether the state's entry plays first: not when Tick first shows,
     /// or comes back from the background, already in it.
     var entering = false
+    /// The calm breathing spells; off while working out, which breathes its own way.
+    var breathes = true
 
     /// How long the state's entry lasts.
     var entryLength: TimeInterval {
@@ -134,7 +136,7 @@ struct TickLoops {
     func nextMovement(from t: TimeInterval) -> TimeInterval {
         if isContinuous || t < entryLength { return t }
         var windows = [blinkWindow(from: t)]
-        if pose != .ringing { windows.append(breathWindow(from: t)) }
+        if pose != .ringing, breathes { windows.append(breathWindow(from: t)) }
         switch pose {
         case .ready: windows.append(window(from: t, every: 8, offset: 3, length: 0.5))
         case .waiting:
@@ -188,6 +190,7 @@ struct TickLoops {
 
     /// 0...1...0 through each breath of a breathing spell, 0 between.
     func breath(at t: TimeInterval, period: TimeInterval) -> Double {
+        guard breathes else { return 0 }
         let spell = breathWindow(from: t)
         guard spell.contains(t) else { return 0 }
         return 0.5 - 0.5 * cos(2 * .pi * (t - spell.lowerBound) / period)
