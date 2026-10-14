@@ -68,8 +68,9 @@ struct SweatEmitter: Sendable {
 
     // MARK: Where
 
-    /// The drops showing at `elapsed`, newest first, at most `cap`.
-    func drops(at elapsed: TimeInterval) -> [SweatDrop] {
+    /// The drops showing at `elapsed`, newest first, at most `cap`; without
+    /// the flung ones when Tick isn't punching.
+    func drops(at elapsed: TimeInterval, flinging: Bool = true) -> [SweatDrop] {
         var drops: [(born: TimeInterval, drop: SweatDrop)] = []
         let from = elapsed - Self.life
         let first = max(0, Int(count(at: from).rounded(.down)) - 1)
@@ -81,7 +82,7 @@ struct SweatEmitter: Sendable {
                 drops.append((born, drip(k, age: elapsed - born)))
             }
         }
-        for (index, born) in flings.enumerated() where born <= elapsed && born > from {
+        for (index, born) in flings.enumerated() where flinging && born <= elapsed && born > from {
             drops.append((born, fling(index, age: elapsed - born)))
         }
         return drops.sorted { $0.born > $1.born }.prefix(Self.cap).map(\.drop)

@@ -51,8 +51,19 @@ struct TickDirectorTests {
         #expect(director(set, since: 0).nextChange(after: now) == now.addingTimeInterval(3))
         // Not for an ordinary session, nor one finished early.
         #expect(director(finished(), since: 10).pose(at: now) == .done)
-        #expect(director(finished(.endedEarly, longBreak: true), since: 10).pose(at: now) == .interrupted)
+        #expect(director(finished(.endedEarly, longBreak: true), since: 10).pose(at: now) == .done)
         #expect(director(finished(.endedEarly, longBreak: true)).nextChange(after: now) == nil)
+    }
+
+    @Test func aCancelIsShruggedOffThenReady() {
+        var cancelled = director(.idle)
+        cancelled.interruptedUntil = now.addingTimeInterval(TickDirector.interruptedLength)
+        #expect(cancelled.pose(at: now) == .interrupted)
+        #expect(cancelled.pose(at: now.addingTimeInterval(3)) == .ready)
+        #expect(cancelled.nextChange(after: now) == now.addingTimeInterval(3))
+        // The alarm still beats it.
+        cancelled.alarmRinging = true
+        #expect(cancelled.pose(at: now) == .ringing)
     }
 
     @Test func theStreakIsDroppedWhenTheStageMovesOn() {

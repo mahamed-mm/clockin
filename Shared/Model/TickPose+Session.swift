@@ -13,7 +13,8 @@ extension TickPose {
         case .active(let session):
             return forLive(phase: session.phase, paused: session.isPaused, done: false)
         case .focusComplete(let focus):
-            if focus.outcome == .endedEarly { return .interrupted }
+            // "Finish now": done, as it should be (a cancel is what's interrupted).
+            if focus.outcome == .endedEarly { return .done }
             // A minute past the bell and still going: back to work.
             if let overtime, overtime >= 60 { return .working }
             // The fourth full session of the set: proud, not a streak.
@@ -43,6 +44,7 @@ extension TickPose {
 /// - A set of four shows done first, then the proud streak a few seconds
 ///   later; it's dropped as soon as the stage moves on.
 /// - Hello, once: on first launch or back after a week away, then ready.
+/// - A cancelled focus session: interrupted for a moment, then ready.
 /// - Idle at night, or idle for ten minutes, Tick falls asleep.
 struct TickDirector: Equatable {
     var stage: SessionStage
@@ -54,6 +56,8 @@ struct TickDirector: Equatable {
     var stageSince: Date
     /// Until when Tick says hello, if it greets this time.
     var helloUntil: Date? = nil
+    /// Until when Tick shrugs off a cancelled session.
+    var interruptedUntil: Date? = nil
 
     /// How long done shows before a set of four's streak.
     static let streakDelay: TimeInterval = 3
@@ -63,6 +67,8 @@ struct TickDirector: Equatable {
     static let greetAfter: TimeInterval = 7 * 24 * 3600
     /// How long a hello lasts: the pop and three waves.
     static let helloLength: TimeInterval = 2.5
+    /// How long the shrug after a cancel lasts.
+    static let interruptedLength: TimeInterval = 3
     /// Changes closer together than this show only the last.
     static let settle: TimeInterval = 0.3
 
@@ -70,6 +76,7 @@ struct TickDirector: Equatable {
         if alarmRinging { return .ringing }
         switch stage {
         case .idle:
+            if let interruptedUntil, now < interruptedUntil { return .interrupted }
             if let helloUntil, now < helloUntil { return .hello }
             if TickPose.isNight(hour: hour) || now.timeIntervalSince(stageSince) >= Self.dozeAfter { return .sleeping }
             return .ready
@@ -90,6 +97,7 @@ struct TickDirector: Equatable {
         switch stage {
         case .idle:
             if let helloUntil, helloUntil > now { dates.append(helloUntil) }
+            if let interruptedUntil, interruptedUntil > now { dates.append(interruptedUntil) }
             dates.append(stageSince.addingTimeInterval(Self.dozeAfter))
         case .focusComplete(let focus) where focus.isLongBreak == true && focus.outcome != .endedEarly:
             dates.append(stageSince.addingTimeInterval(Self.streakDelay))
@@ -139,6 +147,12 @@ extension TickWorkout {
     init(session: ActiveSession, style: Style = .workout) {
         self.init(planned: session.plannedDuration, endDate: session.endDate,
                   pausedRemaining: session.isPaused ? session.remaining(at: .now) : nil,
-                  seed: Self.seed(from: session.id), style: style)
+                  seed: Self.seed(from: session.id), style: style, pausedAt: session.pausedAt)
+    }
+
+    /// The workout just finished: all of it done, for the champion.
+    init(finished focus: CompletedFocus, style: Style = .workout) {
+        self.init(planned: max(1, focus.plannedSeconds ?? focus.focusSeconds), endDate: focus.completedAt,
+                  pausedRemaining: nil, seed: Self.seed(from: focus.id), style: style)
     }
 }

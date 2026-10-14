@@ -162,3 +162,57 @@ struct WorkoutLoopsTests {
         #expect(abs(settled.centerY - stance.centerY) < 1e-6 && abs(settled.rightLeg.end.y - stance.rightLeg.end.y) < 1e-6)
     }
 }
+
+/// The workout around the session: gloving up, pausing, and the champion.
+struct WorkoutAroundTests {
+    let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+
+    @Test func glovesGoOnThenTap() {
+        let loops = WorkoutLoops(workout: TickWorkout(planned: 1500, endDate: now.addingTimeInterval(1500),
+                                                      pausedRemaining: nil, seed: 2))
+        let frame = loops.frame(at: now)
+        #expect(loops.gearingUp(frame, at: 0).rig.gloves == 0)
+        #expect(loops.gearingUp(frame, at: 0.2).rig.gloves > 0.8)
+        #expect(loops.gearingUp(frame, at: 0.5).rig.gloves == 1)
+        // The gloves meet in front as they tap.
+        let tap = loops.gearingUp(frame, at: 0.3 + 0.25).rig
+        #expect(abs(tap.leftArm.end.x - tap.rightArm.end.x) < 10)
+        #expect(loops.gearingUp(frame, at: WorkoutLoops.gearUpLength).rig.rightArm == frame.rig.rightArm)
+    }
+
+    @Test func pausedWornOutKeepsSweatingAndPanting() {
+        let paused = WorkoutLoops(workout: TickWorkout(planned: 1500, endDate: nil, pausedRemaining: 30, seed: 2,
+                                                       pausedAt: now))
+        let frame = paused.pausedFrame(at: now.addingTimeInterval(7.3))
+        #expect(frame.rig == .glovedWaiting)
+        #expect(frame.face.mouth == .pant && frame.motion.breathDepth == 0.05)
+        #expect(paused.pausedMoving)
+        #expect(paused.nextMovement(from: now, pose: .waiting, since: now) == now)
+        let sweating = (0..<40).contains { !paused.pausedFrame(at: now.addingTimeInterval(Double($0) / 2)).motion.sweat.isEmpty }
+        #expect(sweating)
+        // Paused fresh: arms crossed, gloves on, still.
+        let fresh = WorkoutLoops(workout: TickWorkout(planned: 1500, endDate: nil, pausedRemaining: 900, seed: 2, pausedAt: now))
+        #expect(!fresh.pausedMoving)
+        #expect(fresh.pausedFrame(at: now.addingTimeInterval(3)).motion == TickMotion())
+        #expect(fresh.nextMovement(from: now, pose: .waiting, since: now) == .distantFuture)
+    }
+
+    @Test func doneIsTheChampion() {
+        let focus = CompletedFocus(id: UUID(), name: "Essay", startedAt: now.addingTimeInterval(-1500), completedAt: now,
+                                   focusSeconds: 1500, plannedSeconds: 1500, outcome: .completed)
+        let loops = WorkoutLoops(workout: TickWorkout(finished: focus))
+        let frame = loops.championFrame(sinceDone: 1)
+        #expect(frame.rig == .champion && frame.face.flush > 0)
+        #expect(loops.championFrame(sinceDone: 6).motion.sweat.isEmpty)
+        #expect(loops.championFrame(sinceDone: 6).face.flush == 0)
+        #expect(loops.nextMovement(from: now.addingTimeInterval(2), pose: .done, since: now) == now.addingTimeInterval(2))
+        #expect(loops.nextMovement(from: now.addingTimeInterval(6), pose: .done, since: now) == .distantFuture)
+        #expect(TickRig.champion.leftArm.end.y < -20 && TickRig.champion.gloves == 1)
+    }
+
+    @Test func aPausedSessionRemembersWhen() {
+        let session = ActiveSession(id: UUID(), name: "Essay", phase: .focus, plannedDuration: 1500, focusStartedAt: now,
+                                    state: .paused(remaining: 600), pausedAt: now)
+        #expect(TickWorkout(session: session).pausedAt == now)
+    }
+}

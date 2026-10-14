@@ -432,7 +432,8 @@ struct DialFace: View {
 /// Tick for the dial: the state `TickDirector` picks for where the session
 /// stands (and the alarm), with its ring following the timer. It changes
 /// on its own a minute past the bell, at night, when dozing off, and for
-/// a set of four's streak after done.
+/// a set of four's streak after done. A focus session is a workout.
+/// Cancel one and Tick shrugs it off for a moment.
 private struct DialTick: View {
     /// Below this the dial has no room to spare in its corner.
     static let minimumDial: CGFloat = 200
@@ -446,6 +447,7 @@ private struct DialTick: View {
     @AppStorage(Onboarding.tickLastSeenKey) private var lastSeen: Double = 0
     @State private var stageSince = Date.now
     @State private var helloUntil: Date?
+    @State private var interruptedUntil: Date?
     /// The state on show, which settles 0.3 s after a burst of changes.
     @State private var shown: TickPose?
     @State private var lastShown: Date?
@@ -464,7 +466,14 @@ private struct DialTick: View {
                 }
                 .id(schedule)
             }
-        .onChange(of: StageKey(stage)) { stageSince = .now; clock = .now }
+        .onChange(of: StageKey(stage)) { old, new in
+            stageSince = .now
+            clock = .now
+            // Straight from focusing to nothing is a cancel (finishing goes to complete).
+            if old.kind == 1, old.phase == .focus, new.kind == 0 {
+                interruptedUntil = .now.addingTimeInterval(TickDirector.interruptedLength)
+            }
+        }
         .onAppear(perform: greet)
         .onDisappear { lastSeen = Date.now.timeIntervalSince1970 }
     }
@@ -473,14 +482,23 @@ private struct DialTick: View {
         let pose = director(at: date).pose(at: date)
         let dismiss: (() -> Void)? = services.alarmRinging ? { services.stopAlarm() } : nil
         return TickView(pose: shown ?? pose, progress: .fixed(TickPose.ringProgress(for: stage, at: date)),
-                        celebration: celebration, crown: crown, onDismiss: dismiss)
+                        celebration: celebration, crown: crown, onDismiss: dismiss, workout: workout)
             .onChange(of: pose, initial: true) { show(pose) }
     }
 
     private func director(at date: Date) -> TickDirector {
         TickDirector(stage: stage, alarmRinging: services.alarmRinging, overtime: engine.overtime(at: date),
                      hour: services.calendar.component(.hour, from: date), stageSince: stageSince,
-                     helloUntil: helloUntil)
+                     helloUntil: helloUntil, interruptedUntil: interruptedUntil)
+    }
+
+    /// The focus session as a workout: running or paused, or just finished.
+    private var workout: TickWorkout? {
+        switch stage {
+        case .active(let session) where session.phase == .focus: TickWorkout(session: session)
+        case .focusComplete(let focus): TickWorkout(finished: focus)
+        default: nil
+        }
     }
 
     /// Shows a change at once, unless one showed under 0.3 s ago; then the

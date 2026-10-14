@@ -43,8 +43,8 @@ struct TickLoopSchedule: TimelineSchedule {
             var upcoming = since.addingTimeInterval(soonest * speed)
             if let workout {
                 // The next combo frame, or the next combo's start.
-                let step = date.addingTimeInterval(workout.frameInterval(at: date))
-                upcoming = min(upcoming, max(step, workout.nextMovement(from: step)))
+                let step = date.addingTimeInterval(workout.frameInterval(at: date, pose: loops.pose))
+                upcoming = min(upcoming, max(step, workout.nextMovement(from: step, pose: loops.pose, since: since)))
             }
             next = upcoming
             return date
@@ -101,18 +101,44 @@ struct TickView: View {
     @State private var pokes = 0
     @State private var seed = Double.random(in: 0..<100)
     @State private var combos = ComboCache()
+    /// A workout just started, seen happen: Tick gloves up first.
+    @State private var gearingUp = false
 
     private var reduceMotion: Bool { systemReduceMotion || galleryReduceMotion }
     private var still: Bool { reduceMotion || services.power.isConstrained }
     private var paused: Bool { !onScreen || scenePhase != .active }
     private var loops: TickLoops {
-        TickLoops(pose: pose, seed: seed, entering: entering, breathes: workoutLoops == nil)
+        // Working out, or paused worn out, Tick breathes hard instead of in calm spells.
+        let breathesHard = workoutLoops.map { pose == .working || (pose == .waiting && $0.pausedMoving) } ?? false
+        return TickLoops(pose: pose, seed: seed, entering: entering, breathes: !breathesHard, gearsUp: gearingUp)
     }
-    /// The workout, while working through one.
+
+    /// The workout behind Tick: working through one, paused in one, or just done.
     private var workoutLoops: WorkoutLoops? {
-        guard pose == .working, let workout, workout.style == .workout else { return nil }
+        guard let workout, workout.style == .workout, Self.workoutPoses.contains(pose) else { return nil }
         let (scheduler, sweat) = combos.parts(for: workout)
         return WorkoutLoops(workout: workout, scheduler: scheduler, sweat: sweat)
+    }
+
+    private static let workoutPoses: Set<TickPose> = [.working, .waiting, .done, .ringing, .streak]
+
+    /// Tick at `date`, `elapsed` into the state, when a workout is behind it.
+    private func workoutFrame(_ loops: WorkoutLoops?, at date: Date, elapsed: TimeInterval) -> WorkoutFrame? {
+        guard let loops else { return nil }
+        switch pose {
+        case .working:
+            let frame = loops.frame(at: date)
+            return gearingUp && elapsed < WorkoutLoops.gearUpLength ? loops.gearingUp(frame, at: elapsed) : frame
+        case .waiting:
+            return loops.pausedFrame(at: date)
+        case .done:
+            return loops.championFrame(sinceDone: elapsed)
+        default:
+            // Ringing, or a set of four: the gloves stay on.
+            var rig = TickRig(pose)
+            rig.gloves = 1
+            return WorkoutFrame(rig: rig, face: TickFace(pose))
+        }
     }
 
     var body: some View {
@@ -120,7 +146,9 @@ struct TickView: View {
             if still {
                 // Cross-fades between stills; a poke still changes the face.
                 TimelineView(.explicit(pokedAt.map { [$0, $0.addingTimeInterval(TickTouch.pokeLength)] } ?? [])) { context in
-                    let frame = workoutLoops.map { WorkoutFrame(params: WorkoutParams($0.workout.energy(at: context.date))) }
+                    let frame = pose == .working
+                        ? workoutLoops.map { WorkoutFrame(params: WorkoutParams($0.workout.energy(at: context.date))) }
+                        : workoutFrame(workoutLoops, at: context.date, elapsed: .infinity)
                     figure(motion: .still, face: face(at: context.date, base: frame?.face).0, rig: frame?.rig)
                 }
                 .id(pose)
@@ -131,7 +159,7 @@ struct TickView: View {
                 TimelineView(TickLoopSchedule(loops: loops, since: since, pokedAt: pokedAt, paused: paused,
                                               speed: Motion.speed, workout: workoutLoops)) { context in
                     let elapsed = context.date.timeIntervalSince(since) / Motion.speed
-                    let frame = workoutLoops?.frame(at: context.date)
+                    let frame = workoutFrame(workoutLoops, at: context.date, elapsed: elapsed)
                     let motion = paused ? TickMotion.still : withPoke(withWorkout(loops.motion(at: elapsed), frame), at: context.date)
                     let (face, swapBlink) = face(at: context.date, base: frame?.face)
                     GeometryReader { proxy in
@@ -156,18 +184,24 @@ struct TickView: View {
                 .aspectRatio(1, contentMode: .fit)
             }
         }
-        .animation(still ? Motion.calm(true) : .spring(duration: 0.45 * Motion.speed, bounce: 0.25), value: pose)
+        // Pausing a workout drops back to guard quickly.
+        .animation(still ? Motion.calm(true) : .spring(duration: (pose == .waiting && workout != nil ? 0.3 : 0.45) * Motion.speed,
+                                                       bounce: 0.25), value: pose)
         .animation(.spring(duration: 0.22, bounce: 0.45), value: pressing)
         .overlay { touchAreas }
         .sensoryFeedback(.impact(weight: .light), trigger: crownTaps)
         .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.7), trigger: pokes)
         .modifier(TickAccessibility(pose: pose, crown: crown, onDismiss: onDismiss))
-        .onChange(of: pose) { old, _ in
+        .onChange(of: pose) { old, new in
             since = .now
             facePose = old
             faceSwap = .now
             // A change caught up on as the app comes back shows as it stands.
-            entering = onScreen && scenePhase == .active && Date.now.timeIntervalSince(activeSince) > 0.5
+            let seen = onScreen && scenePhase == .active && Date.now.timeIntervalSince(activeSince) > 0.5
+            // Resuming a workout goes straight back to it, gloves and headphones still on.
+            let resuming = workout != nil && new == .working && old == .waiting
+            entering = seen && !resuming
+            gearingUp = seen && workout != nil && new == .working && !resuming
         }
         .onChange(of: celebration) {
             // Replays the done entry: the jump, the sparkles, the gold.

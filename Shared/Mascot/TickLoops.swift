@@ -13,13 +13,15 @@ struct TickLoops {
     var entering = false
     /// The calm breathing spells; off while working out, which breathes its own way.
     var breathes = true
+    /// A workout starting: working's entry is gloving up, not just the headphones.
+    var gearsUp = false
 
     /// How long the state's entry lasts.
     var entryLength: TimeInterval {
         guard entering else { return 0 }
         return switch pose {
         case .hello: 2.0
-        case .working: 0.5
+        case .working: gearsUp ? WorkoutLoops.gearUpLength : 0.5
         case .ringing: 0.35
         case .done: 0.95
         case .onBreak: 0.45

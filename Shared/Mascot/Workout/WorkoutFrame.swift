@@ -7,6 +7,12 @@ struct WorkoutFrame: Equatable {
     var face: TickFace
     var motion = TickMotion()
 
+    init(rig: TickRig, face: TickFace, motion: TickMotion = TickMotion()) {
+        self.rig = rig
+        self.face = face
+        self.motion = motion
+    }
+
     init(params: WorkoutParams, move: WorkoutMove? = nil, at t: TimeInterval = 0) {
         let pose = move.map { $0.pose(at: t).reaching(params.reach) } ?? .rest
         rig = TickRig(workout: params).applying(pose)

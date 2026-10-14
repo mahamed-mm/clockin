@@ -19,6 +19,8 @@ struct TickWorkout: Equatable, Sendable {
     /// The same for a session every time, so its combos are too.
     var seed: UInt64
     var style: Style = .workout
+    /// When it was paused, while paused.
+    var pausedAt: Date? = nil
 
     var isPaused: Bool { endDate == nil }
 

@@ -32,7 +32,9 @@ struct TickPoseTests {
         #expect(TickPose.forStage(finished(), overtime: 59, hour: 14) == .done)
         #expect(TickPose.forStage(finished(), overtime: 60, hour: 14) == .working)
         #expect(TickPose.forStage(finished(), overtime: nil, hour: 14) == .done)
-        #expect(TickPose.forStage(finished(.endedEarly), overtime: nil, hour: 14) == .interrupted)
+        // "Finish now" is done, never a set of four's streak.
+        #expect(TickPose.forStage(finished(.endedEarly), overtime: nil, hour: 14) == .done)
+        #expect(TickPose.forStage(finished(.endedEarly, longBreak: true), overtime: nil, hour: 14) == .done)
         #expect(TickPose.forStage(finished(longBreak: true), overtime: 0, hour: 14) == .streak)
     }
 

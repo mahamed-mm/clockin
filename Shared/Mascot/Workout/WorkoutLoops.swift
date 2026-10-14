@@ -134,6 +134,75 @@ struct WorkoutLoops: Sendable {
         faceChanges.map { max(0, 1 - abs(elapsed - $0) / 0.09) }.max() ?? 0
     }
 
+    // MARK: Around the session
+
+    /// How long gloving up takes as a session starts.
+    static let gearUpLength = 1.25
+
+    /// Gloving up, `t` seconds into the session's start: the gloves pop on,
+    /// then Tick taps them together twice.
+    func gearingUp(_ frame: WorkoutFrame, at t: TimeInterval) -> WorkoutFrame {
+        var frame = frame
+        frame.rig = frame.rig.applying(WorkoutMove.gloveTap.pose(at: t - 0.3))
+        // Popping on with a little overshoot.
+        let x = min(1, max(0, t / 0.35))
+        frame.rig.gloves = x >= 1 ? 1 : 1 - exp(-6 * x) * cos(10 * x)
+        return frame
+    }
+
+    /// Paused: arms crossed, gloves still on. Worn out, Tick keeps
+    /// breathing hard and sweating while it waits.
+    func pausedFrame(at date: Date) -> WorkoutFrame {
+        let energy = workout.energy(at: date)
+        let params = WorkoutParams(energy)
+        var face = TickFace(.waiting)
+        face.flush = params.flush
+        var frame = WorkoutFrame(rig: .glovedWaiting, face: face)
+        guard pausedMoving, let pausedAt = workout.pausedAt else { return frame }
+        let t = max(0, date.timeIntervalSince(pausedAt))
+        let period = params.breathPeriod ?? 2
+        frame.motion.breath = 0.5 - 0.5 * cos(2 * .pi * t / period)
+        frame.motion.breathDepth = params.breathDepth
+        if params.face == .panting {
+            frame.face.mouth = .pant
+            frame.face.mouthOpen = 0.35 + 0.65 * frame.motion.breath
+        }
+        // The sweat goes on: the last 20 s of drops (none flung), over and over.
+        frame.motion.sweat = sweat.drops(at: energy.elapsed - 20 + t.truncatingRemainder(dividingBy: 20), flinging: false)
+        return frame
+    }
+
+    /// Whether a pause keeps moving: once tired.
+    var pausedMoving: Bool { workout.energy(at: .now).phase >= .tired }
+
+    /// Done after a workout, `t` seconds on: the champion, gloves up, still
+    /// sweating and flushed for a few seconds.
+    func championFrame(sinceDone t: TimeInterval) -> WorkoutFrame {
+        var face = TickFace(.done)
+        face.flush = max(0, 1 - t / Self.championSweat)
+        var frame = WorkoutFrame(rig: .champion, face: face)
+        if t < Self.championSweat {
+            frame.motion.sweat = sweat.drops(at: workout.planned - Self.championSweat + t, flinging: false)
+        }
+        return frame
+    }
+
+    static let championSweat = 5.0
+
+    /// When anything next moves in `pose`, which began at `since`.
+    func nextMovement(from date: Date, pose: TickPose, since: Date) -> Date {
+        switch pose {
+        case .working: nextMovement(from: date)
+        case .waiting: pausedMoving ? date : .distantFuture
+        case .done: date.timeIntervalSince(since) < Self.championSweat ? date : .distantFuture
+        default: .distantFuture
+        }
+    }
+
+    func frameInterval(at date: Date, pose: TickPose) -> TimeInterval {
+        pose == .working ? frameInterval(at: date) : 1.0 / 15
+    }
+
     // MARK: Frames
 
     /// `date` itself while something moves (a combo, a bounce, a blink,

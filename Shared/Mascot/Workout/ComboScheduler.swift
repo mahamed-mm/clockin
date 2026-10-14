@@ -69,6 +69,9 @@ struct ComboScheduler: Equatable, Sendable {
     let seed: UInt64
     private(set) var entries: [Entry] = []
 
+    /// When the first combo can start: after gloving up.
+    static let firstCombo = 1.5
+
     /// Combos in a round, and the still stretch between rounds.
     static let roundSize = 3...4
     static let roundRest = 8.0...12.0
@@ -125,7 +128,8 @@ struct ComboScheduler: Equatable, Sendable {
         let phases = WorkoutEnergy.Plan(planned: planned)
         var random = SplitMix64(seed: seed)
         var entries: [Entry] = []
-        var time = 0.0
+        // The first combo after the gloves go on.
+        var time = min(firstCombo, phases.finalPush)
         var stretched = false
         var inRound = 0
         var roundLength = Int.random(in: roundSize, using: &random)

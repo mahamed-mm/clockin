@@ -106,7 +106,11 @@ struct ComboSchedulerTests {
                 #expect(stepped.combo.moves.contains(move.move))
             }
         }
-        #expect(scheduler.nextStart(after: 0) == scheduler.entries[1].start)
+        // The first combo waits for the gloves to go on.
+        #expect(scheduler.nextStart(after: 0) == ComboScheduler.firstCombo)
+        #expect(scheduler.entries[0].start == ComboScheduler.firstCombo)
+        #expect(ComboScheduler.firstCombo >= WorkoutLoops.gearUpLength)
+        #expect(scheduler.nextStart(after: scheduler.entries[0].start) == scheduler.entries[1].start)
         #expect(scheduler.nextStart(after: 1500) == nil)
     }
 
