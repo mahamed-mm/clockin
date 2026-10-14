@@ -8,8 +8,11 @@ struct TickView: View {
     let pose: TickPose
     /// Increments when a focus session completes, for the "ding" hop.
     var celebration = 0
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @Environment(\.tickReduceMotion) private var galleryReduceMotion
     @Environment(AppServices.self) private var services
+
+    private var reduceMotion: Bool { systemReduceMotion || galleryReduceMotion }
 
     var body: some View {
         ZStack {

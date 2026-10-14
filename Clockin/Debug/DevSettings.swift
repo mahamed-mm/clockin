@@ -5,6 +5,7 @@ import SwiftUI
 struct DevMenu: View {
     @Bindable private var settings = DevSettings.shared
     @Environment(AppServices.self) private var services
+    @State private var showsGallery = ProcessInfo.processInfo.arguments.contains("-MascotGallery")
 
     private let hapticEvents: [(String, SessionEvent)] = [
         ("Start (medium impact)", .started),
@@ -30,6 +31,11 @@ struct DevMenu: View {
                 Label("Replay celebration", systemImage: "sparkles")
             }
             Button {
+                showsGallery = true
+            } label: {
+                Label("Tick gallery", systemImage: "face.smiling")
+            }
+            Button {
                 Onboarding.reset()
             } label: {
                 Label("Show first-launch hints again", systemImage: "hand.point.up.left")
@@ -45,6 +51,7 @@ struct DevMenu: View {
             Image(systemName: "ladybug")
         }
         .accessibilityLabel("Developer options")
+        .sheet(isPresented: $showsGallery) { MascotGallery() }
     }
 }
 
