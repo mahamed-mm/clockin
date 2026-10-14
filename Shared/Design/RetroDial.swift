@@ -19,6 +19,9 @@ struct RetroDial: View, Animatable {
     var showsTicks = true
     var showsKnob = true
     var lineWidthRatio: CGFloat = 0.075
+    /// A faint gloss on the track's upper left, like light on Bakelite. The
+    /// app's dial only; the arc's colours mean the same either way.
+    var highlight = false
     @Environment(\.widgetRenderingMode) private var renderingMode
 
     var animatableData: Double {
@@ -72,6 +75,18 @@ struct RetroDial: View, Animatable {
         }
         context.stroke(circle(g.center, g.arcRadius), with: .color(Retro.ink.opacity(0.08)),
                        style: StrokeStyle(lineWidth: g.line))
+        if highlight && showsFace {
+            // Along the track's outer edge, from about 8 to 11 o'clock, fading at both ends.
+            var gloss = Path()
+            gloss.addArc(center: g.center, radius: g.arcRadius + g.line * 0.22, startAngle: .degrees(-210),
+                         endAngle: .degrees(-100), clockwise: false)
+            let from = point(g.center, g.arcRadius, -.pi * 0.66), to = point(g.center, g.arcRadius, -.pi * 0.06)
+            let shine = Gradient(stops: [.init(color: .white.opacity(0), location: 0),
+                                         .init(color: .white.opacity(0.12), location: 0.5),
+                                         .init(color: .white.opacity(0), location: 1)])
+            context.stroke(gloss, with: .linearGradient(shine, startPoint: from, endPoint: to),
+                           style: StrokeStyle(lineWidth: g.line * 0.28, lineCap: .round))
+        }
     }
 
     /// Ticks inside the arc, the arc, and the knob at its tip.

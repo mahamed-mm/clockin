@@ -136,6 +136,7 @@ struct FocusView: View {
             let wide = geo.size.width > 640 || geo.size.width > geo.size.height * 1.15
             ZStack {
                 PaperBackground(wash: wash)
+                    .paperGrain()
                     .animation(Motion.tint(reduceMotion), value: engine.stage)
                     .animation(Motion.tint(reduceMotion), value: engine.breakOver)
                     .onTapGesture { nameFocused = false }

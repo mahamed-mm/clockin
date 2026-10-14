@@ -27,7 +27,7 @@ struct SettingsSheet: View {
             }
             .scrollContentBackground(.hidden)
             .contentMargins(.horizontal, Space.gutter, for: .scrollContent)
-            .background(PaperBackground())
+            .background(PaperBackground().paperGrain())
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

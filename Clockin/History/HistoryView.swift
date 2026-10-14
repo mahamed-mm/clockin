@@ -66,7 +66,7 @@ struct HistoryView: View {
             .scrollContentBackground(.hidden)
             // The same edge as the Focus screen, so the titles line up.
             .contentMargins(.horizontal, Space.gutter, for: .scrollContent)
-            .background(PaperBackground())
+            .background(PaperBackground().paperGrain())
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .bottom) {
                 if !services.undoableDeletion.isEmpty {

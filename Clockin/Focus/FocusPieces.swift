@@ -287,7 +287,8 @@ struct DialFace: View {
             // the timer runs. The arc moves under half a point a second, so
             // when the phone asks to save power it moves once a minute.
             TimelineView(TickSchedule(countdownEnd: session?.endDate, interval: constrained ? 60 : 1)) { context in
-                RetroDial(value: arcValue(session: session, now: context.date), tint: tint, glowTint: glowTint)
+                RetroDial(value: arcValue(session: session, now: context.date), tint: tint, glowTint: glowTint,
+                          highlight: true)
                     .modifier(PausedTone(active: session?.isPaused == true))
                     // Spring the arc when the stage changes; between ticks it just steps.
                     .animation(Motion.wind(reduceMotion), value: stageKey)

@@ -22,6 +22,12 @@ jobs:
       - name: Show Xcode
         run: xcodebuild -version
 
+      # Xcode 26 ships the Metal compiler separately; the paper grain shader needs it.
+      - name: Install the Metal toolchain
+        run: |
+          xcodebuild -showComponent MetalToolchain | grep -q "Status: installed" \
+            || xcodebuild -downloadComponent MetalToolchain
+
       - name: Generate the Xcode project
         run: |
           brew install xcodegen
