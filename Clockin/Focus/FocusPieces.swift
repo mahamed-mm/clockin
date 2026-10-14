@@ -181,6 +181,8 @@ struct DialFace: View {
     var teaches = false
     /// Tick, leaning on the dial's lower right.
     var showsMascot = true
+    /// Tick stays calm through a session (bedside, at night).
+    var calmMascot = false
     /// What Tick's crown does, and its name for VoiceOver.
     var crown: (label: String, action: () -> Void)? = nil
     @AppStorage(Onboarding.dialHintKey) private var dialHintSeen = false
@@ -215,7 +217,7 @@ struct DialFace: View {
         // element, beside the dial's, so its crown can be used with VoiceOver.
         .overlay {
             if showsMascot, size >= DialTick.minimumDial {
-                DialTick(stage: stage, celebration: celebration, crown: crown)
+                DialTick(stage: stage, celebration: celebration, crown: crown, calm: calmMascot)
                     .frame(width: size * 0.3, height: size * 0.3)
                     .position(x: size * 0.9, y: size * 0.88)
             }
@@ -441,6 +443,8 @@ private struct DialTick: View {
     let stage: SessionStage
     let celebration: Int
     let crown: (label: String, action: () -> Void)?
+    /// Calm whatever the setting says (bedside).
+    var calm = false
     @Environment(SessionEngine.self) private var engine
     @Environment(AppServices.self) private var services
     /// When Tick was last on screen, for hello after a week away.
@@ -492,12 +496,20 @@ private struct DialTick: View {
                      helloUntil: helloUntil, interruptedUntil: interruptedUntil)
     }
 
-    /// The focus session as a workout: running or paused, or just finished.
+    /// The focus session as a workout: running or paused, or just finished;
+    /// calm when asked for, at the bedside, and working on past the bell.
     private var workout: TickWorkout? {
+        let chosen = services.settings.mascotDuringFocus
+        guard chosen != .off else { return nil }
+        let style: TickWorkout.Style = chosen == .calm || calm ? .calm : .workout
         switch stage {
-        case .active(let session) where session.phase == .focus: TickWorkout(session: session)
-        case .focusComplete(let focus): TickWorkout(finished: focus)
-        default: nil
+        case .active(let session) where session.phase == .focus:
+            return TickWorkout(session: session, style: style)
+        case .focusComplete(let focus):
+            let overtime = (engine.overtime(at: clock) ?? 0) >= 60
+            return TickWorkout(finished: focus, style: overtime ? .calm : style)
+        default:
+            return nil
         }
     }
 

@@ -69,6 +69,16 @@
         }
       }
     },
+    "%@, energy %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, energy %2$@"
+          }
+        }
+      }
+    },
     "%@, one in progress" : {
 
     },
@@ -228,6 +238,9 @@
     "%lld skipped as unreadable" : {
 
     },
+    "%lld×" : {
+
+    },
     "+%lld min" : {
 
     },
@@ -327,6 +340,9 @@
     "CSV opens in Numbers or Excel. A backup restores here, keeping the sessions you already have." : {
 
     },
+    "Calm" : {
+
+    },
     "Can't restore" : {
 
     },
@@ -346,6 +362,9 @@
 
     },
     "Close" : {
+
+    },
+    "Combos" : {
 
     },
     "Complete" : {
@@ -403,6 +422,9 @@
 
     },
     "Ends the session and keeps the minutes done, or ends the break. Under a minute in, nothing is kept." : {
+
+    },
+    "Energy" : {
 
     },
     "Erase All" : {
@@ -521,10 +543,16 @@
     "Live Activities off" : {
 
     },
+    "Live session" : {
+
+    },
     "Long break" : {
 
     },
     "Long break after four" : {
+
+    },
+    "Mascot during focus" : {
 
     },
     "Minutes" : {
@@ -549,6 +577,9 @@
 
     },
     "Mostly mornings this week; %@ was your longest day." : {
+
+    },
+    "Moves" : {
 
     },
     "Name" : {
@@ -576,6 +607,9 @@
 
     },
     "OK" : {
+
+    },
+    "Off" : {
 
     },
     "Off, a notification plays the chime, and Silent mode or a Focus can hush it." : {
@@ -734,6 +768,9 @@
     "Set of four" : {
 
     },
+    "Set the energy instead" : {
+
+    },
     "Settings" : {
 
     },
@@ -749,6 +786,9 @@
     "Show first-launch hints again" : {
 
     },
+    "Show the envelope" : {
+
+    },
     "Shows the session, to rename or delete it" : {
 
     },
@@ -759,6 +799,9 @@
 
     },
     "Slow motion ×4" : {
+
+    },
+    "Speed" : {
 
     },
     "Spread across the day this week; %@ was your longest day." : {
@@ -845,6 +888,9 @@
     "Tick" : {
 
     },
+    "Tick boxes through a session in short bursts and tires as the time runs out. Calm keeps it in guard. Reduce Motion and Low Power Mode keep it calm and still." : {
+
+    },
     "Tick gallery" : {
 
     },
@@ -911,6 +957,9 @@
     "When time's up" : {
 
     },
+    "Workout" : {
+
+    },
     "Yesterday" : {
 
     },
@@ -923,8 +972,31 @@
     "Your saved sessions haven't been deleted. Timers still work, and new sessions are kept until History opens again." : {
 
     },
+    "bounce %@ · breath %@ · sweat %@/s · hunch %@°" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "bounce %1$@ · breath %2$@ · sweat %3$@/s · hunch %4$@°"
+          }
+        }
+      }
+    },
+    "knob" : {
+
+    },
     "min" : {
 
+    },
+    "tempo %@ · reach %@ · rest %@–%@ s" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "tempo %1$@ · reach %2$@ · rest %3$@–%4$@ s"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

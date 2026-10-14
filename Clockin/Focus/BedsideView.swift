@@ -26,7 +26,7 @@ struct BedsideView: View {
             let height = proxy.size.height
             HStack(spacing: height * 0.1) {
                 DialFace(stage: .active(session), size: height * 0.84,
-                         celebration: services.celebrations, showsCountdown: false, showsPills: false)
+                         celebration: services.celebrations, showsCountdown: false, showsPills: false, calmMascot: true)
                     .frame(width: height * 0.84, height: height * 0.84)
 
                 VStack(alignment: .leading, spacing: height * 0.03) {

@@ -113,6 +113,26 @@ enum SessionLength: Hashable, Sendable {
 }
 
 /// Light or dark, or whatever the phone is set to.
+/// What Tick does through a focus session.
+enum MascotFocusStyle: String, CaseIterable, Identifiable, Sendable {
+    /// Boxing and kicking in bursts, tiring as the time runs out.
+    case workout
+    /// In guard, breathing, tired near the end; no punches.
+    case calm
+    /// The plain working pose, headphones on.
+    case off
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .workout: String(localized: "Workout")
+        case .calm: String(localized: "Calm")
+        case .off: String(localized: "Off")
+        }
+    }
+}
+
 enum Appearance: String, CaseIterable, Identifiable, Sendable {
     case system
     case light
@@ -149,6 +169,8 @@ struct TimerSettings: Codable, Equatable, Sendable {
     var ringAtEnd = false
     /// Finished focus sessions go to Health as Mindful Minutes. Off until chosen.
     var saveToHealth = false
+    /// Tick through a focus session: working out, calm, or the plain pose.
+    var mascotDuringFocus: MascotFocusStyle = .workout
 
     init(preset: Preset = .classic, longBreak: Bool = true, appearance: Appearance = .system,
          bedsideWhenSideways: Bool = true) {
@@ -175,6 +197,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case preset, customMinutes, longBreak, appearance, bedsideWhenSideways, weekSummaries, ringAtEnd, saveToHealth
+        case mascotDuringFocus
     }
 
     init(from decoder: Decoder) throws {
@@ -193,6 +216,8 @@ struct TimerSettings: Codable, Equatable, Sendable {
         weekSummaries = (try? container.decodeIfPresent(Bool.self, forKey: .weekSummaries)) ?? true
         ringAtEnd = (try? container.decodeIfPresent(Bool.self, forKey: .ringAtEnd)) ?? false
         saveToHealth = (try? container.decodeIfPresent(Bool.self, forKey: .saveToHealth)) ?? false
+        let mascot = try? container.decodeIfPresent(String.self, forKey: .mascotDuringFocus)
+        mascotDuringFocus = mascot.flatMap(MascotFocusStyle.init(rawValue:)) ?? .workout
     }
 
     func encode(to encoder: Encoder) throws {
@@ -205,6 +230,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
         try container.encode(weekSummaries, forKey: .weekSummaries)
         try container.encode(ringAtEnd, forKey: .ringAtEnd)
         try container.encode(saveToHealth, forKey: .saveToHealth)
+        try container.encode(mascotDuringFocus.rawValue, forKey: .mascotDuringFocus)
     }
 
     var plan: TimerPlan {

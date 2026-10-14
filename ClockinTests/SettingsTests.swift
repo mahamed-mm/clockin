@@ -46,6 +46,18 @@ struct SettingsTests {
         #expect(store.load().ringAtEnd)
     }
 
+    @Test func tickWorksOutUnlessToldOtherwise() throws {
+        // Settings saved before the workout, or by a newer build with another style.
+        #expect(try decode(#"{"preset":"deep"}"#).mascotDuringFocus == .workout)
+        #expect(try decode(#"{"mascotDuringFocus":"yoga"}"#).mascotDuringFocus == .workout)
+        #expect(try decode(#"{"mascotDuringFocus":"calm"}"#).mascotDuringFocus == .calm)
+        let store = DefaultsSettingsStore(defaults: UserDefaults(suiteName: "clockin.tests.\(UUID())")!)
+        var settings = TimerSettings()
+        settings.mascotDuringFocus = .off
+        store.save(settings)
+        #expect(store.load().mascotDuringFocus == .off)
+    }
+
     @Test func weekSummariesAreOnUnlessTurnedOff() throws {
         #expect(try decode(#"{"preset":"deep"}"#).weekSummaries)
         #expect(try decode(#"{"weekSummaries":false}"#).weekSummaries == false)

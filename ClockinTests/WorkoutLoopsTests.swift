@@ -216,3 +216,41 @@ struct WorkoutAroundTests {
         #expect(TickWorkout(session: session).pausedAt == now)
     }
 }
+
+/// Calm: in guard, tiring in the face, never punching or sweating.
+struct WorkoutCalmTests {
+    let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+
+    func calm(left: TimeInterval) -> WorkoutLoops {
+        WorkoutLoops(workout: TickWorkout(planned: 1500, endDate: now.addingTimeInterval(left), pausedRemaining: nil,
+                                          seed: 2, style: .calm))
+    }
+
+    @Test func neverPunchesOrSweats() {
+        let loops = calm(left: 1500)
+        for elapsed in stride(from: 0.0, to: 1500, by: 0.7) {
+            let date = now.addingTimeInterval(elapsed)
+            let frame = loops.frame(at: date)
+            #expect(frame.motion.impact == 0 && frame.motion.sweat.isEmpty && frame.motion.breath == 0)
+            // Always in guard, never down on its knees.
+            #expect(frame.rig.legFollow == 1)
+        }
+    }
+
+    @Test func tiresInTheFace() {
+        let loops = calm(left: 1500)
+        #expect(loops.frame(at: now.addingTimeInterval(600)).face.mouth == .set)
+        #expect(loops.frame(at: now.addingTimeInterval(1400)).face.mouth == .gritted)
+        #expect(loops.frame(at: now.addingTimeInterval(1470)).face.mouth == .pant)
+        #expect(loops.frame(at: now.addingTimeInterval(1440)).motion.blink == 1)
+    }
+
+    @Test func onlyMovesToChangeFace() {
+        let loops = calm(left: 1500)
+        // From the strong stretch, nothing until the blink before the first face change.
+        #expect(loops.nextMovement(from: now.addingTimeInterval(600)) == now.addingTimeInterval(1320 - 0.09))
+        #expect(!loops.pausedMoving)
+        #expect(loops.championFrame(sinceDone: 1).motion.sweat.isEmpty)
+        #expect(loops.nextMovement(from: now, pose: .done, since: now) == .distantFuture)
+    }
+}

@@ -109,18 +109,27 @@ struct TickView: View {
     private var paused: Bool { !onScreen || scenePhase != .active }
     private var loops: TickLoops {
         // Working out, or paused worn out, Tick breathes hard instead of in calm spells.
-        let breathesHard = workoutLoops.map { pose == .working || (pose == .waiting && $0.pausedMoving) } ?? false
+        let breathesHard = workoutLoops.map { !$0.isCalm && (pose == .working || (pose == .waiting && $0.pausedMoving)) } ?? false
         return TickLoops(pose: pose, seed: seed, entering: entering, breathes: !breathesHard, gearsUp: gearingUp)
     }
 
     /// The workout behind Tick: working through one, paused in one, or just done.
     private var workoutLoops: WorkoutLoops? {
-        guard let workout, workout.style == .workout, Self.workoutPoses.contains(pose) else { return nil }
+        guard let workout, Self.workoutPoses.contains(pose) else { return nil }
         let (scheduler, sweat) = combos.parts(for: workout)
         return WorkoutLoops(workout: workout, scheduler: scheduler, sweat: sweat)
     }
 
     private static let workoutPoses: Set<TickPose> = [.working, .waiting, .done, .ringing, .streak]
+
+    /// When a still Tick changes: a poke and its end, and each face change of a workout.
+    private var stillDates: [Date] {
+        var dates = pokedAt.map { [$0, $0.addingTimeInterval(TickTouch.pokeLength)] } ?? []
+        if pose == .working, let loops = workoutLoops {
+            dates += loops.faceChanges.compactMap { loops.workout.date(atElapsed: $0) }.filter { $0 > .now }
+        }
+        return dates.sorted()
+    }
 
     /// Tick at `date`, `elapsed` into the state, when a workout is behind it.
     private func workoutFrame(_ loops: WorkoutLoops?, at date: Date, elapsed: TimeInterval) -> WorkoutFrame? {
@@ -144,12 +153,17 @@ struct TickView: View {
     var body: some View {
         Group {
             if still {
-                // Cross-fades between stills; a poke still changes the face.
-                TimelineView(.explicit(pokedAt.map { [$0, $0.addingTimeInterval(TickTouch.pokeLength)] } ?? [])) { context in
+                // Cross-fades between stills; a poke still changes the face. A
+                // workout is calm here, and changes face as Tick tires.
+                TimelineView(.explicit(stillDates)) { context in
+                    let calm = workoutLoops.map { CalmLoops($0) }
                     let frame = pose == .working
-                        ? workoutLoops.map { WorkoutFrame(params: WorkoutParams($0.workout.energy(at: context.date))) }
-                        : workoutFrame(workoutLoops, at: context.date, elapsed: .infinity)
+                        ? calm?.loops.calmFrame(at: context.date)
+                        : workoutFrame(calm?.loops, at: context.date, elapsed: .infinity)
                     figure(motion: .still, face: face(at: context.date, base: frame?.face).0, rig: frame?.rig)
+                        .id(frame.map { "\($0.face.eyes)\($0.face.mouth)" })
+                        .transition(.opacity)
+                        .animation(Motion.calm(true), value: frame.map { "\($0.face.eyes)\($0.face.mouth)" })
                 }
                 .id(pose)
                 .transition(.opacity)
@@ -332,6 +346,17 @@ struct TickView: View {
             return (face, into / 0.07)
         }
         return (face, 1 - (into - 0.07) / 0.11)
+    }
+}
+
+/// A workout made calm, as Reduce Motion and Low Power Mode want it.
+private struct CalmLoops {
+    let loops: WorkoutLoops
+
+    init(_ loops: WorkoutLoops) {
+        var calm = loops
+        calm.workout.style = .calm
+        self.loops = calm
     }
 }
 

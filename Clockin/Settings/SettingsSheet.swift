@@ -16,6 +16,7 @@ struct SettingsSheet: View {
             List {
                 timer
                 appearance
+                mascot
                 longBreak
                 bedside
                 alerts
@@ -106,6 +107,25 @@ struct SettingsSheet: View {
             Text("Appearance").retroLabel()
         } footer: {
             Text("The widget and Lock Screen follow your iPhone's setting. The app icon is Tick at work or on a break.")
+        }
+    }
+
+    // MARK: Tick
+
+    private var mascot: some View {
+        @Bindable var services = services
+        return Section {
+            Picker("Mascot during focus", selection: $services.settings.mascotDuringFocus) {
+                ForEach(MascotFocusStyle.allCases) { style in
+                    Text(style.title).tag(style)
+                }
+            }
+            .pickerStyle(.segmented)
+            .listRowBackground(rowBackground)
+        } header: {
+            Text("Mascot during focus").retroLabel()
+        } footer: {
+            Text("Tick boxes through a session in short bursts and tires as the time runs out. Calm keeps it in guard. Reduce Motion and Low Power Mode keep it calm and still.")
         }
     }
 

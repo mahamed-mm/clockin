@@ -19,9 +19,24 @@ struct WorkoutLoops: Sendable {
 
     private var phases: WorkoutEnergy.Plan { WorkoutEnergy.Plan(planned: workout.planned) }
 
+    /// Calm: in guard the whole session, the face tiring near the end; no
+    /// combos, sweat or hard breathing (Tick breathes in its calm spells).
+    var isCalm: Bool { workout.style == .calm }
+
+    /// Calm at `date`: guard, never down on its knees, the face for how tired it is.
+    func calmFrame(at date: Date) -> WorkoutFrame {
+        let energy = workout.energy(at: date)
+        var params = WorkoutParams(energy)
+        params.stance = .guardUp
+        var frame = WorkoutFrame(params: params)
+        frame.motion.blink = faceBlink(at: energy.elapsed)
+        return frame
+    }
+
     /// Tick at `date`: mid-move during a combo, in guard between (settling
     /// with a few bounces after each combo), breathing hard once tired.
     func frame(at date: Date) -> WorkoutFrame {
+        if isCalm { return calmFrame(at: date) }
         let energy = workout.energy(at: date)
         var params = WorkoutParams(energy)
         let elapsed = energy.elapsed
@@ -172,16 +187,16 @@ struct WorkoutLoops: Sendable {
         return frame
     }
 
-    /// Whether a pause keeps moving: once tired.
-    var pausedMoving: Bool { workout.energy(at: .now).phase >= .tired }
+    /// Whether a pause keeps moving: once tired, working out.
+    var pausedMoving: Bool { !isCalm && workout.energy(at: .now).phase >= .tired }
 
     /// Done after a workout, `t` seconds on: the champion, gloves up, still
     /// sweating and flushed for a few seconds.
     func championFrame(sinceDone t: TimeInterval) -> WorkoutFrame {
         var face = TickFace(.done)
-        face.flush = max(0, 1 - t / Self.championSweat)
+        face.flush = isCalm ? 0 : max(0, 1 - t / Self.championSweat)
         var frame = WorkoutFrame(rig: .champion, face: face)
-        if t < Self.championSweat {
+        if t < Self.championSweat, !isCalm {
             frame.motion.sweat = sweat.drops(at: workout.planned - Self.championSweat + t, flinging: false)
         }
         return frame
@@ -194,7 +209,7 @@ struct WorkoutLoops: Sendable {
         switch pose {
         case .working: nextMovement(from: date)
         case .waiting: pausedMoving ? date : .distantFuture
-        case .done: date.timeIntervalSince(since) < Self.championSweat ? date : .distantFuture
+        case .done: !isCalm && date.timeIntervalSince(since) < Self.championSweat ? date : .distantFuture
         default: .distantFuture
         }
     }
@@ -210,6 +225,11 @@ struct WorkoutLoops: Sendable {
     func nextMovement(from date: Date) -> Date {
         guard !workout.isPaused else { return .distantFuture }
         let elapsed = workout.energy(at: date).elapsed
+        if isCalm {
+            // Only the blinks that change the face.
+            if faceBlink(at: elapsed) > 0 { return date }
+            return faceChanges.map { $0 - 0.09 }.first { $0 > elapsed }.flatMap { workout.date(atElapsed: $0) } ?? .distantFuture
+        }
         if moving(at: elapsed) { return date }
         let starts = [scheduler.nextStart(after: elapsed), faceChanges.map { $0 - 0.09 }.first { $0 > elapsed },
                       phases.tired > elapsed ? phases.tired : nil]
@@ -219,6 +239,7 @@ struct WorkoutLoops: Sendable {
     /// Seconds between frames: 30 a second for combos, bounces and blinks,
     /// 15 when only breathing.
     func frameInterval(at date: Date) -> TimeInterval {
+        if isCalm { return 1.0 / 30 }
         let elapsed = workout.energy(at: date).elapsed
         let quick = scheduler.entry(at: elapsed) != nil || bouncing(at: elapsed) != nil || faceBlink(at: elapsed) > 0
             || stanceChanges.contains { elapsed >= $0 && elapsed < $0 + Self.stanceBlend }
