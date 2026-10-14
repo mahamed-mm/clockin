@@ -133,3 +133,12 @@ extension TickPose {
         }
     }
 }
+
+extension TickWorkout {
+    /// The workout for a running or paused session.
+    init(session: ActiveSession, style: Style = .workout) {
+        self.init(planned: session.plannedDuration, endDate: session.endDate,
+                  pausedRemaining: session.isPaused ? session.remaining(at: .now) : nil,
+                  seed: Self.seed(from: session.id), style: style)
+    }
+}
