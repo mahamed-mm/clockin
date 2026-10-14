@@ -34,7 +34,12 @@ struct LargeTodayView: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Copy.focusedToday(seconds: entry.stats.focusSeconds))
                 SessionPills(completed: entry.stats.sessionCount, inProgress: entry.active?.phase == .focus,
-                             pillWidth: 22, pillHeight: 6, showsCaption: true)
+                             pillWidth: 22, pillHeight: 6)
+                // Under the pills rather than beside them, so it never runs into the button.
+                Text(SessionPills.caption(completed: entry.stats.sessionCount))
+                    .font(.retro(.meta))
+                    .foregroundStyle(Retro.inkSoft)
+                    .accessibilityHidden(true)
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 8) {

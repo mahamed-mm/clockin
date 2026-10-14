@@ -303,20 +303,36 @@ struct FocusWidgetButton: View {
     }
 
     var body: some View {
-        Button(intent: FocusButtonIntent()) {
-            if compact {
-                Label(entry.face.title, systemImage: entry.face.symbol)
-                    .labelStyle(.iconOnly)
-                    .frame(width: 30, height: 30)
-            } else {
-                Label(entry.face.title, systemImage: entry.face.symbol)
-                    .frame(minHeight: 30)
+        if compact {
+            round
+        } else {
+            // The title when it fits, else just the symbol: never "Star…".
+            ViewThatFits(in: .horizontal) {
+                button {
+                    Label(entry.face.title, systemImage: entry.face.symbol)
+                        .fixedSize()
+                        .frame(minHeight: 30)
+                }
+                .buttonBorderShape(.capsule)
+                round
             }
         }
-        .font(.retro(.meta).weight(.semibold))
-        .buttonStyle(.borderedProminent)
-        .buttonBorderShape(compact ? .circle : .capsule)
-        .tint(tint)
-        .widgetAccentable()
+    }
+
+    private var round: some View {
+        button {
+            Label(entry.face.title, systemImage: entry.face.symbol)
+                .labelStyle(.iconOnly)
+                .frame(width: 30, height: 30)
+        }
+        .buttonBorderShape(.circle)
+    }
+
+    private func button(@ViewBuilder label: () -> some View) -> some View {
+        Button(intent: FocusButtonIntent(), label: label)
+            .font(.retro(.meta).weight(.semibold))
+            .buttonStyle(.borderedProminent)
+            .tint(tint)
+            .widgetAccentable()
     }
 }
