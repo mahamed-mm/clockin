@@ -19,12 +19,17 @@ struct MascotGallery: View {
                     live
                     controls
                     WorkoutSimulator()
+                    BreakSimulator()
                     ForEach(shown, id: \.self) { pose in
                         row(pose)
                     }
                     if state == nil {
                         ForEach(Array((WorkoutSamples.stances + WorkoutSamples.faces).enumerated()), id: \.offset) { _, sample in
                             row(sample.name, rig: sample.rig, face: sample.face)
+                        }
+                        ForEach(StretchMove.allCases, id: \.self) { move in
+                            row(move.rawValue, rig: TickRig.standing.applying(move.stillPose),
+                                face: TickFace.stretching.applying(move.stillPose), sheetProgress: 0.5)
                         }
                     }
                 }

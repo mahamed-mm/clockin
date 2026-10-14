@@ -19,7 +19,7 @@ struct RenderTick {
     static func main() throws {
         let arguments = CommandLine.arguments.dropFirst()
         guard let mode = arguments.first, let out = arguments.dropFirst().first else {
-            print("usage: render-tick sheet|shapes|workout|hero <file.png> | icon <directory>")
+            print("usage: render-tick sheet|shapes|workout|moves|breath|ending|break|hero <file.png> | icon <directory>")
             exit(2)
         }
         switch mode {
@@ -29,6 +29,7 @@ struct RenderTick {
         case "moves": try write(MoveSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "breath": try write(BreathSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "ending": try write(EndingSheet(), scale: 2, to: URL(fileURLWithPath: out))
+        case "break": try write(StretchSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "hero":
             // The README's banner: the name in Fraunces, Tick working, resting, done.
             for font in ["Display", "Title", "Text"] {
@@ -150,6 +151,50 @@ struct MoveSheet: View {
                             .background(paper)
                     }
                 }
+            }
+        }
+        .padding(20)
+        .background(Color(white: 0.97))
+        .foregroundStyle(Color(white: 0.15))
+    }
+}
+
+/// The break's stretches, each across its length at the in-app size, then
+/// every still pose and the breathing stance, light and dark.
+struct StretchSheet: View {
+    var body: some View {
+        let palette = TickPalette.assets(in: assets)
+        let paper = Color("Paper", bundle: assets)
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(StretchMove.allCases, id: \.self) { move in
+                let frames = 10
+                HStack(spacing: 6) {
+                    Text(move.rawValue).font(.system(size: 13, weight: .semibold)).frame(width: 96, alignment: .leading)
+                    ForEach(0..<frames, id: \.self) { i in
+                        let pose = move.pose(at: move.duration * Double(i) / Double(frames - 1))
+                        TickFigure(rig: TickRig.standing.applying(pose), face: TickFace.stretching.applying(pose),
+                                   palette: palette, progress: 0.5)
+                            .frame(width: 106, height: 106)
+                            .border(Color.red.opacity(0.25), width: 0.5)
+                            .background(paper)
+                    }
+                }
+            }
+            ForEach([ColorScheme.light, .dark], id: \.self) { scheme in
+                HStack(spacing: 6) {
+                    Text(scheme == .light ? "still, light" : "still, dark").font(.system(size: 13, weight: .semibold))
+                        .frame(width: 96, alignment: .leading)
+                    ForEach(StretchMove.allCases, id: \.self) { move in
+                        TickFigure(rig: TickRig.standing.applying(move.stillPose),
+                                   face: TickFace.stretching.applying(move.stillPose), palette: palette, progress: 0.5)
+                            .frame(width: 106, height: 106)
+                            .background(paper)
+                    }
+                    TickFigure(rig: .breathing, face: .breathing, palette: palette, progress: 0.5)
+                        .frame(width: 106, height: 106)
+                        .background(paper)
+                }
+                .environment(\.colorScheme, scheme)
             }
         }
         .padding(20)
