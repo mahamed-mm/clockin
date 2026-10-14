@@ -22,6 +22,9 @@ struct RetroDial: View, Animatable {
     /// A faint gloss on the track's upper left, like light on Bakelite. The
     /// app's dial only; the arc's colours mean the same either way.
     var highlight = false
+    /// Draws the arc as quarters in the set's colours, one per session of
+    /// four, for a day's sessions; the default is one tinted sweep.
+    var setColors = false
     @Environment(\.widgetRenderingMode) private var renderingMode
 
     var animatableData: Double {
@@ -42,6 +45,18 @@ struct RetroDial: View, Animatable {
         }
         .aspectRatio(1, contentMode: .fit)
         .accessibilityHidden(true)
+    }
+
+    /// The quarters a set-coloured arc of `value` draws: each session of
+    /// four, with a small gap between them.
+    nonisolated static func setSegments(value: Double) -> [(position: Int, from: Double, to: Double)] {
+        let gap = 0.015
+        return (0..<4).compactMap { position in
+            let from = Double(position) / 4
+            let to = min(value, from + 0.25)
+            guard to - from > 0.001 else { return nil }
+            return (position, from + gap, max(from + gap, to - gap))
+        }
     }
 
     /// Arc radius as a fraction of the dial's half-width; used to place overlays on the arc.
@@ -95,7 +110,15 @@ struct RetroDial: View, Animatable {
             drawTicks(in: &context, g, lit: true)
         }
 
-        if g.arcValue > 0.001 {
+        if setColors {
+            for segment in Self.setSegments(value: g.arcValue) {
+                var arc = Path()
+                arc.addArc(center: g.center, radius: g.arcRadius, startAngle: .degrees(-90 + 360 * segment.from),
+                           endAngle: .degrees(-90 + 360 * segment.to), clockwise: false)
+                context.stroke(arc, with: .color(Retro.setColor(position: segment.position)),
+                               style: StrokeStyle(lineWidth: g.line, lineCap: .butt))
+            }
+        } else if g.arcValue > 0.001 {
             var arc = Path()
             arc.addArc(center: g.center, radius: g.arcRadius, startAngle: .degrees(-90),
                        endAngle: .degrees(-90 + 360 * g.arcValue), clockwise: false)

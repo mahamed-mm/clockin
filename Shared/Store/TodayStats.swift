@@ -147,6 +147,24 @@ extension TodayStats {
         return weekTotals(records: rows(saved: saved, pending: waiting), containing: day, calendar: calendar)
     }
 
+    /// Each day of `interval` (a month, say), saved sessions plus any waiting
+    /// to be saved, each once.
+    static func dayTotals(saved: [FocusRow], pending: [CompletedFocus], in interval: DateInterval,
+                          calendar: Calendar) -> [DayTotal] {
+        let all = rows(saved: saved, pending: pending.filter { interval.includes($0.completedAt) })
+            .filter { interval.includes($0.completedAt) }
+        let byDay = Dictionary(grouping: all) { calendar.startOfDay(for: $0.completedAt) }
+        var totals: [DayTotal] = []
+        var day = calendar.startOfDay(for: interval.start)
+        while day < interval.end {
+            let rows = byDay[day] ?? []
+            totals.append(DayTotal(day: day, seconds: rows.totalSeconds, sessions: rows.fullCount))
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
+        }
+        return totals
+    }
+
     /// Focus seconds and full sessions for each day of the week containing
     /// `day`, in the calendar's week order (e.g. Mon–Sun).
     static func weekTotals(records: [FocusRow],

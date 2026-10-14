@@ -10,6 +10,14 @@ struct HistoryView: View {
     @Query(HistoryView.oldestFirst) private var oldest: [FocusRecord]
     /// A day in the week shown, or nil to follow the current week.
     @State private var shownDay: Date?
+    /// The day picked in the week strip or the month; nil for the week's own.
+    @State private var pickedDay: Date?
+    /// A day in the month shown, or nil to follow the current month.
+    @State private var shownMonth: Date?
+    @SceneStorage("history.mode") private var mode: HistoryMode = .week
+    /// The month's day being opened, which morphs into its week column.
+    @State private var morphDay: Date?
+    @Namespace private var morph
 
     private static var newestFirst: FetchDescriptor<FocusRecord> { firstRecord(order: .reverse) }
     private static var oldestFirst: FetchDescriptor<FocusRecord> { firstRecord(order: .forward) }
@@ -44,8 +52,18 @@ struct HistoryView: View {
                             .listRowBackground(Color.clear)
                         }
                     } else {
-                        HistoryWeek(week: week, today: services.today, calendar: services.calendar,
-                                    canGoBack: canGoBack, canGoForward: canGoForward, page: page, scroll: scroll)
+                        switch mode {
+                        case .week:
+                            HistoryWeek(week: week, today: services.today, calendar: services.calendar,
+                                        canGoBack: canGoBack, canGoForward: canGoForward, page: page,
+                                        scroll: scroll, pickedDay: $pickedDay, morph: reduceMotion ? nil : morph,
+                                        modePicker: AnyView(modePicker))
+                        case .month:
+                            HistoryMonth(month: month, today: services.today, calendar: services.calendar,
+                                         canGoBack: canGoBackMonth, canGoForward: canGoForwardMonth,
+                                         page: pageMonth, pick: openDay, morph: reduceMotion ? nil : morph,
+                                         morphDay: morphDay, modePicker: AnyView(modePicker))
+                        }
                         if newest.isEmpty {
                             Section {
                                 ContentUnavailableView {
@@ -84,6 +102,59 @@ struct HistoryView: View {
         }
     }
 
+    // MARK: Week or month
+
+    private var modePicker: some View {
+        GlassEffectContainer(spacing: Space.xs) {
+            HStack(spacing: Space.xs) {
+                ForEach(HistoryMode.allCases, id: \.self) { choice in
+                    Button {
+                        if choice == .month { shownMonth = shownDay }
+                        withAnimation(Motion.calm(reduceMotion)) { mode = choice }
+                    } label: {
+                        Text(choice.title)
+                            .font(.retro(.meta))
+                            .foregroundStyle(Retro.ink)
+                            .retroChip(selected: mode == choice)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(mode == choice ? .isSelected : [])
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var month: DateInterval {
+        services.calendar.monthInterval(containing: shownMonth ?? services.today)
+    }
+
+    private var canGoBackMonth: Bool {
+        oldest.first.map { $0.completedAt < month.start } ?? false
+    }
+
+    private var canGoForwardMonth: Bool {
+        month.end <= services.today
+    }
+
+    private func pageMonth(by months: Int) {
+        guard let day = services.calendar.date(byAdding: .month, value: months, to: month.start) else { return }
+        shownMonth = services.calendar.monthInterval(containing: day).includes(services.today) ? nil : day
+    }
+
+    /// A day tapped in the month: its week, with that day picked. The cell
+    /// is marked first, so it can morph into the week's column.
+    private func openDay(_ day: Date) {
+        morphDay = day
+        Task { @MainActor in
+            withAnimation(Motion.calm(reduceMotion)) {
+                shownDay = services.calendar.weekInterval(containing: day).includes(services.today) ? nil : day
+                pickedDay = day
+                mode = .week
+            }
+        }
+    }
+
     // MARK: Paging
 
     private var week: DateInterval {
@@ -102,6 +173,18 @@ struct HistoryView: View {
         guard let day = services.calendar.date(byAdding: .weekOfYear, value: weeks, to: week.start) else { return }
         // Back on this week, follow it again so it moves on at midnight.
         shownDay = services.calendar.weekInterval(containing: day).includes(services.today) ? nil : day
+        pickedDay = nil
+    }
+}
+
+enum HistoryMode: String, CaseIterable {
+    case week, month
+
+    var title: String {
+        switch self {
+        case .week: String(localized: "Week")
+        case .month: String(localized: "Month")
+        }
     }
 }
 
@@ -171,6 +254,11 @@ private struct HistoryWeek: View {
     let canGoForward: Bool
     let page: (Int) -> Void
     let scroll: ScrollViewProxy
+    /// The day tapped in the strip or the month; nil for the week's own default.
+    @Binding var pickedDay: Date?
+    let morph: Namespace.ID?
+    /// Week or month, above the pager.
+    let modePicker: AnyView
     @Query private var records: [FocusRecord]
     @Environment(SessionEngine.self) private var engine
     @Environment(AppServices.self) private var services
@@ -178,11 +266,10 @@ private struct HistoryWeek: View {
     @State private var appeared = false
     /// The session whose card is open.
     @State private var opened: SessionSummary?
-    /// The day tapped in the strip; nil for the week's own default.
-    @State private var pickedDay: Date?
 
     init(week: DateInterval, today: Date, calendar: Calendar, canGoBack: Bool, canGoForward: Bool,
-         page: @escaping (Int) -> Void, scroll: ScrollViewProxy) {
+         page: @escaping (Int) -> Void, scroll: ScrollViewProxy, pickedDay: Binding<Date?>, morph: Namespace.ID?,
+         modePicker: AnyView) {
         self.week = week
         self.today = today
         self.calendar = calendar
@@ -190,15 +277,21 @@ private struct HistoryWeek: View {
         self.canGoForward = canGoForward
         self.page = page
         self.scroll = scroll
+        _pickedDay = pickedDay
+        self.morph = morph
+        self.modePicker = modePicker
         _records = Query(filter: FocusRecord.completed(in: week), sort: \.completedAt, order: .reverse)
     }
 
     var body: some View {
         Section {
             VStack(spacing: Space.s) {
-                pager
+                modePicker
+                HistoryPager(title: weekTitle, previous: String(localized: "Previous week"),
+                             next: String(localized: "Next week"), canGoBack: canGoBack, canGoForward: canGoForward,
+                             page: page)
                 WeekStrip(totals: totals, today: today, calendar: calendar, selected: selectedDay,
-                          select: select)
+                          select: select, morph: morph)
                     // A new week fills in afresh.
                     .id(week.start)
                 if let selectedDay {
@@ -218,7 +311,6 @@ private struct HistoryWeek: View {
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: Space.xs, leading: 0, bottom: Space.s, trailing: 0))
             .onAppear { appeared = true }
-            .onChange(of: week.start) { pickedDay = nil }
             .animation(Motion.calm(reduceMotion), value: selectedDay)
         }
         .listRowSeparator(.hidden)
@@ -308,34 +400,6 @@ private struct HistoryWeek: View {
     private func open(_ id: UUID) {
         guard let record = records.first(where: { $0.id == id }) else { return }
         opened = SessionSummary(record)
-    }
-
-    private var pager: some View {
-        HStack {
-            pageButton("chevron.left", label: String(localized: "Previous week"), enabled: canGoBack) { page(-1) }
-            Spacer()
-            Text(weekTitle)
-                .retroLabel()
-                .contentTransition(.opacity)
-            Spacer()
-            pageButton("chevron.right", label: String(localized: "Next week"), enabled: canGoForward) { page(1) }
-        }
-    }
-
-    private func pageButton(_ symbol: String, label: String, enabled: Bool,
-                            action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.body.weight(.semibold))
-                .frame(width: 44, height: 44)
-                .contentShape(.rect)
-        }
-        .buttonStyle(.borderless)
-        .foregroundStyle(Retro.inkSoft)
-        .opacity(enabled ? 1 : 0.3)
-        .disabled(!enabled)
-        .accessibilityLabel(label)
-        .accessibilityShowsLargeContentViewer { Label(label, systemImage: symbol) }
     }
 
     /// "This week", "Last week", or "28 Sept – 4 Oct".

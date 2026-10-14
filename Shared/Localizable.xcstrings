@@ -1735,6 +1735,16 @@
         }
       }
     },
+    "Month" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Måned"
+          }
+        }
+      }
+    },
     "Mostly afternoons this week, all on %@." : {
       "localizations" : {
         "nb" : {
@@ -1830,6 +1840,16 @@
     },
     "Next" : {
       "shouldTranslate" : false
+    },
+    "Next month" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Neste måned"
+          }
+        }
+      }
     },
     "Next week" : {
       "localizations" : {
@@ -2179,6 +2199,16 @@
     },
     "Previous" : {
       "shouldTranslate" : false
+    },
+    "Previous month" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Forrige måned"
+          }
+        }
+      }
     },
     "Previous week" : {
       "localizations" : {
@@ -3103,6 +3133,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Versjon"
+          }
+        }
+      }
+    },
+    "Week" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Uke"
           }
         }
       }

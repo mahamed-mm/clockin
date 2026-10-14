@@ -13,6 +13,8 @@ struct WeekStrip: View {
     var selected: Date?
     /// Called with a tapped day. Days still to come can't be picked.
     var select: ((Date) -> Void)?
+    /// Shared with the month, so a day picked there morphs into its column.
+    var morph: Namespace.ID?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
@@ -58,12 +60,15 @@ struct WeekStrip: View {
         .frame(maxWidth: .infinity)
         .background {
             // Outlined, not coloured, so it reads without colour too.
-            Capsule()
-                .strokeBorder(Retro.ink.opacity(0.7), lineWidth: 1.5)
-                .padding(.horizontal, 6)
-                .opacity(isSelected ? 1 : 0)
-                .animation(Motion.snappy(reduceMotion), value: isSelected)
+            if isSelected {
+                Capsule()
+                    .strokeBorder(Retro.ink.opacity(0.7), lineWidth: 1.5)
+                    .padding(.horizontal, 6)
+                    .modifier(MorphTarget(morph: morph))
+                    .transition(.opacity)
+            }
         }
+        .animation(Motion.snappy(reduceMotion), value: isSelected)
         .contentShape(.rect)
     }
 
@@ -89,5 +94,19 @@ struct WeekStrip: View {
             return String(localized: "\(day), upcoming")
         }
         return String(localized: "\(day): \(Copy.sessions(entry.sessions)), \(TimeFormat.spokenDuration(entry.seconds))")
+    }
+}
+
+
+/// The picked day's outline, matched with the month's cell when there is one.
+private struct MorphTarget: ViewModifier {
+    let morph: Namespace.ID?
+
+    func body(content: Content) -> some View {
+        if let morph {
+            content.matchedGeometryEffect(id: "picked", in: morph)
+        } else {
+            content
+        }
     }
 }
