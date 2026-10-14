@@ -28,7 +28,7 @@ struct ClockinApp: App {
                 .modelContainer(services.container)
                 .task {
                     #if DEBUG
-                    DemoData.seedIfRequested(into: services.container.mainContext)
+                    DemoData.seedIfRequested(into: services)
                     #endif
                     services.restore()
                     await services.refreshAlertStatus()
