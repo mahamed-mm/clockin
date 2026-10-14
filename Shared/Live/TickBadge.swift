@@ -138,6 +138,6 @@ extension TickPalette {
         return TickPalette(face: tone.opacity(0.18), ring: tone, track: tone.opacity(0.45), cap: tone, crown: tone.opacity(0.85),
                            eyes: tone, cheeks: tone.opacity(0.2), limbs: tone, doneGold: tone, ringingRed: tone,
                            effects: tone.opacity(0.7), shadow: .clear, glove: tone.opacity(0.85),
-                           gloveCuff: tone.opacity(0.5))
+                           gloveCuff: tone.opacity(0.5), sweat: tone.opacity(0.6))
     }
 }

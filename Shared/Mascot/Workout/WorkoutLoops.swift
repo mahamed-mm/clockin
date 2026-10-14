@@ -8,10 +8,13 @@ import Foundation
 struct WorkoutLoops: Sendable {
     var workout: TickWorkout
     var scheduler: ComboScheduler
+    var sweat: SweatEmitter
 
-    init(workout: TickWorkout, scheduler: ComboScheduler? = nil) {
+    init(workout: TickWorkout, scheduler: ComboScheduler? = nil, sweat: SweatEmitter? = nil) {
         self.workout = workout
-        self.scheduler = scheduler ?? ComboScheduler(planned: workout.planned, seed: workout.seed)
+        let scheduler = scheduler ?? ComboScheduler(planned: workout.planned, seed: workout.seed)
+        self.scheduler = scheduler
+        self.sweat = sweat ?? SweatEmitter(planned: workout.planned, seed: workout.seed, scheduler: scheduler)
     }
 
     private var phases: WorkoutEnergy.Plan { WorkoutEnergy.Plan(planned: workout.planned) }
@@ -40,8 +43,30 @@ struct WorkoutLoops: Sendable {
             // Worn out, each breath out puffs.
             if params.face == .panting, let exhaling { frame.motion.puff = exhaling }
         }
+        frame.rig = blended(frame.rig, at: elapsed)
         frame.motion.blink = faceBlink(at: elapsed)
+        frame.motion.sweat = sweat.drops(at: elapsed)
         return frame
+    }
+
+    /// Where the stance changes (down onto the knees, back up for the final
+    /// push), it eases over half a second from the old stance to the new.
+    private func blended(_ rig: TickRig, at elapsed: TimeInterval) -> TickRig {
+        guard let change = stanceChanges.last(where: { elapsed >= $0 && elapsed < $0 + Self.stanceBlend }) else { return rig }
+        let before = TickRig(workout: WorkoutParams(.at(planned: workout.planned, remaining: workout.planned - change + 0.001)))
+        let x = (elapsed - change) / Self.stanceBlend
+        let eased = x * x * (3 - 2 * x)
+        var blended = before
+        blended.animatableData = before.animatableData + (rig.animatableData - before.animatableData).scaled(by: eased)
+        return blended
+    }
+
+    static let stanceBlend = 0.5
+
+    /// When Tick goes down onto its knees, and gets back up.
+    private var stanceChanges: [TimeInterval] {
+        let plan = phases
+        return [plan.exhausted, plan.finalPush].filter { $0 > 0 && $0 < plan.planned }
     }
 
     /// The move under way, if the timer is running.
@@ -127,6 +152,7 @@ struct WorkoutLoops: Sendable {
     func frameInterval(at date: Date) -> TimeInterval {
         let elapsed = workout.energy(at: date).elapsed
         let quick = scheduler.entry(at: elapsed) != nil || bouncing(at: elapsed) != nil || faceBlink(at: elapsed) > 0
+            || stanceChanges.contains { elapsed >= $0 && elapsed < $0 + Self.stanceBlend }
         return quick ? 1.0 / 30 : 1.0 / 15
     }
 

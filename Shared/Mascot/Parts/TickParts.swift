@@ -52,6 +52,7 @@ struct TickParts: View, Animatable {
                     TickCrownPart(look: look)
                     TickMugPart(look: look)
                     TickEffectsPart(look: look)
+                    TickSweatPart(look: look)
                 }
                 .modifier(BodyMotion(look: look, follow: 1))
             }

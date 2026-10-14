@@ -53,6 +53,8 @@ struct TickPalette: Equatable, Sendable {
     /// Boxing gloves, mustard like the crown, and their darker cuffs.
     var glove: Color
     var gloveCuff: Color
+    /// Drops of sweat, a pale water blue.
+    var sweat: Color
 
     /// Tick from the asset catalog in `bundle` (the app's own by default;
     /// the icon script passes the catalog it compiles).
@@ -61,7 +63,8 @@ struct TickPalette: Equatable, Sendable {
         return TickPalette(face: named("Face"), ring: named("Ring"), track: named("Track"), cap: named("Cap"),
                            crown: named("Crown"), eyes: named("Eyes"), cheeks: named("Cheeks"), limbs: named("Limbs"),
                            doneGold: named("DoneGold"), ringingRed: named("RingingRed"), effects: named("Effects"),
-                           shadow: named("Shadow"), glove: named("Glove"), gloveCuff: named("GloveCuff"))
+                           shadow: named("Shadow"), glove: named("Glove"), gloveCuff: named("GloveCuff"),
+                           sweat: named("Sweat"))
     }
 
     /// The app icon's Tick: deep terracotta limbs, so one picture reads on
@@ -118,6 +121,8 @@ struct TickMotion: Equatable, Sendable {
     var impact: Double = 0
     /// Where it lands, relative to the body's centre (Tick units).
     var impactAt: CGPoint = .zero
+    /// Drops of sweat showing.
+    var sweat: [SweatDrop] = []
 
     // Entries, each 0 at rest.
     /// Smaller than full size, as a fraction (0.2 is 80%): popping in.

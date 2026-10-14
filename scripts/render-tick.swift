@@ -28,6 +28,7 @@ struct RenderTick {
         case "workout": try write(WorkoutSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "moves": try write(MoveSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "breath": try write(BreathSheet(), scale: 2, to: URL(fileURLWithPath: out))
+        case "ending": try write(EndingSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "hero":
             // The README's banner: the name in Fraunces, Tick working, resting, done.
             for font in ["Display", "Title", "Text"] {
@@ -178,6 +179,35 @@ struct BreathSheet: View {
             }
         }
         .padding(20)
+        .background(Color(white: 0.97))
+    }
+}
+
+/// The last minute of a 25-minute session, as the app draws it: a frame a
+/// second through the worn-out stretch and final push, then the flurry
+/// at 30 frames a second.
+struct EndingSheet: View {
+    var body: some View {
+        let palette = TickPalette.assets(in: assets)
+        let paper = Color("Paper", bundle: assets)
+        let loops = WorkoutLoops(workout: TickWorkout(planned: 1500, endDate: Date(timeIntervalSinceReferenceDate: 1500),
+                                                      pausedRemaining: nil, seed: 1))
+        let flurry = loops.scheduler.entries.last!
+        let times = stride(from: 1440.0, to: 1500, by: 1).map { $0 }
+            + stride(from: flurry.end - WorkoutMove.flurry.duration / flurry.tempo, to: 1500, by: 1.0 / 30).map { $0 }
+        LazyVGrid(columns: Array(repeating: GridItem(.fixed(80), spacing: 4), count: 20), spacing: 4) {
+            ForEach(Array(times.enumerated()), id: \.offset) { _, t in
+                let frame = loops.frame(at: Date(timeIntervalSinceReferenceDate: t))
+                VStack(spacing: 0) {
+                    TickFigure(rig: frame.rig, face: frame.face, palette: palette, motion: frame.motion, progress: (1500 - t) / 1500)
+                        .scaleEffect(1 + frame.motion.breathDepth * frame.motion.breath, anchor: UnitPoint(x: 0.5, y: 0.92))
+                        .frame(width: 80, height: 80)
+                        .background(paper)
+                    Text(String(format: "%.1f", 1500 - t)).font(.system(size: 9)).foregroundStyle(.gray)
+                }
+            }
+        }
+        .padding(16)
         .background(Color(white: 0.97))
     }
 }

@@ -130,6 +130,20 @@ struct WorkoutLoopsTests {
         #expect(abs(frame.face.mouthOpen - (0.35 + 0.65 * frame.motion.breath)) < 1e-9)
     }
 
+    @Test func theStanceEasesFromOneToTheNext() {
+        // Down onto the knees and back up for the final push: no jumps.
+        let loops = loops(left: 900)
+        for change in [1440.0, 1490] {
+            var last = loops.frame(at: loops.workout.date(atElapsed: change - 0.01)!).rig
+            for step in 0...20 {
+                let rig = loops.frame(at: loops.workout.date(atElapsed: change + Double(step) * 0.03)!).rig
+                #expect(abs(rig.centerY - last.centerY) < 1.2 && abs(rig.lean - last.lean) < 2, "at \(change)+\(step)")
+                last = rig
+            }
+            #expect(loops.frameInterval(at: loops.workout.date(atElapsed: change + 0.2)!) == 1.0 / 30)
+        }
+    }
+
     @Test func bouncesAfterACombo() {
         let loops = loops(left: 900)
         let entries = loops.scheduler.entries.filter { $0.start > 600 && $0.start < 1100 }

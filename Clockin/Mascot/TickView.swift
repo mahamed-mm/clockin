@@ -111,7 +111,8 @@ struct TickView: View {
     /// The workout, while working through one.
     private var workoutLoops: WorkoutLoops? {
         guard pose == .working, let workout, workout.style == .workout else { return nil }
-        return WorkoutLoops(workout: workout, scheduler: combos.scheduler(for: workout))
+        let (scheduler, sweat) = combos.parts(for: workout)
+        return WorkoutLoops(workout: workout, scheduler: scheduler, sweat: sweat)
     }
 
     var body: some View {
@@ -239,6 +240,7 @@ struct TickView: View {
         motion.breath = frame.motion.breath
         motion.breathDepth = frame.motion.breathDepth
         motion.puff = frame.motion.puff
+        motion.sweat = frame.motion.sweat
         motion.blink = max(motion.blink, frame.motion.blink)
         return motion
     }
@@ -299,16 +301,17 @@ struct TickView: View {
     }
 }
 
-/// The session's combos, worked out once for its length and seed rather
-/// than on every frame.
+/// The session's combos and sweat, worked out once for its length and
+/// seed rather than on every frame.
 private final class ComboCache {
-    private var scheduler: ComboScheduler?
+    private var made: (ComboScheduler, SweatEmitter)?
 
-    func scheduler(for workout: TickWorkout) -> ComboScheduler {
-        if let scheduler, scheduler.planned == workout.planned, scheduler.seed == workout.seed { return scheduler }
-        let made = ComboScheduler(planned: workout.planned, seed: workout.seed)
-        scheduler = made
-        return made
+    func parts(for workout: TickWorkout) -> (ComboScheduler, SweatEmitter) {
+        if let made, made.0.planned == workout.planned, made.0.seed == workout.seed { return made }
+        let scheduler = ComboScheduler(planned: workout.planned, seed: workout.seed)
+        let parts = (scheduler, SweatEmitter(planned: workout.planned, seed: workout.seed, scheduler: scheduler))
+        made = parts
+        return parts
     }
 }
 

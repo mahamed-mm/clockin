@@ -95,6 +95,39 @@ struct TickMugPart: View {
     }
 }
 
+/// Drops of sweat flying off, each a little teardrop outlined in ink;
+/// larger when small, so they still read in the app.
+struct TickSweatPart: View {
+    let look: TickLook
+
+    var body: some View {
+        if !look.motion.sweat.isEmpty {
+            let scale = look.handmade ? 1.0 : 1.3
+            ZStack {
+                ForEach(Array(look.motion.sweat.enumerated()), id: \.offset) { _, drop in
+                    let shape = Self.teardrop(at: look.body(drop.at), radius: drop.size * scale)
+                    ZStack {
+                        Ink(shape).fill(look.palette.sweat)
+                        Ink(shape).stroke(look.palette.eyes.opacity(0.8), lineWidth: look.handmade ? 0.9 : 1.1)
+                    }
+                    .opacity(drop.opacity)
+                }
+            }
+        }
+    }
+
+    /// Round at the bottom, pointed at the top.
+    static func teardrop(at c: CGPoint, radius r: Double) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: c.x, y: c.y - 2.3 * r))
+        path.addQuadCurve(to: CGPoint(x: c.x + r, y: c.y), control: CGPoint(x: c.x + 0.9 * r, y: c.y - 1.1 * r))
+        path.addArc(center: c, radius: r, startAngle: .degrees(0), endAngle: .degrees(180), clockwise: false)
+        path.addQuadCurve(to: CGPoint(x: c.x, y: c.y - 2.3 * r), control: CGPoint(x: c.x - 0.9 * r, y: c.y - 1.1 * r))
+        path.closeSubpath()
+        return path
+    }
+}
+
 /// The effects in front: alarm lines, sparkles, the wave and the tapping
 /// foot's lines, z's, and the star on the crown.
 struct TickEffectsPart: View {
