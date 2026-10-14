@@ -121,7 +121,7 @@ struct TickBrowsPart: View {
     let look: TickLook
 
     var body: some View {
-        let y = look.centerY - 11
+        let y = look.centerY - 11 - look.motion.browLift
         var path = Path()
         switch look.face.brows {
         case .innerRaised:

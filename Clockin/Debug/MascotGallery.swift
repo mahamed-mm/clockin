@@ -16,6 +16,7 @@ struct MascotGallery: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Space.l) {
+                    live
                     controls
                     ForEach(shown, id: \.self) { pose in
                         row(pose)
@@ -36,6 +37,31 @@ struct MascotGallery: View {
     }
 
     private var shown: [TickPose] { state.map { [$0] } ?? TickPose.allCases }
+
+    /// The animated Tick, in the chosen state (ready when showing all).
+    private var live: some View {
+        let pose = state ?? .ready
+        return VStack(spacing: Space.s) {
+            TickView(pose: pose, progress: usesSheetRing ? .sheet : .fixed(progress))
+                .frame(width: 200, height: 200)
+            HStack {
+                Button("Previous", systemImage: "chevron.left") { step(-1) }
+                Text(pose.rawValue).font(.retro(.label)).frame(minWidth: 110)
+                Button("Next", systemImage: "chevron.right") { step(1) }
+            }
+            .labelStyle(.iconOnly)
+            .buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(Space.m)
+        .background(Retro.paperDeep, in: .rect(cornerRadius: Radius.card))
+    }
+
+    private func step(_ by: Int) {
+        let all = TickPose.allCases
+        let index = all.firstIndex(of: state ?? .ready) ?? 0
+        state = all[(index + by + all.count) % all.count]
+    }
 
     private var controls: some View {
         VStack(alignment: .leading, spacing: Space.s) {

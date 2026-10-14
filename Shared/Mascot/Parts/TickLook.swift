@@ -36,6 +36,18 @@ struct TickLook {
     /// The time left, unless the whole ring is gold or ringing.
     var arcOpacity: Double { 1 - max(rig.gold, rig.alarm) }
 
+    /// The arms, with the motion's reach for the crown and shrug added.
+    var arms: [TickRig.Limb] {
+        var left = rig.leftArm, right = rig.rightArm
+        let shrug = motion.shrug * 4
+        left.end.y -= shrug; left.bend.y -= shrug * 0.6
+        right.end.y -= shrug; right.bend.y -= shrug * 0.6
+        // Reaching up onto the crown's edge.
+        right.end.x -= 5 * motion.crownTap
+        right.end.y -= 6 * motion.crownTap
+        return [left, right]
+    }
+
     /// A point given relative to the body's centre.
     func body(_ point: CGPoint) -> CGPoint { CGPoint(x: 50 + point.x, y: centerY + point.y) }
 }

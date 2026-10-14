@@ -28,7 +28,7 @@ enum TickPose: String, CaseIterable, Sendable {
 /// Tick's colours, all from the asset catalog's Tick colour sets, each
 /// with a light and a dark value. The face and its features are the same
 /// in both; the limbs, which stand against the page, follow the ink.
-struct TickPalette: Sendable {
+struct TickPalette: Equatable, Sendable {
     var face: Color
     /// The filled part of the ring: the time left.
     var ring: Color
@@ -90,6 +90,23 @@ struct TickMotion: Equatable, Sendable {
     var tremble: Double = 0
     /// The ring's time left, 0...1, instead of the pose's own.
     var ring: Double? = nil
+    /// 0...1 of a breath: Tick grows up to 2%. Applied round the whole
+    /// figure by `TickView`, so a breath never redraws the parts.
+    var breath: Double = 0
+    /// Degrees added to the tapping foot.
+    var footTap: Double = 0
+    /// 0...1 of reaching up and pressing the crown.
+    var crownTap: Double = 0
+    /// How far the plain brows lift, in Tick units.
+    var browLift: Double = 0
+    /// 0...1 of the z's floating up and away.
+    var zeeRise: Double = 0
+    /// 0...1 of the star's twinkle.
+    var twinkle: Double = 0
+    /// 0...1 of the alarm lines' flash: dimmer at 1.
+    var alarmFlash: Double = 0
+    /// 0...1 of a shrug: hands and shoulders up.
+    var shrug: Double = 0
 
     static let still = TickMotion()
 }
@@ -117,30 +134,44 @@ enum TickDetail: Equatable, Sendable {
 /// whose ring is its own timer and whose crown is the start button. Drawn
 /// from its parts (`TickParts`) in a 100-unit square scaled to fit, with
 /// the detail picked from the size unless given.
-struct TickFigure: View {
-    var pose: TickPose
+struct TickFigure: View, Equatable {
+    var rig: TickRig
+    var face: TickFace
     var palette: TickPalette
     var motion: TickMotion = .still
     /// Nil picks the detail from the size it's drawn at.
     var detail: TickDetail? = nil
-    /// The ring's time left; the character sheet's own when nil.
-    var progress: Double? = nil
+    var progress: Double
+
+    /// Tick still in a state, as on the character sheet.
+    init(pose: TickPose, palette: TickPalette, motion: TickMotion = .still, detail: TickDetail? = nil,
+         progress: Double? = nil) {
+        var face = TickFace(pose)
+        face.blink = motion.blink
+        self.init(rig: TickRig(pose), face: face, palette: palette, motion: motion, detail: detail,
+                  progress: motion.ring ?? progress ?? pose.sheetProgress)
+    }
+
+    /// Tick in any pose and face, for animation.
+    init(rig: TickRig, face: TickFace, palette: TickPalette, motion: TickMotion = .still, detail: TickDetail? = nil,
+         progress: Double) {
+        self.rig = rig
+        self.face = face
+        self.palette = palette
+        self.motion = motion
+        self.detail = detail
+        self.progress = progress
+    }
 
     var body: some View {
         GeometryReader { proxy in
             let side = min(proxy.size.width, proxy.size.height)
-            TickParts(rig: TickRig(pose), face: face, progress: motion.ring ?? progress ?? pose.sheetProgress,
+            TickParts(rig: rig, face: face, progress: progress,
                       palette: palette, motion: motion, detail: detail ?? .fitting(points: side))
                 .scaleEffect(side / 100, anchor: .topLeading)
                 .frame(width: side, height: side, alignment: .topLeading)
                 .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
         }
         .aspectRatio(1, contentMode: .fit)
-    }
-
-    private var face: TickFace {
-        var face = TickFace(pose)
-        face.blink = motion.blink
-        return face
     }
 }

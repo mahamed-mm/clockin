@@ -12,7 +12,7 @@ struct TickBackPropsPart: View {
                 .opacity(look.rig.headphones)
             Ink(vibration)
                 .stroke(look.palette.effects, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                .opacity(look.rig.alarm)
+                .opacity(look.rig.alarm * (1 - 0.6 * look.motion.alarmFlash))
         }
     }
 
@@ -99,14 +99,15 @@ struct TickEffectsPart: View {
         let rig = look.rig
         ZStack {
             Ink(alarmLines).stroke(look.palette.effects, style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
-                .opacity(rig.alarm)
+                .opacity(rig.alarm * (1 - 0.6 * look.motion.alarmFlash))
             sparkles.opacity(rig.sparkles)
             Ink(waveLines).stroke(look.palette.limbs.opacity(0.6), style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
                 .opacity(rig.waveLines)
             Ink(tapLines).stroke(look.palette.limbs.opacity(0.6), style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
                 .opacity(rig.tapLines)
             Ink(zees).stroke(look.palette.limbs, style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
-                .opacity(rig.zees)
+                .opacity(rig.zees * (1 - look.motion.zeeRise))
+                .offset(x: 3 * look.motion.zeeRise, y: -8 * look.motion.zeeRise)
             star.opacity(rig.star)
         }
     }
@@ -182,10 +183,14 @@ struct TickEffectsPart: View {
     }
 
     private var star: some View {
-        let shape = TickPath.star(at: CGPoint(x: 50 + look.shift, y: look.ringTop - 23), points: 5, outer: 5.5, inner: 5.5 * 0.45)
+        let center = CGPoint(x: 50 + look.shift, y: look.ringTop - 23)
+        let shape = TickPath.star(at: center, points: 5, outer: 5.5, inner: 5.5 * 0.45)
+        let twinkle = look.motion.twinkle
         return ZStack {
             Ink(shape).fill(look.palette.effects)
             Ink(shape).stroke(look.palette.eyes, lineWidth: 1.2)
         }
+        .scaleEffect(1 + 0.25 * twinkle, anchor: UnitPoint(x: center.x / 100, y: center.y / 100))
+        .rotationEffect(.degrees(12 * twinkle), anchor: UnitPoint(x: center.x / 100, y: center.y / 100))
     }
 }

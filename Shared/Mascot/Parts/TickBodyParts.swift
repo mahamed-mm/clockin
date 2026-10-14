@@ -19,7 +19,7 @@ struct TickLegsPart: View {
         let rig = look.rig
         let style = StrokeStyle(lineWidth: look.legWidth, lineCap: .round, lineJoin: .round)
         ZStack {
-            ForEach(Array([(rig.leftLeg, rig.leftFoot), (rig.rightLeg, rig.rightFoot)].enumerated()), id: \.offset) { _, leg in
+            ForEach(Array([(rig.leftLeg, rig.leftFoot), (rig.rightLeg, rig.rightFoot + look.motion.footTap)].enumerated()), id: \.offset) { _, leg in
                 Ink(TickPath.limb(leg.0, from: look)).stroke(look.palette.limbs, style: style)
                 foot(leg.0, tilt: leg.1)
             }
@@ -99,8 +99,12 @@ struct TickRingRimPart: View {
         return path
     }
 
-    /// The same speckle every time.
     private var grain: Path {
+        Self.speckle.applying(CGAffineTransform(translationX: 50, y: look.centerY))
+    }
+
+    /// The same speckle every time, round the face's centre; made once.
+    private static let speckle: Path = {
         var seed: UInt64 = 0x7E57
         func next() -> Double {
             seed = seed &* 6364136223846793005 &+ 1442695040888963407
@@ -111,10 +115,10 @@ struct TickRingRimPart: View {
             let x = (next() * 2 - 1) * 23, y = (next() * 2 - 1) * 23
             let size = 0.22 + next() * 0.18
             guard x * x + y * y < 23 * 23 else { continue }
-            path.addPath(TickPath.circle(CGPoint(x: 50 + x, y: look.centerY + y), size))
+            path.addPath(TickPath.circle(CGPoint(x: x, y: y), size))
         }
         return path
-    }
+    }()
 }
 
 /// The arms and hands, in front of the face.
@@ -124,7 +128,7 @@ struct TickArmsPart: View {
     var body: some View {
         let style = StrokeStyle(lineWidth: look.limbWidth, lineCap: .round, lineJoin: .round)
         ZStack {
-            ForEach(Array([look.rig.leftArm, look.rig.rightArm].enumerated()), id: \.offset) { _, arm in
+            ForEach(Array(look.arms.enumerated()), id: \.offset) { _, arm in
                 Ink(TickPath.limb(arm, from: look)).stroke(look.palette.limbs, style: style)
                 Ink(TickPath.circle(look.body(arm.end), look.handRadius)).fill(look.palette.limbs)
             }
@@ -161,7 +165,7 @@ struct TickCrownPart: View {
         let ringTop = look.ringTop
         // The stem is the ring's colour, so the crown never floats on a dark page.
         let stem = Path(roundedRect: CGRect(x: x - 3.5, y: ringTop - 6, width: 7, height: 6.6), cornerRadius: 1.2)
-        let press = 2.5 * look.rig.crownPress
+        let press = 2.5 * min(1, look.rig.crownPress + look.motion.crownTap)
         let button = CGRect(x: x - 11, y: ringTop - 17 + press, width: 22, height: 12)
         let shape = Path(roundedRect: button, cornerRadius: 4.5)
         ZStack {
