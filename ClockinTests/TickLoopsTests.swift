@@ -83,6 +83,13 @@ struct TickLoopsTests {
         #expect(loops.nextMovement(from: 0) > 0)
     }
 
+    @Test func slowDriftDrawsFewerFrames() {
+        let loops = TickLoops(pose: .onBreak, seed: 4)
+        let quiet = (0..<400).map { Double($0) * 0.05 }.first { loops.blink(at: $0) == 0 && loops.breath(at: $0, period: 3.2) == 0 }!
+        #expect(loops.frameInterval(at: quiet) == 1.0 / 15)
+        #expect(TickLoops(pose: .ringing, seed: 4).frameInterval(at: quiet) == 1.0 / 30)
+    }
+
     @Test func ringingDoesntBreathe() {
         #expect(TickLoops(pose: .ringing, seed: 1).motion(at: 1.3).breath == 0)
     }

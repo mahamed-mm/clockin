@@ -33,7 +33,8 @@ struct TickLoopSchedule: TimelineSchedule {
                 next = nil
                 return date
             }
-            let frame = date.timeIntervalSince(since) / speed + 1 / 30
+            let elapsed = date.timeIntervalSince(since) / speed
+            let frame = elapsed + loops.frameInterval(at: elapsed)
             // The face swaps behind a blink in the first 0.18 s; a poke lasts 0.6 s.
             let poking = pokedAt.map { date.timeIntervalSince($0) / speed < TickTouch.pokeLength } ?? false
             let soonest = frame < 0.2 || poking ? frame : loops.nextMovement(from: frame)

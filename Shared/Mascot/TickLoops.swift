@@ -120,6 +120,14 @@ struct TickLoops {
     /// Whether this state moves all the time (steam, z's, the alarm).
     var isContinuous: Bool { pose == .onBreak || pose == .sleeping || pose == .ringing }
 
+    /// Seconds between frames while moving: 30 a second, but 15 for the
+    /// slow drift of steam and z's, which a whole break or a night shows.
+    func frameInterval(at t: TimeInterval) -> TimeInterval {
+        let slowDrift = (pose == .onBreak || pose == .sleeping) && t >= entryLength
+            && blink(at: t) == 0 && breath(at: t, period: breathPeriod) == 0
+        return slowDrift ? 1.0 / 15 : 1.0 / 30
+    }
+
     /// The next moment, from `t` on, when anything but breathing moves:
     /// `t` itself if something is moving now. Between moments Tick holds
     /// still, so nothing needs drawing.
