@@ -8,6 +8,23 @@ struct TickLoops {
     var pose: TickPose
     /// Shifts the blinks and breathing for this Tick.
     var seed: Double
+    /// Whether the state's entry plays first: not when Tick first shows,
+    /// or comes back from the background, already in it.
+    var entering = false
+
+    /// How long the state's entry lasts.
+    var entryLength: TimeInterval {
+        guard entering else { return 0 }
+        return switch pose {
+        case .hello: 2.0
+        case .working: 0.5
+        case .ringing: 0.35
+        case .done: 0.95
+        case .onBreak: 0.45
+        case .streak: 0.7
+        case .waiting, .interrupted, .sleeping, .ready: 0
+        }
+    }
 
     /// The motion `elapsed` seconds after this state began.
     func motion(at elapsed: TimeInterval) -> TickMotion {
@@ -47,8 +64,56 @@ struct TickLoops {
         case .sleeping:
             motion.zeeRise = (t / 3).truncatingRemainder(dividingBy: 1)
         }
+        if t < entryLength { addEntry(at: t, to: &motion) }
         return motion
     }
+
+    /// Each state's way in, played once as it begins.
+    private func addEntry(at t: TimeInterval, to motion: inout TickMotion) {
+        switch pose {
+        case .hello:
+            // Pops in from 80%, with a little overshoot, then waves three times.
+            motion.shrink = t < 0.45 ? 0.2 * (1 - springOut(t / 0.45)) : 0
+            if t > 0.35 { motion.wave = sin(2 * .pi * (t - 0.35) / 0.55) * fade(t, end: entryLength) }
+        case .working:
+            // The headphones slide on from above.
+            motion.headphonesAbove = 1 - easeOut(t / entryLength)
+        case .ringing:
+            motion.squash = sin(.pi * t / entryLength)
+        case .done:
+            // Crouch, jump, land: squash and stretch. The gold sweeps round
+            // and the sparkles burst out at the top of the jump.
+            if t < 0.12 {
+                motion.squash = 0.7 * sin(.pi / 2 * t / 0.12)
+            } else if t < 0.72 {
+                let x = (t - 0.12) / 0.6
+                motion.hop = 4 * x * (1 - x)
+                motion.squash = -0.5 * sin(.pi * x)
+            } else {
+                motion.squash = 0.5 * sin(.pi * (t - 0.72) / (entryLength - 0.72))
+            }
+            motion.goldUnswept = 1 - easeOut(min(1, t / 0.6))
+            motion.sparklesIn = t < 0.35 ? 1 : 1 - easeOut(min(1, (t - 0.35) / 0.4))
+        case .onBreak:
+            motion.mugIn = 1 - springOut(t / entryLength)
+        case .streak:
+            // The star drops onto the crown and bounces.
+            motion.starAbove = 1 - springOut(t / entryLength)
+        case .waiting, .interrupted, .sleeping, .ready:
+            break
+        }
+    }
+
+    private func easeOut(_ x: Double) -> Double { 1 - pow(1 - min(1, max(0, x)), 3) }
+
+    /// 0 to 1, overshooting by about 15% on the way: a springy arrival.
+    private func springOut(_ x: Double) -> Double {
+        let x = min(1, max(0, x))
+        return x >= 1 ? 1 : 1 - exp(-6 * x) * cos(10 * x)
+    }
+
+    /// 1 until near `end`, then down to 0.
+    private func fade(_ t: TimeInterval, end: TimeInterval) -> Double { min(1, max(0, (end - t) / 0.3)) }
 
     // MARK: When something moves
 
@@ -59,7 +124,7 @@ struct TickLoops {
     /// `t` itself if something is moving now. Between moments Tick holds
     /// still, so nothing needs drawing.
     func nextMovement(from t: TimeInterval) -> TimeInterval {
-        if isContinuous { return t }
+        if isContinuous || t < entryLength { return t }
         var windows = [blinkWindow(from: t)]
         if pose != .ringing { windows.append(breathWindow(from: t)) }
         switch pose {

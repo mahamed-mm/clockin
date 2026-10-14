@@ -33,6 +33,9 @@ struct TickLook {
     /// The crown and eyebrow sit a touch off centre when hand-made.
     var shift: Double { handmade ? 1.2 : 0 }
 
+    /// Thin motion lines only when there's room for them.
+    var showsMotionLines: Bool { handmade }
+
     /// The time left, unless the whole ring is gold or ringing.
     var arcOpacity: Double { 1 - max(rig.gold, rig.alarm) }
 
@@ -45,6 +48,9 @@ struct TickLook {
         // Reaching up onto the crown's edge.
         right.end.x -= 5 * motion.crownTap
         right.end.y -= 6 * motion.crownTap
+        // The waving hand swings side to side.
+        left.end.x += 5 * motion.wave
+        left.bend.x += 2 * motion.wave
         return [left, right]
     }
 

@@ -87,3 +87,45 @@ struct TickLoopsTests {
         #expect(TickLoops(pose: .ringing, seed: 1).motion(at: 1.3).breath == 0)
     }
 }
+
+/// Each state's entry: once, as the state begins, and only when seen.
+struct TickEntryTests {
+    @Test func noEntryWhenAlreadyThere() {
+        let loops = TickLoops(pose: .done, seed: 1, entering: false)
+        #expect(loops.entryLength == 0)
+        #expect(loops.motion(at: 0.4).goldUnswept == 0 && loops.motion(at: 0.4).sparklesIn == 0)
+    }
+
+    @Test func doneJumpsSweepsAndBursts() {
+        let loops = TickLoops(pose: .done, seed: 1, entering: true)
+        #expect(loops.motion(at: 0.05).squash > 0)            // crouch
+        #expect(loops.motion(at: 0.42).hop > 0.9)              // top of the jump
+        #expect(loops.motion(at: 0.42).squash < 0)             // stretched
+        #expect(loops.motion(at: 0.0).goldUnswept == 1)
+        #expect(loops.motion(at: 0.7).goldUnswept == 0)
+        #expect(loops.motion(at: 0.2).sparklesIn == 1)
+        #expect(loops.motion(at: 0.9).sparklesIn < 0.05)
+    }
+
+    @Test func helloPopsInAndWaves() {
+        let loops = TickLoops(pose: .hello, seed: 1, entering: true)
+        #expect(abs(loops.motion(at: 0).shrink - 0.2) < 0.001)
+        #expect(loops.motion(at: 1.9).shrink == 0)
+        let swings = (0..<40).map { loops.motion(at: 0.35 + Double($0) * 0.04).wave }
+        #expect(swings.max()! > 0.8 && swings.min()! < -0.8)
+        #expect(loops.motion(at: 2.5).wave == 0)
+    }
+
+    @Test func propsArrive() {
+        #expect(TickLoops(pose: .working, seed: 1, entering: true).motion(at: 0).headphonesAbove == 1)
+        #expect(TickLoops(pose: .working, seed: 1, entering: true).motion(at: 0.6).headphonesAbove == 0)
+        #expect(TickLoops(pose: .onBreak, seed: 1, entering: true).motion(at: 0).mugIn == 1)
+        #expect(TickLoops(pose: .streak, seed: 1, entering: true).motion(at: 0).starAbove == 1)
+        #expect(TickLoops(pose: .ringing, seed: 1, entering: true).motion(at: 0.17).squash > 0.9)
+    }
+
+    @Test func framesRunThroughTheEntry() {
+        let loops = TickLoops(pose: .hello, seed: 1, entering: true)
+        #expect(loops.nextMovement(from: 1.2) == 1.2)
+    }
+}

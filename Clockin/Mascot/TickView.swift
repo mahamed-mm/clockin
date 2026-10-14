@@ -8,6 +8,8 @@ private extension TickMotion {
         motion.lean = 0
         motion.tremble = 0
         motion.blink = 0
+        motion.shrink = 0
+        motion.squash = 0
         return motion
     }
 }
@@ -69,12 +71,16 @@ struct TickView: View {
     @State private var facePose: TickPose?
     @State private var faceSwap: Date?
     @State private var onScreen = false
+    /// Whether the current state's entry plays: only for a change seen
+    /// happen, not on showing or coming back from the background.
+    @State private var entering = false
+    @State private var activeSince = Date.now
     @State private var seed = Double.random(in: 0..<100)
 
     private var reduceMotion: Bool { systemReduceMotion || galleryReduceMotion }
     private var still: Bool { reduceMotion || services.power.isConstrained }
     private var paused: Bool { !onScreen || scenePhase != .active }
-    private var loops: TickLoops { TickLoops(pose: pose, seed: seed) }
+    private var loops: TickLoops { TickLoops(pose: pose, seed: seed, entering: entering) }
 
     var body: some View {
         Group {
@@ -89,15 +95,26 @@ struct TickView: View {
                     let elapsed = context.date.timeIntervalSince(since) / Motion.speed
                     let motion = paused ? TickMotion.still : loops.motion(at: elapsed)
                     let (face, swapBlink) = face(at: context.date)
-                    figure(motion: motion.drawn, face: face, blink: max(swapBlink, motion.blink))
-                        .equatable()
-                        // Drawn once into a layer, so moving it costs no redraw.
-                        .drawingGroup()
-                        // Breathing and the alarm's shake move the whole drawn layer, about the feet.
-                        .scaleEffect(1 + 0.02 * motion.breath, anchor: Self.feet)
-                        .rotationEffect(.degrees(motion.lean), anchor: Self.feet)
-                        .offset(x: 1.5 * motion.tremble)
+                    GeometryReader { proxy in
+                        let side = min(proxy.size.width, proxy.size.height)
+                        // Drawn once into a layer, so moving it costs no redraw. The
+                        // layer has room round the square for jumps and sparkles.
+                        figure(motion: motion.drawn, face: face, blink: max(swapBlink, motion.blink))
+                            .equatable()
+                            .frame(width: side, height: side)
+                            .padding(side * Self.overflow)
+                            .drawingGroup()
+                            .padding(-side * Self.overflow)
+                            .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                    }
+                    // Breathing, squash and the alarm's shake move the whole drawn layer, about the feet.
+                    .scaleEffect(x: (1 + 0.02 * motion.breath - motion.shrink) * (1 + 0.12 * motion.squash),
+                                 y: (1 + 0.02 * motion.breath - motion.shrink) * (1 - 0.12 * motion.squash),
+                                 anchor: Self.feet)
+                    .rotationEffect(.degrees(motion.lean), anchor: Self.feet)
+                    .offset(x: 1.5 * motion.tremble)
                 }
+                .aspectRatio(1, contentMode: .fit)
             }
         }
         .animation(still ? Motion.calm(true) : .spring(duration: 0.45 * Motion.speed, bounce: 0.25), value: pose)
@@ -105,6 +122,17 @@ struct TickView: View {
             since = .now
             facePose = old
             faceSwap = .now
+            // A change caught up on as the app comes back shows as it stands.
+            entering = onScreen && scenePhase == .active && Date.now.timeIntervalSince(activeSince) > 0.5
+        }
+        .onChange(of: celebration) {
+            // Replays the done entry: the jump, the sparkles, the gold.
+            guard pose == .done else { return }
+            since = .now
+            entering = true
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { activeSince = .now }
         }
         .onAppear { onScreen = true }
         .onDisappear { onScreen = false }
@@ -112,6 +140,9 @@ struct TickView: View {
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
+
+    /// How far beyond its square Tick may reach, as a fraction of its size.
+    private static let overflow = 0.25
 
     /// Where Tick stands, in the figure's square.
     private static let feet = UnitPoint(x: 0.5, y: 0.92)

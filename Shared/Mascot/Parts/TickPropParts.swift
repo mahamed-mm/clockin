@@ -10,16 +10,19 @@ struct TickBackPropsPart: View {
             Ink(TickPath.arc(look.center, look.radius + 7, from: -168, to: -12))
                 .stroke(look.palette.crown, style: StrokeStyle(lineWidth: look.handmade ? 2 : 2.8, lineCap: .round))
                 .opacity(look.rig.headphones)
+                .offset(y: -14 * look.motion.headphonesAbove)
             Ink(vibration)
-                .stroke(look.palette.effects, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .stroke(look.palette.effects, style: StrokeStyle(lineWidth: look.handmade ? 2 : 3, lineCap: .round))
                 .opacity(look.rig.alarm * (1 - 0.6 * look.motion.alarmFlash))
         }
     }
 
     private var vibration: Path {
         var path = Path()
+        // One bold line a side when small, two fine ones when large.
+        let radii = look.handmade ? [look.radius + 9, look.radius + 13.5] : [look.radius + 10]
         for (start, end) in [(-20.0, 20.0), (160.0, 200.0)] {
-            for r in [look.radius + 9, look.radius + 13.5] {
+            for r in radii {
                 path.addPath(TickPath.arc(look.center, r, from: start, to: end))
             }
         }
@@ -44,6 +47,7 @@ struct TickHeadphoneCupsPart: View {
             Ink(stripes).stroke(look.palette.crown, style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
         }
         .opacity(look.rig.headphones)
+        .offset(y: -14 * look.motion.headphonesAbove)
     }
 }
 
@@ -64,6 +68,7 @@ struct TickMugPart: View {
             Ink(TickPath.circle(CGPoint(x: 86, y: look.centerY - 6), look.handRadius)).fill(look.palette.limbs)
             steam(above: mug)
         }
+        .scaleEffect(1 - look.motion.mugIn, anchor: UnitPoint(x: 0.86, y: (look.centerY - 6) / 100))
         .opacity(look.rig.mug)
     }
 
@@ -100,15 +105,21 @@ struct TickEffectsPart: View {
         ZStack {
             Ink(alarmLines).stroke(look.palette.effects, style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
                 .opacity(rig.alarm * (1 - 0.6 * look.motion.alarmFlash))
-            sparkles.opacity(rig.sparkles)
-            Ink(waveLines).stroke(look.palette.limbs.opacity(0.6), style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
-                .opacity(rig.waveLines)
-            Ink(tapLines).stroke(look.palette.limbs.opacity(0.6), style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
-                .opacity(rig.tapLines)
+            sparkles
+                .scaleEffect(1 - 0.7 * look.motion.sparklesIn, anchor: UnitPoint(x: 0.5, y: look.centerY / 100))
+                .opacity(rig.sparkles * (1 - look.motion.sparklesIn))
+            if look.showsMotionLines {
+                Ink(waveLines).stroke(look.palette.limbs.opacity(0.6), style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
+                    .opacity(rig.waveLines)
+                Ink(tapLines).stroke(look.palette.limbs.opacity(0.6), style: StrokeStyle(lineWidth: 1.8, lineCap: .round))
+                    .opacity(rig.tapLines)
+            }
             Ink(zees).stroke(look.palette.limbs, style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
                 .opacity(rig.zees * (1 - look.motion.zeeRise))
                 .offset(x: 3 * look.motion.zeeRise, y: -8 * look.motion.zeeRise)
-            star.opacity(rig.star)
+            star
+                .offset(y: -16 * look.motion.starAbove)
+                .opacity(rig.star * (1 - look.motion.starAbove))
         }
     }
 

@@ -47,7 +47,10 @@ struct TickRingTrackPart: View {
         ZStack {
             Ink(face).fill(look.palette.face)
             Ink(face).stroke(look.palette.track, lineWidth: look.rimWidth)
-            Ink(face).stroke(look.palette.doneGold, lineWidth: look.rimWidth).opacity(look.rig.gold)
+            // The gold sweeps round from twelve as a session is done.
+            Ink(TickPath.arc(look.center, look.radius, from: -90, to: -90 + 360 * (1 - look.motion.goldUnswept)))
+                .stroke(look.palette.doneGold, style: StrokeStyle(lineWidth: look.rimWidth, lineCap: look.motion.goldUnswept > 0 ? .round : .butt))
+                .opacity(look.rig.gold)
             Ink(face).stroke(look.palette.ringingRed, lineWidth: look.rimWidth).opacity(look.rig.alarm)
         }
     }

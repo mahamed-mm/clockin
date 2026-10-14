@@ -108,6 +108,24 @@ struct TickMotion: Equatable, Sendable {
     /// 0...1 of a shrug: hands and shoulders up.
     var shrug: Double = 0
 
+    // Entries, each 0 at rest.
+    /// Smaller than full size, as a fraction (0.2 is 80%): popping in.
+    var shrink: Double = 0
+    /// Squashed wider and lower, 0...1 (applied about the feet).
+    var squash: Double = 0
+    /// -1...1 of the waving hand's swing.
+    var wave: Double = 0
+    /// 0...1 of the headphones still above the head, sliding on.
+    var headphonesAbove: Double = 0
+    /// 0...1 of the gold ring still to sweep round.
+    var goldUnswept: Double = 0
+    /// 0...1 of the sparkles still to burst out.
+    var sparklesIn: Double = 0
+    /// 0...1 of the mug still to pop into the hand.
+    var mugIn: Double = 0
+    /// 0...1 of the star still to drop onto the crown.
+    var starAbove: Double = 0
+
     static let still = TickMotion()
 }
 
