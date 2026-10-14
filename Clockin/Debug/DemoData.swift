@@ -45,12 +45,22 @@ enum DemoData {
     /// seconds after launch, so the completion moment shows real durations.
     /// Must run before `AppServices` loads the saved state.
     @MainActor
+    /// `-DemoFinishing`: a session that runs out 3 seconds after launch.
+    /// `-DemoOvertime`: one that ran out four minutes ago, kept going since.
     static func prepareFinishingSession(now: Date = .now) {
-        guard ProcessInfo.processInfo.arguments.contains("-DemoFinishing") else { return }
+        let arguments = ProcessInfo.processInfo.arguments
+        let end: TimeInterval
+        if arguments.contains("-DemoFinishing") {
+            end = 3
+        } else if arguments.contains("-DemoOvertime") {
+            end = -(4 * 60 + 10)
+        } else {
+            return
+        }
         let session = ActiveSession(id: UUID(), name: "Thesis outline", phase: .focus,
                                     plannedDuration: Preset.classic.focus,
-                                    focusStartedAt: now.addingTimeInterval(3 - Preset.classic.focus),
-                                    state: .running(endDate: now.addingTimeInterval(3)))
+                                    focusStartedAt: now.addingTimeInterval(end - Preset.classic.focus),
+                                    state: .running(endDate: now.addingTimeInterval(end)))
         DefaultsSessionStateStore().save(PersistedSessionState(active: session))
     }
 

@@ -10,16 +10,20 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 
 - **One session at a time:** focus, pause and resume, or cancel without recording (and undo the cancel for a few seconds). The break starts manually and never counts as focus time.
 - **Your rhythm:** Classic 25/5, Deep 50/10 or Short 15/3, and a 15-minute long break after every fourth full session of the day. "+5 min" in the last five minutes, and "Finish now" to stop early and keep the minutes. Pick the length from chips under the dial or in Settings, or drag the dial's knob like a kitchen timer to any length from 5 to 60 minutes, one detent per five minutes (its break is a fifth of it, 3 to 15 minutes). It applies from the next session.
+- **Keeps going after the bell:** if you carry on past time's up, the dial keeps time in a thin rust lap round its rim, "+3 min" under the seal, once a minute for up to an hour. "Keep +3 min" adds the whole minutes to the session; starting the break or Done leaves it as it rang.
 - **Calm while it runs:** eight seconds after your last touch, everything round a running dial fades back to the countdown and Pause; a tap brings it back. It stays put while paused, in the last five minutes and with VoiceOver or Switch Control. A paused dial goes still and sepia, and the header says when you paused.
 - **Survives relaunch:** the timer is date-based, so a running session is restored exactly after the app is closed or the phone restarts. A session that finished while the app was closed opens quietly, saying when it finished.
 - **Keeps up with the clock:** "today" moves on at midnight, and on time zone and clock changes, everywhere at once. Setting the clock back can't add time to a session.
-- **History:** today's focused minutes, then a week at a time as session columns and sessions by day, paging back to the first one. Tap a session for its card: when it ran, focused and planned minutes, how it ended and whether it counts toward the set, with Rename and Delete. Swipe to delete too; both offer Undo. Under the week, one line sums it up ("Mostly mornings this week; Tuesday was your longest day."). On iPhones with Apple Intelligence the on-device model writes it, from session times and lengths only, never names; everywhere else it's a fixed sentence.
+- **History:** today's focused minutes, then a week at a time as session columns and sessions by day, paging back to the first one. Tap a session for its card: when it ran, focused and planned minutes, how it ended, any extra minutes beyond the plan and whether it counts toward the set, with Rename and Delete. Swipe to delete too; both offer Undo. Under the week, one line sums it up ("Mostly mornings this week; Tuesday was your longest day."). On iPhones with Apple Intelligence the on-device model writes it, from session times and lengths only, never names; everywhere else it's a fixed sentence.
 - **Appearance:** System, Light or Dark in Settings, following the phone by default.
 - **Your data:** export History as CSV, back it up as JSON and restore it, or erase it, all from Settings. Nothing leaves the phone unless you export it; week summaries use Apple's on-device model, and can be turned off.
+- **Mindful Minutes:** turn on "Save to Apple Health" and each finished session is written to Health as Mindful Minutes, in step with History: kept overtime updates it, deleting a session removes it and Undo puts it back. Clockin only writes, never reads, and a session that ends while the phone is locked is written the next time the app runs.
+- **Siri, Shortcuts and Control Center:** "Start a focus in Clockin", "Pause Clockin", "Stop Clockin", with a spoken reply, and Start, Pause, Resume and Stop actions in Shortcuts (Start takes a length and a name, for that session only). On iOS 27 Siri's own timer words work too: "Set a 25-minute timer in Clockin". Stop never throws work away: past the first minute it ends the session and keeps its minutes. A Control Center, Lock Screen and Action button control does what the app's big button would: start, pause, resume or start the break.
+- **Teaches itself:** no tutorial screens. On a first launch a faint thumb sweeps the dial's knob over "Drag the knob to set the time", until the length is first set or a session starts. After the very first session the summary says "That's the whole app." just once.
 - **Rings on time:** turn on "Ring when time's up" and the end of a session or break is an AlarmKit alarm: it sounds through Silent mode and a Focus, repeating Clockin's chime until you stop it, and after focus it offers Start break right on the alarm. Pause, +5 min and Finish now move or take it away. Without it, a notification plays the same chime. If alarms are turned off for Clockin, Settings and the Focus screen say so and link to the switch.
 - **Live Activity:** a Lock Screen card and Dynamic Island with a live countdown and a pause/resume button that works without opening the app.
 - **StandBy and bedside mode:** a full-screen bedside clock when the phone is charging on its side, and a bedside clock inside the app: open it from Settings during a session (it turns the screen even with orientation lock on) or turn the phone on its side. It uses a night palette, and the screen stays on only while the clock runs.
-- **Home Screen widget:** today's progress in small and medium sizes, including tinted and clear Home Screens; tapping it opens the Focus screen. Away from Focus, a running session also sits above the tab bar.
+- **Home Screen widget:** today's progress in small and medium sizes, including tinted and clear Home Screens; tapping it opens the Focus screen. In History, a running session floats above the tab bar; a tap goes back to Focus.
 - **Feel:** subtle haptics on every transition, a custom Core Haptics pattern and a sunburst when a session completes, and calm fallbacks when Reduce Motion is on.
 - **Easy on the battery:** screens redraw only when something on them changes, so a paused or idle timer draws nothing. Low Power Mode and a hot phone stop the decoration.
 
@@ -33,9 +37,9 @@ A retro, one-thing-at-a-time focus timer for iPhone. Name what you're working on
 
 ## Screenshots
 
-| Focus | Running | Complete |
+| Focus | Running | Kept going |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/focus-idle.png" width="250" alt="Focus screen with the dial set to 35 minutes and the length chips"> | <img src="docs/screenshots/focus-running.png" width="250" alt="A focus session running"> | <img src="docs/screenshots/focus-complete.png" width="250" alt="Session complete with the sunburst"> |
+| <img src="docs/screenshots/focus-idle.png" width="250" alt="Focus screen with the dial set to 35 minutes and the length chips"> | <img src="docs/screenshots/focus-running.png" width="250" alt="A focus session running"> | <img src="docs/screenshots/focus-complete.png" width="250" alt="Session complete, four minutes past the bell, with the overtime lap and Keep +4 min"> |
 
 | History | Session card | Settings |
 |:---:|:---:|:---:|
@@ -105,6 +109,8 @@ Debug builds accept these launch arguments (Product → Scheme → Edit Scheme �
 | `-SlowAnimations` | Plays every animation 4× slower |
 | `-DemoData` | Fills an empty store with a week of sample sessions and hides the debug menu |
 | `-DemoFinishing` | Starts a 25-minute session that ends 3 seconds after launch |
+| `-DemoOvertime` | A 25-minute session that ended four minutes before launch, for the overtime screen |
+| `-ResetOnboarding` | Shows the first-launch hints again (also in the debug menu) |
 
 Run the tests:
 
