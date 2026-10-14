@@ -65,8 +65,6 @@ struct SessionPills: View {
         Copy.pillsCaption(completed: completed, setSize: setSize)
     }
 
-    private static let colors: [Color] = Retro.stripes.reversed()
-
     var body: some View {
         Group {
             if axis == .vertical {
@@ -99,7 +97,7 @@ struct SessionPills: View {
                 .modifier(PulseOnce(active: next))
             if let fill, filling {
                 Capsule()
-                    .fill(Self.colors[index % Self.setSize])
+                    .fill(Retro.setColor(position: index))
                     .opacity(reduceMotion ? fill.level : 1)
                     .mask { LiquidFill(level: reduceMotion ? 1 : fill.level) }
                     .widgetAccentable()
@@ -135,7 +133,7 @@ struct SessionPills: View {
         switch state {
         case .filled(let colorIndex):
             Capsule()
-                .fill(Self.colors[colorIndex])
+                .fill(Retro.setColor(position: colorIndex))
                 .widgetAccentable()
         case .current:
             Capsule()

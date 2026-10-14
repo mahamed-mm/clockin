@@ -36,6 +36,13 @@ enum Retro {
     /// The four stripe colors, warmest last.
     static let stripes: [Color] = [avocado, mustard, orange, rust]
 
+    /// A session's colour by its place in the day's set of four, from 0:
+    /// rust, orange, mustard, avocado, then round again. The stripe colours
+    /// mean only this.
+    static func setColor(position: Int) -> Color {
+        stripes[stripes.count - 1 - position % stripes.count]
+    }
+
     static func tint(for phase: SessionPhase) -> Color {
         phase == .focus ? orange : avocado
     }

@@ -168,6 +168,11 @@ enum Copy {
 
     // MARK: History
 
+    /// "Chemistry, 19:00 to 19:25": a block on the day's ribbon, for VoiceOver.
+    static func ribbonBlock(name: String, from start: Date, to end: Date) -> String {
+        String(localized: "\(name), \(TimeFormat.time(start)) to \(TimeFormat.time(end))")
+    }
+
     /// One calm line about the week under History's strip: "Mostly mornings
     /// this week; Tuesday was your longest day." No names, no praise.
     static func weekSentence(_ facts: WeekFacts, calendar: Calendar) -> String {

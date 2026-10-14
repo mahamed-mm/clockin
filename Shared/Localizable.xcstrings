@@ -1857,6 +1857,16 @@
         }
       }
     },
+    "No sessions" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingen økter"
+          }
+        }
+      }
+    },
     "No sessions this week." : {
       "localizations" : {
         "nb" : {
@@ -2537,6 +2547,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Viser økten, så du kan gi den nytt navn eller slette den"
+          }
+        }
+      }
+    },
+    "Shows this day" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Viser denne dagen"
           }
         }
       }

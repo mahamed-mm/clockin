@@ -22,48 +22,50 @@ struct HistoryView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    HistoryHeader(day: services.today, calendar: services.calendar,
-                                  showsTotals: !services.historyUnavailable)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: Space.xs, leading: 0, bottom: Space.xxs, trailing: 0))
-                }
-                .listRowSeparator(.hidden)
-
-                if services.historyUnavailable {
+            ScrollViewReader { scroll in
+                List {
                     Section {
-                        ContentUnavailableView {
-                            Label("History couldn't be loaded", systemImage: "exclamationmark.triangle")
-                        } description: {
-                            Text("Your saved sessions haven't been deleted. Timers still work, and new sessions are kept until History opens again.")
-                                .font(.retro(.body))
-                        }
-                        .foregroundStyle(Retro.inkSoft)
-                        .listRowBackground(Color.clear)
+                        HistoryHeader(day: services.today, calendar: services.calendar,
+                                      showsTotals: !services.historyUnavailable)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: Space.xs, leading: 0, bottom: Space.xxs, trailing: 0))
                     }
-                } else {
-                    HistoryWeek(week: week, today: services.today, calendar: services.calendar,
-                                canGoBack: canGoBack, canGoForward: canGoForward, page: page)
-                    if newest.isEmpty {
+                    .listRowSeparator(.hidden)
+
+                    if services.historyUnavailable {
                         Section {
                             ContentUnavailableView {
-                                VStack(spacing: Space.s) {
-                                    TickView(pose: .hello)
-                                        .frame(width: 104, height: 104)
-                                    Text("No sessions yet")
-                                }
+                                Label("History couldn't be loaded", systemImage: "exclamationmark.triangle")
                             } description: {
-                                Text("Finish a focus session and it will show up here.")
+                                Text("Your saved sessions haven't been deleted. Timers still work, and new sessions are kept until History opens again.")
                                     .font(.retro(.body))
                             }
                             .foregroundStyle(Retro.inkSoft)
                             .listRowBackground(Color.clear)
                         }
+                    } else {
+                        HistoryWeek(week: week, today: services.today, calendar: services.calendar,
+                                    canGoBack: canGoBack, canGoForward: canGoForward, page: page, scroll: scroll)
+                        if newest.isEmpty {
+                            Section {
+                                ContentUnavailableView {
+                                    VStack(spacing: Space.s) {
+                                        TickView(pose: .hello)
+                                            .frame(width: 104, height: 104)
+                                        Text("No sessions yet")
+                                    }
+                                } description: {
+                                    Text("Finish a focus session and it will show up here.")
+                                        .font(.retro(.body))
+                                }
+                                .foregroundStyle(Retro.inkSoft)
+                                .listRowBackground(Color.clear)
+                            }
+                        }
                     }
                 }
+                .scrollContentBackground(.hidden)
             }
-            .scrollContentBackground(.hidden)
             // The same edge as the Focus screen, so the titles line up.
             .contentMargins(.horizontal, Space.gutter, for: .scrollContent)
             .background(PaperBackground().paperGrain())
@@ -168,6 +170,7 @@ private struct HistoryWeek: View {
     let canGoBack: Bool
     let canGoForward: Bool
     let page: (Int) -> Void
+    let scroll: ScrollViewProxy
     @Query private var records: [FocusRecord]
     @Environment(SessionEngine.self) private var engine
     @Environment(AppServices.self) private var services
@@ -175,15 +178,18 @@ private struct HistoryWeek: View {
     @State private var appeared = false
     /// The session whose card is open.
     @State private var opened: SessionSummary?
+    /// The day tapped in the strip; nil for the week's own default.
+    @State private var pickedDay: Date?
 
     init(week: DateInterval, today: Date, calendar: Calendar, canGoBack: Bool, canGoForward: Bool,
-         page: @escaping (Int) -> Void) {
+         page: @escaping (Int) -> Void, scroll: ScrollViewProxy) {
         self.week = week
         self.today = today
         self.calendar = calendar
         self.canGoBack = canGoBack
         self.canGoForward = canGoForward
         self.page = page
+        self.scroll = scroll
         _records = Query(filter: FocusRecord.completed(in: week), sort: \.completedAt, order: .reverse)
     }
 
@@ -191,9 +197,18 @@ private struct HistoryWeek: View {
         Section {
             VStack(spacing: Space.s) {
                 pager
-                WeekStrip(totals: totals, today: today, calendar: calendar)
+                WeekStrip(totals: totals, today: today, calendar: calendar, selected: selectedDay,
+                          select: select)
                     // A new week fills in afresh.
                     .id(week.start)
+                if let selectedDay {
+                    DayRibbon(title: dayTitle(selectedDay), sessions: ribbon(on: selectedDay), day: selectedDay,
+                              calendar: calendar, open: open)
+                        .padding(.top, Space.xxs)
+                        // Each day draws in afresh.
+                        .id(selectedDay)
+                        .transition(.opacity)
+                }
                 if let facts {
                     WeekSentenceLine(facts: facts, calendar: calendar)
                         .id(week.start)
@@ -203,6 +218,8 @@ private struct HistoryWeek: View {
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: Space.xs, leading: 0, bottom: Space.s, trailing: 0))
             .onAppear { appeared = true }
+            .onChange(of: week.start) { pickedDay = nil }
+            .animation(Motion.calm(reduceMotion), value: selectedDay)
         }
         .listRowSeparator(.hidden)
 
@@ -249,6 +266,7 @@ private struct HistoryWeek: View {
                 }
             }
             .listRowBackground(Retro.paperDeep.opacity(0.6))
+            .id(Self.sectionID(group.day))
         }
         .sheet(item: $opened) { summary in
             SessionCard(summary: summary, now: today, calendar: calendar,
@@ -258,6 +276,38 @@ private struct HistoryWeek: View {
                         delete: { services.deleteSessions([summary.id]) })
                 .fittedSheet()
         }
+    }
+
+    private var selectedDay: Date? {
+        pickedDay ?? WeekStrip.defaultDay(totals, today: today, calendar: calendar)
+    }
+
+    private static func sectionID(_ day: Date) -> String { "day-\(day.timeIntervalSinceReferenceDate)" }
+
+    private func select(_ day: Date) {
+        pickedDay = day
+        guard let group = days.first(where: { calendar.isDate($0.day, inSameDayAs: day) }) else { return }
+        withAnimation(Motion.calm(reduceMotion)) { scroll.scrollTo(Self.sectionID(group.day), anchor: .top) }
+    }
+
+    /// The day's sessions for its ribbon, saved or waiting.
+    private func ribbon(on day: Date) -> [DayRibbonLayout.Session] {
+        let saved = records.filter { calendar.isDate($0.completedAt, inSameDayAs: day) }
+        let ids = Set(saved.map(\.id))
+        let waiting = engine.pendingRecords(on: day).filter { !ids.contains($0.id) }
+        return saved.map {
+            DayRibbonLayout.Session(id: $0.id, name: $0.name, startedAt: $0.startedAt, completedAt: $0.completedAt,
+                                    seconds: $0.focusSeconds, countsAsFull: $0.row.countsAsFull)
+        } + waiting.map {
+            DayRibbonLayout.Session(id: $0.id, name: $0.name, startedAt: $0.startedAt, completedAt: $0.completedAt,
+                                    seconds: $0.focusSeconds, countsAsFull: $0.countsAsFull)
+        }
+    }
+
+    /// Opens a session's card from the ribbon; one still waiting to be saved has none.
+    private func open(_ id: UUID) {
+        guard let record = records.first(where: { $0.id == id }) else { return }
+        opened = SessionSummary(record)
     }
 
     private var pager: some View {
