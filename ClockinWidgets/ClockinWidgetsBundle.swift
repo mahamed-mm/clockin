@@ -7,5 +7,6 @@ struct ClockinWidgetsBundle: WidgetBundle {
         TodayWidget()
         FocusLiveActivity()
         AlarmLiveActivity()
+        FocusControl()
     }
 }

@@ -242,7 +242,13 @@
     "Alerts off" : {
 
     },
+    "All done." : {
+
+    },
     "All on %@ this week." : {
+
+    },
+    "Already focusing. %@." : {
 
     },
     "Appearance" : {
@@ -257,6 +263,9 @@
     "Asked on your first start" : {
 
     },
+    "Back to it. %@." : {
+
+    },
     "Back up History" : {
 
     },
@@ -267,6 +276,12 @@
 
     },
     "Break after %@" : {
+
+    },
+    "Break ended." : {
+
+    },
+    "Break started: %@." : {
 
     },
     "Break until %@" : {
@@ -288,6 +303,9 @@
 
     },
     "Cancel session" : {
+
+    },
+    "Carries on with a paused session or break." : {
 
     },
     "Classic" : {
@@ -347,6 +365,9 @@
     "Ends the session and keeps the minutes" : {
 
     },
+    "Ends the session and keeps the minutes done, or ends the break. Under a minute in, nothing is kept." : {
+
+    },
     "Erase All" : {
 
     },
@@ -399,6 +420,9 @@
     "Focus" : {
 
     },
+    "Focus Button" : {
+
+    },
     "Focus complete" : {
 
     },
@@ -417,6 +441,9 @@
           }
         }
       }
+    },
+    "Focusing for %@." : {
+
     },
     "Haptics lab" : {
 
@@ -454,6 +481,9 @@
     "Long break after four" : {
 
     },
+    "Minutes" : {
+
+    },
     "Minutes of focus you've finished today." : {
 
     },
@@ -475,6 +505,9 @@
     "Mostly mornings this week; %@ was your longest day." : {
 
     },
+    "Name" : {
+
+    },
     "Next week" : {
 
     },
@@ -490,6 +523,9 @@
     "Nothing was restored. Try again." : {
 
     },
+    "Nothing's running in Clockin." : {
+
+    },
     "OK" : {
 
     },
@@ -497,6 +533,9 @@
 
     },
     "On" : {
+
+    },
+    "On a break. %@." : {
 
     },
     "One session this week, on %@ afternoon." : {
@@ -520,6 +559,9 @@
     "Pause" : {
 
     },
+    "Pause Focus" : {
+
+    },
     "Pause or Resume Focus" : {
 
     },
@@ -533,6 +575,12 @@
 
     },
     "Paused, %@" : {
+
+    },
+    "Paused. %@." : {
+
+    },
+    "Pauses the running session or break." : {
 
     },
     "Planned" : {
@@ -572,6 +620,9 @@
 
     },
     "Resume" : {
+
+    },
+    "Resume Focus" : {
 
     },
     "Ring when time's up" : {
@@ -646,13 +697,37 @@
     "Start Break" : {
 
     },
+    "Start Focus" : {
+
+    },
+    "Start a focus of ${minutes} minutes called ${name}" : {
+
+    },
     "Start break" : {
 
     },
     "Start focus" : {
 
     },
+    "Start focus, pause or resume it, or start the break." : {
+
+    },
+    "Starts a focus session. Without a length, it uses the one set on the dial." : {
+
+    },
+    "Starts focus, pauses or resumes it, or starts the break." : {
+
+    },
     "Stop" : {
+
+    },
+    "Stop Focus" : {
+
+    },
+    "Stopped. %@ of focus kept." : {
+
+    },
+    "Stopped. It was under a minute, so nothing was kept." : {
 
     },
     "System" : {

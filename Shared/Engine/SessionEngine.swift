@@ -191,10 +191,16 @@ final class SessionEngine {
     // MARK: - Actions
 
     /// Starts a focus phase. Returns false if a session is already active.
+    /// A `length` (from Siri or Shortcuts) is for this session only; the
+    /// next one goes back to the plan.
     @discardableResult
-    func start(name: String) -> Bool {
+    func start(name: String, length: SessionLength? = nil) -> Bool {
         guard !hasActiveSession else { return false }
-        let plan = plan()
+        var plan = plan()
+        if let length {
+            plan.focus = length.focus
+            plan.shortBreak = length.shortBreak
+        }
         let startedAt = now()
         // The break it will most likely earn, for the end alert and the
         // Lock Screen. Settled for real when it ends.

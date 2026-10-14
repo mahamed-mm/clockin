@@ -14,6 +14,7 @@ struct SystemWidgets: WidgetReloading {
     func reload(with snapshot: WidgetSnapshot) {
         WidgetSnapshotStore().save(snapshot)
         WidgetCenter.shared.reloadAllTimelines()
+        ControlCenter.shared.reloadControls(ofKind: ControlFace.kind)
     }
 }
 
@@ -157,6 +158,13 @@ final class AppServices: SessionEffects {
         IntentBridge.startBreak = { [weak services] sessionID in
             await services?.alarmStartBreak(after: sessionID)
         }
+        IntentBridge.startFocus = { [weak services] minutes, name in
+            await services?.intentStart(minutes: minutes, name: name) ?? .nothingRunning
+        }
+        IntentBridge.pauseFocus = { [weak services] in await services?.intentPause() ?? .nothingRunning }
+        IntentBridge.resumeFocus = { [weak services] in await services?.intentResume() ?? .nothingRunning }
+        IntentBridge.stopFocus = { [weak services] in await services?.intentStop() ?? .nothingRunning }
+        IntentBridge.primaryAction = { [weak services] in await services?.intentPrimary() ?? .nothingRunning }
         services.engine.undoWindow = {
             // Reaching Undo takes longer with a screen reader or switches.
             UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning
@@ -452,6 +460,90 @@ final class AppServices: SessionEffects {
             engine.startBreak()
         }
         await settle()
+    }
+
+    // MARK: Siri, Shortcuts and the control
+
+    /// The name typed on the Focus screen last, for sessions started elsewhere.
+    @ObservationIgnored var lastSessionName: () -> String = {
+        UserDefaults.standard.string(forKey: "lastSessionName") ?? ""
+    }
+
+    /// Each intent may wake the app in the background: catch up with the
+    /// clock first, act, then wait for the alerts and Live Activity to land.
+    func intentStart(minutes: Int?, name: String?) async -> IntentOutcome {
+        engine.reconcile()
+        let outcome: IntentOutcome
+        if let session = engine.active {
+            outcome = .alreadyRunning(phase: session.phase, remaining: session.remaining(at: engine.now()))
+        } else {
+            let length = minutes.map(SessionLength.init(minutes:))
+            engine.start(name: name ?? lastSessionName(), length: length)
+            outcome = .started(focus: engine.active?.plannedDuration ?? plan.focus)
+        }
+        await settle()
+        return outcome
+    }
+
+    func intentPause() async -> IntentOutcome {
+        engine.reconcile()
+        engine.pause()
+        let outcome: IntentOutcome = engine.active.map { .paused(remaining: $0.remaining(at: engine.now())) }
+            ?? .nothingRunning
+        await settle()
+        return outcome
+    }
+
+    func intentResume() async -> IntentOutcome {
+        engine.reconcile()
+        engine.resume()
+        let outcome: IntentOutcome = engine.active.map { .resumed(remaining: $0.remaining(at: engine.now())) }
+            ?? .nothingRunning
+        await settle()
+        return outcome
+    }
+
+    /// Never throws work away: focus past its first minute ends and keeps
+    /// its minutes; a break ends; a finished session is put away.
+    func intentStop() async -> IntentOutcome {
+        engine.reconcile()
+        let outcome: IntentOutcome
+        switch engine.stage {
+        case .active(let session) where session.phase == .focus:
+            if engine.canFinishEarly(at: engine.now()) {
+                engine.finishEarly()
+                outcome = .finished(kept: engine.stage.completedFocus?.focusSeconds ?? 0)
+            } else {
+                engine.cancel()
+                outcome = .cancelled
+            }
+        case .active:
+            engine.skipBreak()
+            outcome = .breakEnded
+        case .focusComplete:
+            engine.skipBreak()
+            outcome = .dismissed
+        case .idle:
+            outcome = .nothingRunning
+        }
+        await settle()
+        return outcome
+    }
+
+    /// What the app's big button would do right now.
+    func intentPrimary() async -> IntentOutcome {
+        engine.reconcile()
+        switch engine.stage {
+        case .idle:
+            return await intentStart(minutes: nil, name: nil)
+        case .active(let session):
+            return session.isPaused ? await intentResume() : await intentPause()
+        case .focusComplete(let focus):
+            let length = engine.breakLength(after: focus)
+            engine.startBreak()
+            await settle()
+            return .breakStarted(length)
+        }
     }
 
     /// Moves `today` to the current day. True if it changed.
