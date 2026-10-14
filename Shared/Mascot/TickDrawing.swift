@@ -194,17 +194,17 @@ struct TickDrawing {
         // The stem, then the big pressable button on it.
         // The stem is the ring's colour, so the crown never floats on a dark page.
         let stem = Path(roundedRect: CGRect(x: x - 3.5, y: ringTop - 6, width: 7, height: 8), cornerRadius: 1.2)
-        context.fill(stem, with: .color(palette.rim))
-        context.stroke(stem, with: .color(palette.features.opacity(0.85)), lineWidth: 1.2)
+        context.fill(stem, with: .color(palette.ring))
+        context.stroke(stem, with: .color(palette.eyes.opacity(0.85)), lineWidth: 1.2)
         let button = CGRect(x: x - 11, y: ringTop - 17, width: 22, height: 12)
         let shape = Path(roundedRect: button, cornerRadius: 4.5)
-        context.fill(shape, with: .color(palette.prop))
+        context.fill(shape, with: .color(palette.crown))
         // A darker lip at the bottom, a highlight at the top: it presses.
         var lip = context
         lip.clip(to: shape)
         lip.fill(Path(CGRect(x: button.minX, y: button.maxY - 3.6, width: button.width, height: 3.6)),
-                 with: .color(palette.features.opacity(0.22)))
-        context.stroke(shape, with: .color(palette.features), lineWidth: 1.8)
+                 with: .color(palette.eyes.opacity(0.22)))
+        context.stroke(shape, with: .color(palette.eyes), lineWidth: 1.8)
         context.stroke(line(CGPoint(x: button.minX + 4.5, y: button.minY + 2.8),
                             CGPoint(x: button.minX + 10, y: button.minY + 2.8)),
                        with: .color(palette.face.opacity(0.7)), style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
@@ -218,23 +218,21 @@ struct TickDrawing {
         context.fill(face, with: .color(palette.face))
         // The track: a medium, muted terracotta, between the arc and the face,
         // so the whole round body shows on cream and on black.
-        context.stroke(face, with: .color(palette.rim), lineWidth: rimWidth)
-        context.stroke(face, with: .color(palette.face.opacity(0.34)), lineWidth: rimWidth)
+        context.stroke(face, with: .color(palette.track), lineWidth: rimWidth)
         // Time left, clockwise from twelve. Done is all gold; ringing all bright.
         let left = ringLeft
         if pose == .done {
             // Brighter, lighter gold than the mustard crown.
-            context.stroke(face, with: .color(palette.prop), lineWidth: rimWidth)
-            context.stroke(face, with: .color(palette.face.opacity(0.22)), lineWidth: rimWidth)
+            context.stroke(face, with: .color(palette.doneGold), lineWidth: rimWidth)
         } else if pose == .ringing {
-            context.stroke(face, with: .color(palette.accent), lineWidth: rimWidth)
+            context.stroke(face, with: .color(palette.ringingRed), lineWidth: rimWidth)
         } else if left >= 0.999 {
-            context.stroke(face, with: .color(palette.rim), lineWidth: rimWidth)
+            context.stroke(face, with: .color(palette.ring), lineWidth: rimWidth)
         } else if left > 0.005 {
             var arc = Path()
             arc.addArc(center: CGPoint(x: 50, y: centerY), radius: radius, startAngle: .degrees(-90),
                        endAngle: .degrees(-90 + 360 * left), clockwise: false)
-            context.stroke(arc, with: .color(palette.rim), style: StrokeStyle(lineWidth: rimWidth, lineCap: .round))
+            context.stroke(arc, with: .color(palette.ring), style: StrokeStyle(lineWidth: rimWidth, lineCap: .round))
         }
         // Dots at three and nine.
         for x in [50 - radius, 50 + radius] {
@@ -242,13 +240,13 @@ struct TickDrawing {
         }
         // The outer edge: a clean circle, its ink a little heavier on one side when hand-made.
         let outer = circle(CGPoint(x: 50, y: centerY), radius + rimWidth / 2)
-        context.stroke(outer, with: .color(palette.features.opacity(0.85)), lineWidth: 1.2)
+        context.stroke(outer, with: .color(palette.eyes.opacity(0.85)), lineWidth: 1.2)
         if handmade {
             for (from, to, width) in [(20.0, 150.0, 2.1), (200.0, 250.0, 1.7)] {
                 var heavy = Path()
                 heavy.addArc(center: CGPoint(x: 50, y: centerY), radius: radius + rimWidth / 2 + 0.3,
                              startAngle: .degrees(from), endAngle: .degrees(to), clockwise: false)
-                context.stroke(heavy, with: .color(palette.features.opacity(0.85)),
+                context.stroke(heavy, with: .color(palette.eyes.opacity(0.85)),
                                style: StrokeStyle(lineWidth: width, lineCap: .round))
             }
         }
@@ -261,7 +259,7 @@ struct TickDrawing {
         guard pose != .done, pose != .ringing, left > 0.005, left < 0.999 else { return }
         let end = (-90 + 360 * left) * .pi / 180
         let tip = CGPoint(x: 50 + radius * cos(end), y: centerY + radius * sin(end))
-        context.fill(circle(tip, rimWidth / 2 + 0.4), with: .color(palette.accent))
+        context.fill(circle(tip, rimWidth / 2 + 0.4), with: .color(palette.cap))
         context.fill(circle(CGPoint(x: tip.x - 0.8, y: tip.y - 0.8), 1), with: .color(palette.face.opacity(0.7)))
     }
 
@@ -276,7 +274,7 @@ struct TickDrawing {
             let x = (next() * 2 - 1) * 23, y = (next() * 2 - 1) * 23
             guard x * x + y * y < 23 * 23 else { continue }
             context.fill(circle(CGPoint(x: 50 + x, y: centerY + y), 0.22 + next() * 0.18),
-                         with: .color(palette.features.opacity(0.035)))
+                         with: .color(palette.eyes.opacity(0.035)))
         }
     }
 
@@ -285,9 +283,9 @@ struct TickDrawing {
         let pivot = CGPoint(x: 50 + shift, y: centerY - 14.5)
         let angle = browAngle * .pi / 180
         let end = CGPoint(x: pivot.x + 8.5 * sin(angle), y: pivot.y - 8.5 * cos(angle))
-        context.stroke(line(pivot, end), with: .color(palette.features),
+        context.stroke(line(pivot, end), with: .color(palette.eyes),
                        style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
-        context.fill(circle(pivot, 1.8), with: .color(palette.features))
+        context.fill(circle(pivot, 1.8), with: .color(palette.eyes))
     }
 
     /// Small brows, only where the face needs them: kind and raised when
@@ -300,13 +298,13 @@ struct TickDrawing {
             for side in [-1.0, 1.0] {
                 let inner = CGPoint(x: 50 + side * 5.5, y: y - 1.6)
                 let outer = CGPoint(x: 50 + side * 11.5, y: y + 0.8)
-                context.stroke(line(inner, outer), with: .color(palette.features), style: style)
+                context.stroke(line(inner, outer), with: .color(palette.eyes), style: style)
             }
         case .waiting:
             var brow = Path()
             brow.move(to: CGPoint(x: 54.5, y: y - 0.5))
             brow.addQuadCurve(to: CGPoint(x: 63.5, y: y + 0.5), control: CGPoint(x: 59, y: y - 4))
-            context.stroke(brow, with: .color(palette.features), style: style)
+            context.stroke(brow, with: .color(palette.eyes), style: style)
         default:
             break
         }
@@ -315,7 +313,7 @@ struct TickDrawing {
     private func drawCheeks(in context: inout GraphicsContext) {
         for x in [36.5, 63.5] {
             context.fill(Path(ellipseIn: CGRect(x: x - 2.4, y: centerY + 3.5, width: 4.8, height: 2.8)),
-                         with: .color(palette.accent.opacity(0.28)))
+                         with: .color(palette.cheeks))
         }
     }
 
@@ -331,13 +329,13 @@ struct TickDrawing {
                 var arc = Path()
                 arc.move(to: CGPoint(x: x - 3.6 * s, y: y + 1.5 * s))
                 arc.addQuadCurve(to: CGPoint(x: x + 3.6 * s, y: y + 1.5 * s), control: CGPoint(x: x, y: y - 4 * s))
-                context.stroke(arc, with: .color(palette.features), style: stroke)
+                context.stroke(arc, with: .color(palette.eyes), style: stroke)
             case .sleepy, .closed:
                 var arc = Path()
                 let dip = style == .sleepy ? 3.4 : 1.6
                 arc.move(to: CGPoint(x: x - 3.6 * s, y: y))
                 arc.addQuadCurve(to: CGPoint(x: x + 3.6 * s, y: y), control: CGPoint(x: x, y: y + dip * s))
-                context.stroke(arc, with: .color(palette.features), style: stroke)
+                context.stroke(arc, with: .color(palette.eyes), style: stroke)
             default:
                 var width = 6.4, height = 8.8
                 var lid: Double? = nil
@@ -352,7 +350,7 @@ struct TickDrawing {
                 height = max(1.4, height * (1 - motion.blink)) * s
                 width *= s
                 let eye = CGRect(x: x - width / 2, y: y - height / 2, width: width, height: height)
-                context.fill(Path(ellipseIn: eye), with: .color(palette.features))
+                context.fill(Path(ellipseIn: eye), with: .color(palette.eyes))
                 if lid == nil, height > 4.5 * s {
                     context.fill(circle(CGPoint(x: x + 1.3 * s, y: y - height / 2 + 2.2 * s), 1.1 * s),
                                  with: .color(palette.face))
@@ -364,7 +362,7 @@ struct TickDrawing {
                                              height: lidY - eye.minY + 0.6)),
                                  with: .color(palette.face))
                     context.stroke(line(CGPoint(x: eye.minX - 0.8 * s, y: lidY), CGPoint(x: eye.maxX + 0.8 * s, y: lidY)),
-                                   with: .color(palette.features), style: StrokeStyle(lineWidth: 1.8 * s, lineCap: .round))
+                                   with: .color(palette.eyes), style: StrokeStyle(lineWidth: 1.8 * s, lineCap: .round))
                 }
             }
         }
@@ -381,37 +379,37 @@ struct TickDrawing {
         switch pose {
         case .ready:
             mouth.move(to: p(-5, 0)); mouth.addQuadCurve(to: p(5, 0), control: p(0, 5))
-            context.stroke(mouth, with: .color(palette.features), style: stroke)
+            context.stroke(mouth, with: .color(palette.eyes), style: stroke)
         case .onBreak:
             mouth.move(to: p(-4, 0.5)); mouth.addQuadCurve(to: p(4, 0.5), control: p(0, 4))
-            context.stroke(mouth, with: .color(palette.features), style: stroke)
+            context.stroke(mouth, with: .color(palette.eyes), style: stroke)
         case .streak:
             mouth.move(to: p(-6, -0.5)); mouth.addQuadCurve(to: p(6, -0.5), control: p(0, 6))
-            context.stroke(mouth, with: .color(palette.features), style: stroke)
+            context.stroke(mouth, with: .color(palette.eyes), style: stroke)
         case .working:
             mouth.move(to: p(-3.5, 1)); mouth.addLine(to: p(3, 1))
-            context.stroke(mouth, with: .color(palette.features), style: stroke)
+            context.stroke(mouth, with: .color(palette.eyes), style: stroke)
             // A small concentration tongue at the corner.
             context.fill(Path(ellipseIn: CGRect(x: m.x + 1.6 * s, y: m.y + 1.4 * s, width: 3.2 * s, height: 2.8 * s)),
-                         with: .color(palette.accent))
+                         with: .color(palette.effects))
         case .waiting:
             mouth.move(to: p(-3.8, 1.2)); mouth.addLine(to: p(3.8, 1.2))
-            context.stroke(mouth, with: .color(palette.features), style: stroke)
+            context.stroke(mouth, with: .color(palette.eyes), style: stroke)
         case .interrupted:
             // A small "oh well" smile.
             mouth.move(to: p(-3.5, 1)); mouth.addQuadCurve(to: p(3.5, 1), control: p(0, 3.2))
-            context.stroke(mouth, with: .color(palette.features), style: stroke)
+            context.stroke(mouth, with: .color(palette.eyes), style: stroke)
         case .done, .hello:
             let width = pose == .done ? 5.8 : 5
             mouth.move(to: p(-width, -0.5)); mouth.addQuadCurve(to: p(width, -0.5), control: p(0, pose == .done ? 9 : 8))
             mouth.closeSubpath()
-            context.fill(mouth, with: .color(palette.features))
+            context.fill(mouth, with: .color(palette.eyes))
         case .ringing:
             context.fill(Path(ellipseIn: CGRect(x: m.x - 2.4 * s, y: m.y - 1 * s, width: 4.8 * s, height: 6 * s)),
-                         with: .color(palette.features))
+                         with: .color(palette.eyes))
         case .sleeping:
             context.fill(Path(ellipseIn: CGRect(x: m.x - 1.3 * s, y: m.y, width: 2.6 * s, height: 3 * s)),
-                         with: .color(palette.features))
+                         with: .color(palette.eyes))
         }
     }
 
@@ -421,16 +419,16 @@ struct TickDrawing {
         var band = Path()
         band.addArc(center: CGPoint(x: 50, y: centerY), radius: radius + 7, startAngle: .degrees(-168),
                     endAngle: .degrees(-12), clockwise: false)
-        context.stroke(band, with: .color(palette.prop), style: StrokeStyle(lineWidth: handmade ? 2 : 2.8, lineCap: .round))
+        context.stroke(band, with: .color(palette.crown), style: StrokeStyle(lineWidth: handmade ? 2 : 2.8, lineCap: .round))
     }
 
     private func drawHeadphoneCups(in context: inout GraphicsContext) {
         for side in [-1.0, 1.0] {
             let cup = CGRect(x: 50 + side * (radius + 1.5) - 5, y: centerY - 9.5, width: 10, height: 17)
             let shape = Path(roundedRect: cup, cornerRadius: 3.5)
-            context.fill(shape, with: .color(palette.features))
+            context.fill(shape, with: .color(palette.eyes))
             context.stroke(line(CGPoint(x: cup.midX - side * 2.2, y: cup.minY + 3), CGPoint(x: cup.midX - side * 2.2, y: cup.maxY - 3)),
-                           with: .color(palette.prop), style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
+                           with: .color(palette.crown), style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
         }
     }
 
@@ -494,12 +492,12 @@ struct TickDrawing {
         // A mug of something warm, steaming.
         let mug = CGRect(x: 83, y: centerY - 15, width: 12, height: 13)
         let body = Path(roundedRect: mug, cornerRadius: 2.4)
-        context.fill(body, with: .color(palette.prop))
-        context.stroke(body, with: .color(palette.features), lineWidth: 1.6)
+        context.fill(body, with: .color(palette.crown))
+        context.stroke(body, with: .color(palette.eyes), lineWidth: 1.6)
         var handle = Path()
         handle.move(to: CGPoint(x: mug.minX, y: mug.minY + 3))
         handle.addQuadCurve(to: CGPoint(x: mug.minX, y: mug.maxY - 3), control: CGPoint(x: mug.minX - 6, y: mug.midY))
-        context.stroke(handle, with: .color(palette.features), lineWidth: 1.6)
+        context.stroke(handle, with: .color(palette.eyes), lineWidth: 1.6)
         context.fill(circle(CGPoint(x: 86, y: centerY - 6), handmade ? 3 : 3.6), with: .color(palette.limbs))
         let wisps = handmade ? [mug.minX + 2.5, mug.midX, mug.maxX - 2.5] : [mug.minX + 3.5, mug.maxX - 3.5]
         for (index, x) in wisps.enumerated() {
@@ -523,7 +521,7 @@ struct TickDrawing {
                 var arc = Path()
                 arc.addArc(center: CGPoint(x: 50, y: centerY), radius: r, startAngle: .degrees(start),
                            endAngle: .degrees(end), clockwise: false)
-                context.stroke(arc, with: .color(palette.accent), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                context.stroke(arc, with: .color(palette.effects), style: StrokeStyle(lineWidth: 2, lineCap: .round))
             }
         }
     }
@@ -540,7 +538,7 @@ struct TickDrawing {
                     let dx = cos(a) * side, dy = sin(a)
                     context.stroke(line(CGPoint(x: center.x + dx * 14, y: center.y + dy * 14),
                                         CGPoint(x: center.x + dx * 20, y: center.y + dy * 20)),
-                                   with: .color(palette.accent), style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
+                                   with: .color(palette.effects), style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
                 }
             }
         case .done:
@@ -550,7 +548,7 @@ struct TickDrawing {
                    (CGPoint(x: 76, y: y - 52), 2.6, true)]
                 : [(CGPoint(x: 18, y: y - 34), 5.5, true), (CGPoint(x: 86, y: y - 36), 5, false)]
             for (point, size, gold) in sparkles {
-                context.fill(sparkle(at: point, radius: size), with: .color(gold ? palette.prop : palette.accent))
+                context.fill(sparkle(at: point, radius: size), with: .color(gold ? palette.crown : palette.effects))
             }
             if handmade {
                 // A little confetti.
@@ -560,7 +558,7 @@ struct TickDrawing {
                     piece.translateBy(x: point.x, y: point.y)
                     piece.rotate(by: .degrees(angle))
                     piece.fill(Path(roundedRect: CGRect(x: -2.2, y: -1, width: 4.4, height: 2), cornerRadius: 0.6),
-                               with: .color(gold ? palette.prop : palette.accent))
+                               with: .color(gold ? palette.crown : palette.effects))
                 }
             }
         case .hello:
@@ -603,28 +601,26 @@ struct TickDrawing {
         let r = 32.0, rim = 10.0
         let top = c.y - r - rim / 2
         context.fill(Path(roundedRect: CGRect(x: 45.5, y: top - 7, width: 9, height: 9), cornerRadius: 1.5),
-                     with: .color(palette.rim))
+                     with: .color(palette.ring))
         let button = Path(roundedRect: CGRect(x: 35, y: top - 20, width: 30, height: 15), cornerRadius: 6)
-        context.fill(button, with: .color(palette.prop))
-        context.stroke(button, with: .color(palette.features), lineWidth: 3)
+        context.fill(button, with: .color(palette.crown))
+        context.stroke(button, with: .color(palette.eyes), lineWidth: 3)
         let face = circle(c, r)
         context.fill(face, with: .color(palette.face))
-        context.stroke(face, with: .color(palette.rim), lineWidth: rim)
-        context.stroke(face, with: .color(palette.face.opacity(0.34)), lineWidth: rim)
+        context.stroke(face, with: .color(palette.track), lineWidth: rim)
         let left = ringLeft
         if pose == .done {
-            context.stroke(face, with: .color(palette.prop), lineWidth: rim)
-            context.stroke(face, with: .color(palette.face.opacity(0.22)), lineWidth: rim)
+            context.stroke(face, with: .color(palette.doneGold), lineWidth: rim)
         } else if pose == .ringing {
-            context.stroke(face, with: .color(palette.accent), lineWidth: rim)
+            context.stroke(face, with: .color(palette.ringingRed), lineWidth: rim)
         } else if left >= 0.999 {
-            context.stroke(face, with: .color(palette.rim), lineWidth: rim)
+            context.stroke(face, with: .color(palette.ring), lineWidth: rim)
         } else if left > 0.005 {
             var arc = Path()
             arc.addArc(center: c, radius: r, startAngle: .degrees(-90), endAngle: .degrees(-90 + 360 * left), clockwise: false)
-            context.stroke(arc, with: .color(palette.rim), style: StrokeStyle(lineWidth: rim, lineCap: .round))
+            context.stroke(arc, with: .color(palette.ring), style: StrokeStyle(lineWidth: rim, lineCap: .round))
         }
-        context.stroke(circle(c, r + rim / 2), with: .color(palette.features), lineWidth: 2.4)
+        context.stroke(circle(c, r + rim / 2), with: .color(palette.eyes), lineWidth: 2.4)
         var eyes = context
         eyes.translateBy(x: 0, y: -3)
         drawEyes(in: &eyes, center: CGPoint(x: c.x, y: c.y - 3), scale: 1.45)
@@ -636,13 +632,13 @@ struct TickDrawing {
     private func drawTinyGlyph(in context: inout GraphicsContext) {
         let c = CGPoint(x: 50, y: 55)
         let outer = 40.0, inner = 26.0
-        context.fill(Path(CGRect(x: 43, y: c.y - outer - 5, width: 14, height: 7)), with: .color(palette.rim))
+        context.fill(Path(CGRect(x: 43, y: c.y - outer - 5, width: 14, height: 7)), with: .color(palette.ring))
         context.fill(Path(roundedRect: CGRect(x: 30, y: 4, width: 40, height: 9), cornerRadius: 3),
-                     with: .color(palette.prop))
-        context.fill(circle(c, outer), with: .color(palette.rim))
+                     with: .color(palette.crown))
+        context.fill(circle(c, outer), with: .color(palette.ring))
         context.fill(circle(c, inner), with: .color(palette.face))
         for side in [-1.0, 1.0] {
-            context.fill(circle(CGPoint(x: c.x + side * 10, y: c.y - 2), 5.5), with: .color(palette.features))
+            context.fill(circle(CGPoint(x: c.x + side * 10, y: c.y - 2), 5.5), with: .color(palette.eyes))
         }
     }
 
@@ -692,7 +688,7 @@ struct TickDrawing {
             i == 0 ? star.move(to: point) : star.addLine(to: point)
         }
         star.closeSubpath()
-        context.fill(star, with: .color(palette.accent))
-        context.stroke(star, with: .color(palette.features), lineWidth: 1.2)
+        context.fill(star, with: .color(palette.effects))
+        context.stroke(star, with: .color(palette.eyes), lineWidth: 1.2)
     }
 }

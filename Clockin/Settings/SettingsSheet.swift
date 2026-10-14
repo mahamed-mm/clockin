@@ -407,10 +407,10 @@ private struct AppIconPicker: View {
             ForEach(AppIconChoice.allCases) { choice in
                 Button { choose(choice) } label: {
                     VStack(spacing: Space.xs) {
-                        TickFigure(pose: choice.pose, palette: .icon, detail: .simplified)
+                        TickFigure(pose: choice.pose, palette: .icon(), detail: .simplified)
                             .padding(tile * 0.08)
                             .frame(width: tile, height: tile)
-                            .background(TickPalette.cream, in: .rect(cornerRadius: tile * 0.225))
+                            .background(TickPalette.standard.face, in: .rect(cornerRadius: tile * 0.225))
                             .overlay {
                                 RoundedRectangle(cornerRadius: tile * 0.225 + 3)
                                     .strokeBorder(selection == choice ? Retro.orange : .clear, lineWidth: 2.5)

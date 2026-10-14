@@ -25,11 +25,11 @@ struct TickView: View {
     @ViewBuilder
     private var figure: some View {
         if reduceMotion || services.power.isConstrained {
-            TickFigure(pose: pose, palette: .retro)
+            TickFigure(pose: pose, palette: .standard)
         } else {
             let a = Amplitudes(pose)
             Color.clear.keyframeAnimator(initialValue: TickMotion.still, trigger: Moment(pose: pose, celebration: celebration)) { _, motion in
-                TickFigure(pose: pose, palette: .retro, motion: motion)
+                TickFigure(pose: pose, palette: .standard, motion: motion)
             } keyframes: { [speed = Motion.speed] _ in
                 // Two blinks, a few seconds apart.
                 KeyframeTrack(\.blink) {

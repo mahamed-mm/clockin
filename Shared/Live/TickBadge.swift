@@ -35,7 +35,7 @@ struct TickBadge: View {
     }
 
     private var figure: TickFigure {
-        TickFigure(pose: pose, palette: renderingMode == .fullColor ? .retro : .monochrome)
+        TickFigure(pose: pose, palette: renderingMode == .fullColor ? .standard : .monochrome)
     }
 
     /// Tick at this size, keeping the detail the size calls for.
@@ -51,9 +51,12 @@ struct TickBadge: View {
 }
 
 extension TickPalette {
-    /// One tone, for accented and vibrant rendering: the shapes still read
-    /// by brightness.
-    static let monochrome = TickPalette(face: .white.opacity(0.18), rim: .white, features: .white,
-                                        limbs: .white, prop: .white.opacity(0.85), accent: .white.opacity(0.7),
-                                        shadow: .clear)
+    /// One tone, for accented and vibrant rendering, where the system
+    /// keeps only each colour's brightness: the shapes still read.
+    static var monochrome: TickPalette {
+        let tone = Color.white
+        return TickPalette(face: tone.opacity(0.18), ring: tone, track: tone.opacity(0.45), cap: tone, crown: tone.opacity(0.85),
+                           eyes: tone, cheeks: tone.opacity(0.2), limbs: tone, doneGold: tone, ringingRed: tone,
+                           effects: tone.opacity(0.7), shadow: .clear)
+    }
 }

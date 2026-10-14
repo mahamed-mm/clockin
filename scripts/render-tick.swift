@@ -4,6 +4,15 @@
 import AppKit
 import SwiftUI
 
+/// The app's asset catalog, compiled for the Mac by render-tick.sh: the
+/// same Tick colour sets the app uses.
+@MainActor let assets: Bundle = {
+    guard let path = ProcessInfo.processInfo.environment["TICK_ASSETS"], let bundle = Bundle(path: path) else {
+        fatalError("Run through scripts/render-tick.sh, which compiles the asset catalog.")
+    }
+    return bundle
+}()
+
 @main
 struct RenderTick {
     @MainActor
@@ -52,10 +61,8 @@ struct RenderTick {
 /// dark pages, plus the 16 px silhouette test.
 struct ContactSheet: View {
     var body: some View {
-        let light = TickPalette.fixed(dark: false)
-        let dark = TickPalette.fixed(dark: true)
-        let paper = Color(red: 0.953, green: 0.914, blue: 0.839)
-        let night = Color(red: 0.110, green: 0.094, blue: 0.078)
+        let palette = TickPalette.assets(in: assets)
+        let paper = Color("Paper", bundle: assets)
         Grid(horizontalSpacing: 18, verticalSpacing: 14) {
             GridRow {
                 Text("pose").bold()
@@ -69,16 +76,17 @@ struct ContactSheet: View {
             ForEach(TickPose.allCases, id: \.self) { pose in
                 GridRow {
                     Text(pose.rawValue).font(.system(size: 15, weight: .semibold))
-                    TickFigure(pose: pose, palette: light).frame(width: 180, height: 180)
+                    TickFigure(pose: pose, palette: palette).frame(width: 180, height: 180)
                         .padding(8).background(paper, in: .rect(cornerRadius: 16))
-                    TickFigure(pose: pose, palette: dark).frame(width: 180, height: 180)
-                        .padding(8).background(night, in: .rect(cornerRadius: 16))
-                    TickFigure(pose: pose, palette: light).frame(width: 60, height: 60)
+                    TickFigure(pose: pose, palette: palette).frame(width: 180, height: 180)
+                        .padding(8).background(paper, in: .rect(cornerRadius: 16))
+                        .environment(\.colorScheme, .dark)
+                    TickFigure(pose: pose, palette: palette).frame(width: 60, height: 60)
                         .padding(6).background(paper, in: .rect(cornerRadius: 10))
-                    TickFigure(pose: pose, palette: light).frame(width: 20, height: 20)
+                    TickFigure(pose: pose, palette: palette).frame(width: 20, height: 20)
                         .padding(4).background(paper, in: .rect(cornerRadius: 6))
                     // True 16 px (8 pt on this 2x sheet); the glyph fills ~90% of it.
-                    TickFigure(pose: pose, palette: light).frame(width: 8, height: 8)
+                    TickFigure(pose: pose, palette: palette).frame(width: 8, height: 8)
                         .background(paper)
                 }
             }
@@ -95,7 +103,7 @@ struct Silhouettes: View {
         HStack(spacing: 16) {
             ForEach(TickPose.allCases, id: \.self) { pose in
                 VStack(spacing: 6) {
-                    TickFigure(pose: pose, palette: .fixed(dark: false))
+                    TickFigure(pose: pose, palette: .assets(in: assets))
                         .frame(width: 60, height: 60)
                         .colorMultiply(.black)
                     Text(pose.rawValue).font(.system(size: 11))
@@ -114,7 +122,7 @@ struct IconLayer: View {
     let pose: TickPose
 
     var body: some View {
-        TickFigure(pose: pose, palette: .icon, detail: .simplified)
+        TickFigure(pose: pose, palette: .icon(in: assets), detail: .simplified)
             .frame(width: 860, height: 860)
             .offset(y: 30)
             .frame(width: 1024, height: 1024)
@@ -124,13 +132,12 @@ struct IconLayer: View {
 /// The README's banner, 1600 x 933: the name, the line, the set of four,
 /// and Tick at work, on a break and done.
 struct Hero: View {
-    let ink = Color(red: 0.165, green: 0.129, blue: 0.106)
-    let soft = Color(red: 0.404, green: 0.345, blue: 0.294)
-    let stripes = [Color(red: 0.612, green: 0.239, blue: 0.133), Color(red: 0.824, green: 0.376, blue: 0.165),
-                   Color(red: 0.890, green: 0.655, blue: 0.184)]
+    let ink = Color("Ink", bundle: assets)
+    let soft = Color("InkSoft", bundle: assets)
+    let stripes = ["Rust", "BurntOrange", "Mustard"].map { Color($0, bundle: assets) }
 
     var body: some View {
-        let palette = TickPalette.fixed(dark: false)
+        let palette = TickPalette.assets(in: assets)
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 18) {
                 Text("Clockin")
@@ -146,7 +153,7 @@ struct Hero: View {
                     ForEach(0..<3, id: \.self) { i in
                         Capsule().fill(stripes[i]).frame(width: 60, height: 16)
                     }
-                    Capsule().strokeBorder(Color(red: 0.31, green: 0.435, blue: 0.369), lineWidth: 3)
+                    Capsule().strokeBorder(Color("Avocado", bundle: assets), lineWidth: 3)
                         .frame(width: 60, height: 16)
                 }
                 .padding(.top, 28)

@@ -25,45 +25,52 @@ enum TickPose: String, CaseIterable, Sendable {
     case sleeping
 }
 
-/// Tick's colours. The face is cream Bakelite and its features dark in
-/// both appearances; the limbs, which stand against the page, follow the
-/// ink. Kept apart from the asset catalog so the icon script can draw
-/// Tick with exact values.
+/// Tick's colours, all from the asset catalog's Tick colour sets, each
+/// with a light and a dark value. The face and its features are the same
+/// in both; the limbs, which stand against the page, follow the ink.
 struct TickPalette: Sendable {
     var face: Color
-    var rim: Color
-    /// Eyes, mouth and the eyebrow hand: drawn on the face.
-    var features: Color
+    /// The filled part of the ring: the time left.
+    var ring: Color
+    /// The ring's empty part, a muted terracotta.
+    var track: Color
+    /// The bright round end of the time left.
+    var cap: Color
+    /// The crown, and the mug and headphones.
+    var crown: Color
+    /// Eyes, mouth, the eyebrow hand and the outlines.
+    var eyes: Color
+    var cheeks: Color
     /// Arms and legs: drawn on the page.
     var limbs: Color
-    /// The crown, the mug.
-    var prop: Color
-    /// Cheeks, sparkles, the ring's glowing tip, alarm lines.
-    var accent: Color
+    /// The whole ring when a session is done.
+    var doneGold: Color
+    /// The whole ring while the alarm rings.
+    var ringingRed: Color
+    /// Sparkles, the star, alarm and vibration lines, the tongue.
+    var effects: Color
     var shadow: Color
 
-    static let cream = Color(red: 0.953, green: 0.914, blue: 0.839)
-    static let darkInk = Color(red: 0.165, green: 0.129, blue: 0.106)
+    /// Tick from the asset catalog in `bundle` (the app's own by default;
+    /// the icon script passes the catalog it compiles).
+    static func assets(in bundle: Bundle? = nil) -> TickPalette {
+        func named(_ name: String) -> Color { Color("Tick\(name)", bundle: bundle) }
+        return TickPalette(face: named("Face"), ring: named("Ring"), track: named("Track"), cap: named("Cap"),
+                           crown: named("Crown"), eyes: named("Eyes"), cheeks: named("Cheeks"), limbs: named("Limbs"),
+                           doneGold: named("DoneGold"), ringingRed: named("RingingRed"), effects: named("Effects"),
+                           shadow: named("Shadow"))
+    }
 
     /// The app icon's Tick: deep terracotta limbs, so one picture reads on
     /// the light and the dark icon, and on the Settings thumbnails.
-    static var icon: TickPalette {
-        var palette = fixed(dark: false)
-        palette.limbs = Color(red: 0.45, green: 0.16, blue: 0.08)
+    static func icon(in bundle: Bundle? = nil) -> TickPalette {
+        var palette = assets(in: bundle)
+        palette.limbs = Color("TickLimbsIcon", bundle: bundle)
         palette.shadow = .clear
         return palette
     }
 
-    /// Exact light or dark values, for the icon script.
-    static func fixed(dark: Bool) -> TickPalette {
-        TickPalette(face: cream,
-                    rim: dark ? Color(red: 0.757, green: 0.345, blue: 0.227) : Color(red: 0.612, green: 0.239, blue: 0.133),
-                    features: darkInk,
-                    limbs: dark ? Color(red: 0.945, green: 0.902, blue: 0.827) : darkInk,
-                    prop: dark ? Color(red: 0.910, green: 0.706, blue: 0.290) : Color(red: 0.890, green: 0.655, blue: 0.184),
-                    accent: dark ? Color(red: 0.886, green: 0.451, blue: 0.235) : Color(red: 0.824, green: 0.376, blue: 0.165),
-                    shadow: (dark ? Color.black : darkInk).opacity(0.14))
-    }
+    static var standard: TickPalette { assets() }
 }
 
 /// The parts of Tick that move, so one drawing serves the stills and the
