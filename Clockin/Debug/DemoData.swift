@@ -41,14 +41,18 @@ enum DemoData {
         try? context.save()
     }
 
-    /// With `-DemoFinishing`, saves a full-length focus session that ends three
-    /// seconds after launch, so the completion moment shows real durations.
-    /// Must run before `AppServices` loads the saved state.
+    /// Saves a session to open on, before `AppServices` loads the saved state:
+    /// - `-DemoFinishing`: a focus session that runs out 3 seconds after launch.
+    /// - `-DemoOvertime`: one that ran out four minutes ago, kept going since.
+    /// - `-DemoBreak`: a break halfway through, spent as `-DemoBreakStyle`
+    ///   says (rest, stretch or breathe). Seconds long with `-ShortTimers`.
     @MainActor
-    /// `-DemoFinishing`: a session that runs out 3 seconds after launch.
-    /// `-DemoOvertime`: one that ran out four minutes ago, kept going since.
     static func prepareFinishingSession(now: Date = .now) {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-DemoBreak") {
+            prepareBreak(now: now, short: arguments.contains("-ShortTimers"))
+            return
+        }
         let end: TimeInterval
         if arguments.contains("-DemoFinishing") {
             end = 3
@@ -61,6 +65,17 @@ enum DemoData {
                                     plannedDuration: Preset.classic.focus,
                                     focusStartedAt: now.addingTimeInterval(end - Preset.classic.focus),
                                     state: .running(endDate: now.addingTimeInterval(end)))
+        DefaultsSessionStateStore().save(PersistedSessionState(active: session))
+    }
+
+    @MainActor
+    private static func prepareBreak(now: Date, short: Bool) {
+        let length = short ? TimerPlan.classic.asTestTimers().shortBreak : Preset.classic.shortBreak
+        let style = UserDefaults.standard.string(forKey: "DemoBreakStyle").flatMap(BreakStyle.init(rawValue:)) ?? .rest
+        let session = ActiveSession(id: UUID(), name: "Thesis outline", phase: .rest, plannedDuration: length,
+                                    focusStartedAt: now.addingTimeInterval(-length / 2),
+                                    state: .running(endDate: now.addingTimeInterval(length / 2)),
+                                    breakStyle: style, breakStyleFrom: 0)
         DefaultsSessionStateStore().save(PersistedSessionState(active: session))
     }
 

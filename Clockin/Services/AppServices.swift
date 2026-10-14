@@ -144,6 +144,7 @@ final class AppServices: SessionEffects {
                                schedulesCompletion: schedulesCompletion)
         engine.effects = self
         engine.plan = { [weak self] in self?.plan ?? .classic }
+        engine.breakStyle = { [weak self] in self?.settings.duringBreaks ?? .rest }
     }
 
     /// The real thing: the App Group store, ActivityKit, notifications, haptics.

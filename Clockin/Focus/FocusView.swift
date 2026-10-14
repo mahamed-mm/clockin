@@ -240,9 +240,15 @@ struct FocusView: View {
                     RecentNames(typed: sessionName) { sessionName = $0 }
                 }
             case .active(let session):
-                SessionChip(session: session)
-                    .glassEffectID("session", in: glass)
-                    .glassEffectTransition(.matchedGeometry)
+                VStack(spacing: Space.s) {
+                    SessionChip(session: session)
+                        .glassEffectID("session", in: glass)
+                        .glassEffectTransition(.matchedGeometry)
+                    if session.phase == .rest {
+                        BreakStyleChips(session: session)
+                            .transition(.opacity)
+                    }
+                }
             case .focusComplete(let focus):
                 VStack(spacing: Space.xs) {
                     CompletionSummary(focus: focus, day: services.today)

@@ -334,6 +334,9 @@
     "Break's over" : {
 
     },
+    "Breathe" : {
+
+    },
     "Brings the session back" : {
 
     },
@@ -406,6 +409,12 @@
     "Drag the knob to set the time" : {
 
     },
+    "During breaks" : {
+
+    },
+    "During this break" : {
+
+    },
     "Early, with Finish now" : {
 
     },
@@ -434,9 +443,6 @@
 
     },
     "Erase all history…" : {
-
-    },
-    "Every fourth full session of the day earns a %@ break." : {
 
     },
     "Every saved session is deleted from this iPhone. This can't be undone." : {
@@ -705,6 +711,12 @@
     "Replay celebration" : {
 
     },
+    "Rest" : {
+
+    },
+    "Rest with Tick, stretch along with it, or breathe in time with the dial. You can change it on the break screen for that break. Every fourth full session of the day earns a %@ break." : {
+
+    },
     "Restore" : {
 
     },
@@ -859,6 +871,9 @@
 
     },
     "Stopped. It was under a minute, so nothing was kept." : {
+
+    },
+    "Stretch" : {
 
     },
     "System" : {

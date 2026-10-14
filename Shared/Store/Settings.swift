@@ -112,7 +112,6 @@ enum SessionLength: Hashable, Sendable {
     }
 }
 
-/// Light or dark, or whatever the phone is set to.
 /// What Tick does through a focus session.
 enum MascotFocusStyle: String, CaseIterable, Identifiable, Sendable {
     /// Boxing and kicking in bursts, tiring as the time runs out.
@@ -133,6 +132,32 @@ enum MascotFocusStyle: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// What a break is for: resting with the mug, a short stretch led by
+/// Tick, or breathing in time with a halo. Always optional, never counted.
+enum BreakStyle: String, CaseIterable, Identifiable, Codable, Sendable {
+    case rest
+    case stretch
+    case breathe
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .rest: String(localized: "Rest")
+        case .stretch: String(localized: "Stretch")
+        case .breathe: String(localized: "Breathe")
+        }
+    }
+
+    /// A style this build doesn't know (saved by a newer one) is a rest,
+    /// so the saved session around it still loads.
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = BreakStyle(rawValue: raw) ?? .rest
+    }
+}
+
+/// Light or dark, or whatever the phone is set to.
 enum Appearance: String, CaseIterable, Identifiable, Sendable {
     case system
     case light
@@ -171,6 +196,8 @@ struct TimerSettings: Codable, Equatable, Sendable {
     var saveToHealth = false
     /// Tick through a focus session: working out, calm, or the plain pose.
     var mascotDuringFocus: MascotFocusStyle = .workout
+    /// What each break starts as; the break screen can change it for that break.
+    var duringBreaks: BreakStyle = .rest
 
     init(preset: Preset = .classic, longBreak: Bool = true, appearance: Appearance = .system,
          bedsideWhenSideways: Bool = true) {
@@ -197,7 +224,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case preset, customMinutes, longBreak, appearance, bedsideWhenSideways, weekSummaries, ringAtEnd, saveToHealth
-        case mascotDuringFocus
+        case mascotDuringFocus, duringBreaks
     }
 
     init(from decoder: Decoder) throws {
@@ -218,6 +245,8 @@ struct TimerSettings: Codable, Equatable, Sendable {
         saveToHealth = (try? container.decodeIfPresent(Bool.self, forKey: .saveToHealth)) ?? false
         let mascot = try? container.decodeIfPresent(String.self, forKey: .mascotDuringFocus)
         mascotDuringFocus = mascot.flatMap(MascotFocusStyle.init(rawValue:)) ?? .workout
+        let breaks = try? container.decodeIfPresent(String.self, forKey: .duringBreaks)
+        duringBreaks = breaks.flatMap(BreakStyle.init(rawValue:)) ?? .rest
     }
 
     func encode(to encoder: Encoder) throws {
@@ -231,6 +260,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
         try container.encode(ringAtEnd, forKey: .ringAtEnd)
         try container.encode(saveToHealth, forKey: .saveToHealth)
         try container.encode(mascotDuringFocus.rawValue, forKey: .mascotDuringFocus)
+        try container.encode(duringBreaks.rawValue, forKey: .duringBreaks)
     }
 
     var plan: TimerPlan {

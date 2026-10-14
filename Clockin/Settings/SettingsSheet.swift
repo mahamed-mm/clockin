@@ -129,18 +129,27 @@ struct SettingsSheet: View {
         }
     }
 
-    // MARK: Long break
+    // MARK: Break
 
     private var longBreak: some View {
         @Bindable var services = services
         return Section {
+            Picker("During breaks", selection: $services.settings.duringBreaks) {
+                ForEach(BreakStyle.allCases) { style in
+                    Text(style.title).tag(style)
+                }
+            }
+            .pickerStyle(.segmented)
+            .listRowBackground(rowBackground)
             Toggle(isOn: $services.settings.longBreak) {
                 RowLabel("Long break after four", symbol: "cup.and.saucer")
             }
             .tint(Retro.orange)
             .listRowBackground(rowBackground)
+        } header: {
+            Text("Break").retroLabel()
         } footer: {
-            Text("Every fourth full session of the day earns a \(TimeFormat.duration(TimerPlan.longBreakLength)) break.")
+            Text("Rest with Tick, stretch along with it, or breathe in time with the dial. You can change it on the break screen for that break. Every fourth full session of the day earns a \(TimeFormat.duration(TimerPlan.longBreakLength)) break.")
         }
     }
 

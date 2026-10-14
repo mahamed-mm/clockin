@@ -78,6 +78,8 @@ final class SessionEngine {
     /// The lengths for the next session, read when it starts. The app
     /// supplies them from Settings.
     @ObservationIgnored var plan: @MainActor () -> TimerPlan = { .classic }
+    /// How a break starts out, read when it starts. The app supplies it from Settings.
+    @ObservationIgnored var breakStyle: @MainActor () -> BreakStyle = { .rest }
 
     @ObservationIgnored let now: () -> Date
     @ObservationIgnored let calendar: Calendar
@@ -337,9 +339,22 @@ final class SessionEngine {
             plannedDuration: duration,
             focusStartedAt: start,
             state: .running(endDate: start.addingTimeInterval(duration)),
-            isLongBreak: focus.isLongBreak
+            isLongBreak: focus.isLongBreak,
+            breakStyle: breakStyle(),
+            breakStyleFrom: 0
         )
         apply(.active(session), event: .breakStarted)
+    }
+
+    /// Spends the rest of this break another way, starting now. Nothing
+    /// about its time changes, so nothing outside the app hears of it.
+    func chooseBreakStyle(_ style: BreakStyle) {
+        guard var session = active, session.phase == .rest, !session.isFinished(at: now()),
+              session.breakStyle != style else { return }
+        session.breakStyle = style
+        session.breakStyleFrom = session.elapsed(at: now())
+        stage = .active(session)
+        persist()
     }
 
     /// Ends a break early, or dismisses the "focus complete" state.

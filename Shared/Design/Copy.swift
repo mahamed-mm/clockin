@@ -78,6 +78,11 @@ enum Copy {
         String(localized: "Add \(TimeFormat.spokenDuration(seconds))")
     }
 
+    // MARK: Breaks
+
+    /// The break screen's style chips, as a group.
+    static var duringThisBreak: String { String(localized: "During this break") }
+
     // MARK: Phases
 
     static var focus: String { String(localized: "Focus") }

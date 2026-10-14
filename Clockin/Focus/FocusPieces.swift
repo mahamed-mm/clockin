@@ -1045,6 +1045,52 @@ struct LengthChips: View {
     }
 }
 
+// MARK: - Break styles
+
+/// Rest · Stretch · Breathe under the session chip during a break: how to
+/// spend this one. The setting picks how each break starts; a tap here
+/// changes only this break, from now.
+struct BreakStyleChips: View {
+    let session: ActiveSession
+    @Environment(SessionEngine.self) private var engine
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var taps = 0
+
+    var body: some View {
+        let current = session.breakStyle ?? .rest
+        GlassEffectContainer(spacing: Space.xs) {
+            let layout = dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(spacing: Space.xs)) : AnyLayout(HStackLayout(spacing: Space.xs))
+            layout {
+                ForEach(BreakStyle.allCases) { style in
+                    let selected = style == current
+                    Button {
+                        engine.chooseBreakStyle(style)
+                        taps += 1
+                    } label: {
+                        Text(style.title)
+                            .font(.retro(.meta))
+                            .fontWeight(selected ? .bold : .medium)
+                            .foregroundStyle(selected ? Retro.ink : Retro.inkSoft)
+                            .lineLimit(1)
+                            .retroChip(selected: selected, tint: Retro.avocado)
+                            // A 44 pt target round the 36 pt chip.
+                            .padding(.vertical, Space.xxs)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(selected ? .isSelected : [])
+                }
+            }
+        }
+        .animation(Motion.snappy(reduceMotion), value: current)
+        .sensoryFeedback(.selection, trigger: taps)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Copy.duringThisBreak)
+    }
+}
+
 // MARK: - Recent names
 
 /// Up to four recent session names under the name field; a tap fills it in.

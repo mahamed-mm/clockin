@@ -32,6 +32,11 @@ struct ActiveSession: Codable, Equatable, Sendable {
     var extendedSeconds: TimeInterval? = nil
     /// When the timer was paused; nil while it runs, and from older builds.
     var pausedAt: Date? = nil
+    /// Break only: how it's spent right now. Nil from older builds: a rest.
+    var breakStyle: BreakStyle? = nil
+    /// Break only: how far into the break (in the break's own time, so a
+    /// pause doesn't count) the current style began.
+    var breakStyleFrom: TimeInterval? = nil
 
     /// The length planned at start, before any minutes were added.
     var originalPlan: TimeInterval { plannedDuration - (extendedSeconds ?? 0) }
@@ -69,6 +74,11 @@ struct ActiveSession: Codable, Equatable, Sendable {
         case .paused(let remaining): remaining
         }
         return min(plannedDuration, max(0, left))
+    }
+
+    /// Time spent in this phase so far, not counting pauses.
+    func elapsed(at now: Date) -> TimeInterval {
+        plannedDuration - remaining(at: now)
     }
 
     func progress(at now: Date) -> Double {
