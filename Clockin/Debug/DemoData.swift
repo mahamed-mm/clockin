@@ -45,7 +45,7 @@ enum DemoData {
     /// - `-DemoFinishing`: a focus session that runs out 3 seconds after launch.
     /// - `-DemoOvertime`: one that ran out four minutes ago, kept going since.
     /// - `-DemoBreak`: a break halfway through, spent as `-DemoBreakStyle`
-    ///   says (rest, stretch or breathe). Seconds long with `-ShortTimers`.
+    ///   says (rest, stretch or breathe) from launch. Seconds long with `-ShortTimers`.
     @MainActor
     static func prepareFinishingSession(now: Date = .now) {
         let arguments = ProcessInfo.processInfo.arguments
@@ -75,7 +75,8 @@ enum DemoData {
         let session = ActiveSession(id: UUID(), name: "Thesis outline", phase: .rest, plannedDuration: length,
                                     focusStartedAt: now.addingTimeInterval(-length / 2),
                                     state: .running(endDate: now.addingTimeInterval(length / 2)),
-                                    breakStyle: style, breakStyleFrom: 0)
+                                    // The style chosen as the app opens, so a stretch starts from the top.
+                                    breakStyle: style, breakStyleFrom: style == .rest ? 0 : length / 2)
         DefaultsSessionStateStore().save(PersistedSessionState(active: session))
     }
 

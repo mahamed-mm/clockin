@@ -27,8 +27,10 @@ struct MascotGallery: View {
                         ForEach(Array((WorkoutSamples.stances + WorkoutSamples.faces).enumerated()), id: \.offset) { _, sample in
                             row(sample.name, rig: sample.rig, face: sample.face)
                         }
+                        row("break: rest", rig: TickRig(.onBreak), face: TickFace(.onBreak), sheetProgress: 0.5)
+                        row("break: breathe", rig: .breathing, face: .breathing, sheetProgress: 0.5)
                         ForEach(StretchMove.allCases, id: \.self) { move in
-                            row(move.rawValue, rig: TickRig.standing.applying(move.stillPose),
+                            row("break: \(move.rawValue)", rig: TickRig.standing.applying(move.stillPose),
                                 face: TickFace.stretching.applying(move.stillPose), sheetProgress: 0.5)
                         }
                     }

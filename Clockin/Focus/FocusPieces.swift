@@ -349,11 +349,18 @@ struct DialFace: View {
     private func statusLabel(_ session: ActiveSession?) -> some View {
         if let breakActivity {
             let guide = BreakGuide(activity: breakActivity)
-            TimelineView(.explicit(guide.changes(after: .now))) { context in
+            // Now first: an explicit timeline draws its first date first, even a later one.
+            TimelineView(.explicit([.now] + guide.changes(after: .now))) { context in
                 let text = guide.status(at: context.date) ?? status(session)
-                Text(text).retroLabel()
-                    .contentTransition(.opacity)
-                    .animation(Motion.calm(reduceMotion), value: text)
+                VStack(spacing: size * 0.02) {
+                    Text(text).retroLabel()
+                        .contentTransition(.opacity)
+                    if let step = guide.step(at: context.date) {
+                        StepDots(index: step.index, count: step.count, size: size)
+                            .transition(.opacity)
+                    }
+                }
+                .animation(Motion.calm(reduceMotion), value: text)
             }
         } else {
             Text(status(session)).retroLabel()
@@ -771,6 +778,28 @@ private struct BreathHalo: View {
                 }
         }
         .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// "2 of 4" under the dial's label while stretching: one dot a stretch,
+/// done ones filled, the current one ringed. In ink, so it never reads as
+/// one of the set's stripe colours.
+private struct StepDots: View {
+    let index: Int
+    let count: Int
+    let size: CGFloat
+
+    var body: some View {
+        let dot = max(4, size * 0.016)
+        HStack(spacing: dot * 0.9) {
+            ForEach(1...max(1, count), id: \.self) { n in
+                Circle()
+                    .fill(n < index ? Retro.inkSoft : .clear)
+                    .strokeBorder(n <= index ? Retro.ink : Retro.inkSoft.opacity(0.6), lineWidth: max(1, dot * 0.22))
+                    .frame(width: dot, height: dot)
+            }
+        }
         .accessibilityHidden(true)
     }
 }

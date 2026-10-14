@@ -92,6 +92,24 @@ enum Copy {
         String(localized: "Breathe, in for \(inhale) seconds, out for \(exhale)")
     }
 
+    /// The dial's label for each stretch.
+    static func stretchName(_ move: StretchMove) -> String {
+        switch move {
+        case .neckRoll: String(localized: "Neck roll")
+        case .shoulderShrug: String(localized: "Shoulder shrug")
+        case .reachUp, .backToWork: String(localized: "Reach up")
+        case .sideStretch: String(localized: "Side stretch")
+        case .wristCircles: String(localized: "Wrist circles")
+        case .eyeRest: String(localized: "Look far away")
+        }
+    }
+
+    /// The dial for VoiceOver while stretching: "Stretch, 2 of 4, shoulder shrug".
+    static func stretchSpoken(index: Int, count: Int, move: StretchMove) -> String {
+        let name = move == .eyeRest ? String(localized: "look at something far away") : stretchName(move).localizedLowercase
+        return String(localized: "Stretch, \(index) of \(count), \(name)")
+    }
+
     // MARK: Phases
 
     static var focus: String { String(localized: "Focus") }

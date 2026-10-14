@@ -26,6 +26,8 @@ struct TickLoopSchedule: TimelineSchedule {
     let speed: Double
     /// A workout under way: combos move to the session's own clock.
     var workout: WorkoutLoops? = nil
+    /// A break spent stretching: each stretch moves to the break's own clock.
+    var breakLoops: BreakLoops? = nil
 
     func entries(from startDate: Date, mode: TimelineScheduleMode) -> AnyIterator<Date> {
         var next: Date? = startDate
@@ -45,6 +47,10 @@ struct TickLoopSchedule: TimelineSchedule {
                 // The next combo frame, or the next combo's start.
                 let step = date.addingTimeInterval(workout.frameInterval(at: date, pose: loops.pose))
                 upcoming = min(upcoming, max(step, workout.nextMovement(from: step, pose: loops.pose, since: since)))
+            }
+            if let breakLoops {
+                let step = date.addingTimeInterval(breakLoops.frameInterval(at: date))
+                upcoming = min(upcoming, max(step, breakLoops.nextMovement(from: step)))
             }
             next = upcoming
             return date
@@ -106,6 +112,8 @@ struct TickView: View {
     @State private var combos = ComboCache()
     /// A workout just started, seen happen: Tick gloves up first.
     @State private var gearingUp = false
+    /// Moved on when a break's stretches are done, so Tick goes back to resting.
+    @State private var breakRefresh = 0
 
     private var reduceMotion: Bool { systemReduceMotion || galleryReduceMotion }
     private var still: Bool { reduceMotion || services.power.isConstrained }
@@ -117,22 +125,22 @@ struct TickView: View {
                          gearsUp: gearingUp, mug: activeBreak == nil)
     }
 
-    /// The break, while Tick is spending it other than resting.
+    /// The break, while Tick is leading it rather than resting with the mug.
     private var activeBreak: TickBreak? {
-        guard pose == .onBreak, let breakActivity, breakActivity.style != .rest else { return nil }
+        _ = breakRefresh
+        guard pose == .onBreak, let breakActivity, BreakLoops(activity: breakActivity).leads(at: .now) else { return nil }
         return breakActivity
     }
 
     /// Breathing along with the halo: Tick's breath follows the same cycle.
     private var breathing: Bool { activeBreak?.style == .breathe }
 
-    /// Tick's own frame for a break spent breathing or stretching.
-    private func breakFrame(at date: Date) -> WorkoutFrame? {
-        guard let activeBreak else { return nil }
-        switch activeBreak.style {
-        case .rest, .stretch: return nil
-        case .breathe: return WorkoutFrame(rig: .breathing, face: .breathing)
-        }
+    private var breakLoops: BreakLoops? { activeBreak.map(BreakLoops.init(activity:)) }
+
+    /// When the stretches are done and Tick has the mug again: then it rests as usual.
+    private var rejoinsRest: Date? {
+        guard let activeBreak, let t = BreakLoops(activity: activeBreak).rejoinsRest else { return nil }
+        return activeBreak.date(atStyleElapsed: t)
     }
 
     /// The workout behind Tick: working through one, paused in one, or just done.
@@ -150,6 +158,7 @@ struct TickView: View {
         if pose == .working, let loops = workoutLoops {
             dates += loops.faceChanges.compactMap { loops.workout.date(atElapsed: $0) }.filter { $0 > .now }
         }
+        if let breakLoops { dates += breakLoops.stillChanges(after: .now) }
         return dates.sorted()
     }
 
@@ -177,15 +186,19 @@ struct TickView: View {
             if still {
                 // Cross-fades between stills; a poke still changes the face. A
                 // workout is calm here, and changes face as Tick tires.
-                TimelineView(.explicit(stillDates)) { context in
+                // Now first: an explicit timeline draws its first date first, even a later one.
+                TimelineView(.explicit([.now] + stillDates.filter { $0 > .now })) { context in
                     let calm = workoutLoops.map { CalmLoops($0) }
                     let frame = pose == .working
                         ? calm?.loops.calmFrame(at: context.date)
-                        : workoutFrame(calm?.loops, at: context.date, elapsed: .infinity) ?? breakFrame(at: context.date)
+                        : workoutFrame(calm?.loops, at: context.date, elapsed: .infinity)
+                            ?? breakLoops?.stillFrame(at: context.date)
+                    let key = (frame.map { "\($0.face.eyes)\($0.face.mouth)" } ?? "")
+                        + (breakLoops?.stillKey(at: context.date) ?? "")
                     figure(motion: .still, face: face(at: context.date, base: frame?.face).0, rig: frame?.rig)
-                        .id(frame.map { "\($0.face.eyes)\($0.face.mouth)" })
+                        .id(key)
                         .transition(.opacity)
-                        .animation(Motion.calm(true), value: frame.map { "\($0.face.eyes)\($0.face.mouth)" })
+                        .animation(Motion.calm(true), value: key)
                 }
                 .id(pose)
                 .transition(.opacity)
@@ -193,9 +206,11 @@ struct TickView: View {
                 // Frames only while something moves (30 a second), none between.
                 let workoutLoops = workoutLoops
                 TimelineView(TickLoopSchedule(loops: loops, since: since, pokedAt: pokedAt, paused: paused,
-                                              speed: Motion.speed, workout: workoutLoops)) { context in
+                                              speed: Motion.speed, workout: workoutLoops,
+                                              breakLoops: breakLoops)) { context in
                     let elapsed = context.date.timeIntervalSince(since) / Motion.speed
-                    let frame = workoutFrame(workoutLoops, at: context.date, elapsed: elapsed) ?? breakFrame(at: context.date)
+                    let frame = workoutFrame(workoutLoops, at: context.date, elapsed: elapsed)
+                        ?? breakLoops?.frame(at: context.date)
                     let motion = paused ? TickMotion.still : withPoke(withWorkout(loops.motion(at: elapsed), frame), at: context.date)
                     let (face, swapBlink) = face(at: context.date, base: frame?.face)
                     GeometryReader { proxy in
@@ -251,6 +266,12 @@ struct TickView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { activeSince = .now }
+        }
+        .task(id: rejoinsRest) {
+            // Stretches done: back to the mug and its steam.
+            guard let rejoinsRest else { return }
+            try? await Task.sleep(for: .seconds(max(0, rejoinsRest.timeIntervalSinceNow) + 0.05))
+            if !Task.isCancelled { breakRefresh += 1 }
         }
         .onAppear { onScreen = true }
         .onDisappear { onScreen = false }

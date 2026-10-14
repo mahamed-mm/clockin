@@ -18,7 +18,8 @@ struct BreathFollower<Content: View>: View {
     var body: some View {
         content(fullness, turn)
             .background {
-                TimelineView(.explicit(turns)) { context in
+                // Now first: an explicit timeline draws its first date first, even a later one.
+                TimelineView(.explicit([.now] + turns)) { context in
                     Color.clear.onChange(of: context.date, initial: true) { follow(at: context.date) }
                 }
             }

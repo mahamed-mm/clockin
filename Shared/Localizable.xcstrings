@@ -544,6 +544,9 @@
     "History couldn't be loaded" : {
 
     },
+    "Into the break" : {
+
+    },
     "Keep +%lld min" : {
 
     },
@@ -556,6 +559,9 @@
     "Leave bedside clock" : {
 
     },
+    "Length" : {
+
+    },
     "Light" : {
 
     },
@@ -565,6 +571,9 @@
     "Live Activities off" : {
 
     },
+    "Live break" : {
+
+    },
     "Live session" : {
 
     },
@@ -572,6 +581,9 @@
 
     },
     "Long break after four" : {
+
+    },
+    "Look far away" : {
 
     },
     "Mascot during focus" : {
@@ -605,6 +617,9 @@
 
     },
     "Name" : {
+
+    },
+    "Neck roll" : {
 
     },
     "Next" : {
@@ -704,6 +719,9 @@
 
     },
     "Puts the session back" : {
+
+    },
+    "Reach up" : {
 
     },
     "Ready" : {
@@ -808,6 +826,9 @@
     "Short timers (10s / 5s)" : {
 
     },
+    "Shoulder shrug" : {
+
+    },
     "Show bedside clock" : {
 
     },
@@ -818,6 +839,9 @@
 
     },
     "Shows the session, to rename or delete it" : {
+
+    },
+    "Side stretch" : {
 
     },
     "Skip break" : {
@@ -890,6 +914,22 @@
 
     },
     "Stretch" : {
+
+    },
+    "Stretch, %lld of %lld, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Stretch, %1$lld of %2$lld, %3$@"
+          }
+        }
+      }
+    },
+    "Stretches" : {
+
+    },
+    "Style" : {
 
     },
     "System" : {
@@ -991,6 +1031,9 @@
     "Workout" : {
 
     },
+    "Wrist circles" : {
+
+    },
     "Yesterday" : {
 
     },
@@ -1014,6 +1057,9 @@
       }
     },
     "knob" : {
+
+    },
+    "look at something far away" : {
 
     },
     "min" : {
