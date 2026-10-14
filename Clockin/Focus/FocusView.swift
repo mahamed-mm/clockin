@@ -15,6 +15,7 @@ struct FocusView: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @Environment(\.accessibilitySwitchControlEnabled) private var switchControl
     @FocusState private var nameFocused: Bool
+    @State private var pickingSymbol = false
     /// The last tap or scroll, which the screen waits on before stepping back.
     @State private var lastTouch = Date.now
     @State private var steppedBack = false
@@ -281,23 +282,54 @@ struct FocusView: View {
     }
 
     private var nameField: some View {
-        TextField("What are you focusing on?", text: $sessionName)
-            .font(.retro(.body))
-            .foregroundStyle(Retro.ink)
-            .submitLabel(.go)
-            .focused($nameFocused)
-            .onSubmit(start)
-            .onChange(of: sessionName) { _, name in
-                // The engine caps names too; this keeps the field honest about it.
-                if name.count > ActiveSession.maxNameLength {
-                    sessionName = String(name.prefix(ActiveSession.maxNameLength))
+        HStack(spacing: Space.xxs) {
+            nameSymbol
+            TextField("What are you focusing on?", text: $sessionName)
+                .font(.retro(.body))
+                .foregroundStyle(Retro.ink)
+                .submitLabel(.go)
+                .focused($nameFocused)
+                .onSubmit(start)
+                .onChange(of: sessionName) { _, name in
+                    // The engine caps names too; this keeps the field honest about it.
+                    if name.count > ActiveSession.maxNameLength {
+                        sessionName = String(name.prefix(ActiveSession.maxNameLength))
+                    }
                 }
+                .accessibilityLabel("Session name")
+                .accessibilityInputLabels(["What are you focusing on", "Session name"])
+        }
+        .padding(.leading, Space.xxs)
+        .padding(.trailing, Space.l)
+        .padding(.vertical, 5)
+        .glassEffect(.regular.interactive(), in: .capsule)
+    }
+
+    /// The name's symbol, swapping as a known name is typed. Tapped, it
+    /// picks a symbol for the name; an unnamed session keeps the book.
+    private var nameSymbol: some View {
+        let symbol = services.symbol(for: sessionName)
+        let named = !SymbolBook.key(for: sessionName).isEmpty
+        return Button { pickingSymbol = true } label: {
+            Image(systemName: symbol)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Retro.inkSoft)
+                .contentTransition(reduceMotion ? .opacity : .symbolEffect(.replace))
+                .animation(Motion.snappy(reduceMotion), value: symbol)
+                .frame(width: 44, height: 44)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .disabled(!named)
+        .accessibilityHidden(!named)
+        .accessibilityLabel(Copy.changeSymbol)
+        .accessibilityValue(Copy.symbolName(symbol))
+        .popover(isPresented: $pickingSymbol) {
+            SymbolPicker(name: sessionName, selected: symbol) { picked in
+                services.setSymbol(picked, for: sessionName)
+                pickingSymbol = false
             }
-            .padding(.horizontal, Space.l)
-            .padding(.vertical, Space.m)
-            .glassEffect(.regular.interactive(), in: .capsule)
-            .accessibilityLabel("Session name")
-            .accessibilityInputLabels(["What are you focusing on", "Session name"])
+        }
     }
 
     // MARK: Controls

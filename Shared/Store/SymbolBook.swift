@@ -18,13 +18,14 @@ struct SymbolBook: Codable, Equatable {
             .joined(separator: " ")
     }
 
-    /// The symbol to show for a name: the pick, or the book. A pick this
-    /// build doesn't know (from a newer one) is kept but not shown.
+    /// The symbol to show for a name: the pick, else the suggestion, else
+    /// the book. A pick this build doesn't know (from a newer one) is kept
+    /// but not shown.
     func symbol(for name: String) -> String {
         let key = Self.key(for: name)
         guard !key.isEmpty else { return SymbolCatalog.unnamed }
         if let pick = picks[key], SymbolCatalog.contains(pick) { return pick }
-        return SymbolCatalog.unnamed
+        return SymbolSuggester.suggest(for: key) ?? SymbolCatalog.unnamed
     }
 
     /// Picks `symbol` for every session with this name. An unnamed session

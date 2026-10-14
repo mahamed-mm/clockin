@@ -703,12 +703,42 @@
         }
       }
     },
+    "Bar chart" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stolpediagram"
+          }
+        }
+      }
+    },
     "Bedside clock" : {
       "localizations" : {
         "nb" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Nattbordsklokke"
+          }
+        }
+      }
+    },
+    "Book" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bok"
+          }
+        }
+      }
+    },
+    "Books" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bøker"
           }
         }
       }
@@ -819,6 +849,16 @@
         }
       }
     },
+    "Briefcase" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Koffert"
+          }
+        }
+      }
+    },
     "Brings the session back" : {
       "localizations" : {
         "nb" : {
@@ -835,6 +875,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "CSV åpnes i Numbers eller Excel. En sikkerhetskopi gjenopprettes her, og øktene du allerede har, beholdes."
+          }
+        }
+      }
+    },
+    "Calendar" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kalender"
           }
         }
       }
@@ -889,6 +939,16 @@
         }
       }
     },
+    "Change symbol" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Endre symbol"
+          }
+        }
+      }
+    },
     "Classic" : {
       "localizations" : {
         "nb" : {
@@ -915,6 +975,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Lukk"
+          }
+        }
+      }
+    },
+    "Code" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kode"
           }
         }
       }
@@ -1045,6 +1115,16 @@
         }
       }
     },
+    "Dumbbell" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Manual"
+          }
+        }
+      }
+    },
     "During breaks" : {
       "localizations" : {
         "nb" : {
@@ -1127,6 +1207,16 @@
     },
     "Energy" : {
       "shouldTranslate" : false
+    },
+    "Envelope" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Konvolutt"
+          }
+        }
+      }
     },
     "Erase All" : {
       "localizations" : {
@@ -1274,6 +1364,16 @@
         }
       }
     },
+    "Flask" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kolbe"
+          }
+        }
+      }
+    },
     "Focus" : {
       "localizations" : {
         "nb" : {
@@ -1360,6 +1460,56 @@
         }
       }
     },
+    "Fork and knife" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kniv og gaffel"
+          }
+        }
+      }
+    },
+    "Function" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Funksjon"
+          }
+        }
+      }
+    },
+    "Globe" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Globus"
+          }
+        }
+      }
+    },
+    "Graduation cap" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Studenthatt"
+          }
+        }
+      }
+    },
+    "Hammer" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hammer"
+          }
+        }
+      }
+    },
     "Haptics lab" : {
       "shouldTranslate" : false
     },
@@ -1389,6 +1539,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Historikken kunne ikke lastes inn"
+          }
+        }
+      }
+    },
+    "House" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hus"
           }
         }
       }
@@ -1426,6 +1586,16 @@
         }
       }
     },
+    "Leaf" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Blad"
+          }
+        }
+      }
+    },
     "Leave bedside clock" : {
       "localizations" : {
         "nb" : {
@@ -1445,6 +1615,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Lys"
+          }
+        }
+      }
+    },
+    "Light bulb" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lyspære"
           }
         }
       }
@@ -1505,12 +1685,32 @@
         }
       }
     },
+    "Magnifying glass" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Forstørrelsesglass"
+          }
+        }
+      }
+    },
     "Mascot during focus" : {
       "localizations" : {
         "nb" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Maskot under fokus"
+          }
+        }
+      }
+    },
+    "Meditation" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Meditasjon"
           }
         }
       }
@@ -1597,6 +1797,16 @@
     },
     "Moves" : {
       "shouldTranslate" : false
+    },
+    "Music note" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Note"
+          }
+        }
+      }
     },
     "Name" : {
       "localizations" : {
@@ -1817,6 +2027,16 @@
         }
       }
     },
+    "Paintbrush" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pensel"
+          }
+        }
+      }
+    },
     "Pause" : {
       "localizations" : {
         "nb" : {
@@ -1913,6 +2133,26 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Setter økten eller pausen som går, på pause."
+          }
+        }
+      }
+    },
+    "Pencil" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Blyant"
+          }
+        }
+      }
+    },
+    "Pencil and ruler" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Blyant og linjal"
           }
         }
       }
@@ -2568,6 +2808,16 @@
     "Style" : {
       "shouldTranslate" : false
     },
+    "Symbol for %@" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Symbol for %@"
+          }
+        }
+      }
+    },
     "System" : {
       "localizations" : {
         "nb" : {
@@ -2773,6 +3023,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Snu telefonen for nattbordsklokken"
+          }
+        }
+      }
+    },
+    "Two people" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "To personer"
           }
         }
       }

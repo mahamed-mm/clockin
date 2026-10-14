@@ -17,11 +17,18 @@ struct SymbolBookTests {
         #expect(SymbolBook.key(for: "Øving") == "øving")
     }
 
+    @Test func aPickBeatsTheSuggestion() {
+        var book = SymbolBook()
+        #expect(book.symbol(for: "Thesis outline") == "graduationcap.fill")
+        book.pick("pencil", for: "Thesis outline")
+        #expect(book.symbol(for: "Thesis outline") == "pencil")
+    }
+
     @Test func aPickShowsForEverySpellingOfTheName() {
         var book = SymbolBook()
         book.pick("flask.fill", for: "Chemistry")
         #expect(book.symbol(for: " chemistry") == "flask.fill")
-        #expect(book.symbol(for: "Biology") == SymbolCatalog.unnamed)
+        #expect(book.symbol(for: "Something else") == SymbolCatalog.unnamed)
         #expect(book.symbol(for: "") == SymbolCatalog.unnamed)
     }
 
@@ -30,7 +37,7 @@ struct SymbolBookTests {
         book.pick("star.fill", for: "Chemistry")
         #expect(book.picks.isEmpty)
         book.picks["chemistry"] = "symbol.from.a.newer.build"
-        #expect(book.symbol(for: "Chemistry") == SymbolCatalog.unnamed)
+        #expect(book.symbol(for: "Chemistry") == "flask.fill") // The suggestion.
         #expect(book.picks["chemistry"] == "symbol.from.a.newer.build")
     }
 

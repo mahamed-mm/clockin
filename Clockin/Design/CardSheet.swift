@@ -7,6 +7,8 @@ import SwiftUI
 struct CardSheet<Title: View, Rows: View, Actions: View>: View {
     var symbol: String?
     var tint: Color = Retro.orangeText
+    /// The badge's colour, when it differs from the overline's.
+    var badgeTint: Color?
     var overline: String
     /// What VoiceOver reads for the overline, when the printed one reads badly.
     var spokenOverline: String?
@@ -51,9 +53,10 @@ struct CardSheet<Title: View, Rows: View, Actions: View>: View {
             if let symbol {
                 Image(systemName: symbol)
                     .font(.title2.weight(.semibold))
-                    .foregroundStyle(tint)
+                    .foregroundStyle(badgeTint ?? tint)
+                    .contentTransition(.symbolEffect(.replace))
                     .frame(width: badge, height: badge)
-                    .background(tint.opacity(0.14), in: .circle)
+                    .background((badgeTint ?? tint).opacity(0.14), in: .circle)
                     .accessibilityHidden(true)
                     .padding(.bottom, Space.xxs)
             }

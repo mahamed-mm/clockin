@@ -43,7 +43,7 @@ struct HistoryExportTests {
         let lines = HistoryExport.csv([early]).components(separatedBy: "\r\n")
         #expect(lines[0] == HistoryExport.csvHeader)
         #expect(lines[1].hasPrefix("\(early.id.uuidString),\"Essay, part 1\","))
-        #expect(lines[1].hasSuffix(",300,1500,endedEarly,Europe/Oslo,book.closed.fill"))
+        #expect(lines[1].hasSuffix(",300,1500,endedEarly,Europe/Oslo,pencil"))
         #expect(lines.count == 3) // Header, row, and the final line break.
     }
 
@@ -132,12 +132,12 @@ struct HistoryExportTests {
         let history = try #require(services.history)
         let sessions = [session("Essay", endedAgo: 600), session("Spanish", endedAgo: 90_000, seconds: 900)]
         try history.restore(sessions)
-        services.setSymbol("pencil", for: "Essay")
+        services.setSymbol("lightbulb.fill", for: "Essay")
         let file = try HistoryExport.backup(try history.allSessions(), symbols: services.symbolBook, exportedAt: now)
 
         services.eraseHistory()
         #expect(try history.allSessions().isEmpty)
-        #expect(services.symbol(for: "Essay") == SymbolCatalog.unnamed)
+        #expect(services.symbol(for: "Essay") == "pencil") // Back to the suggestion.
 
         let plan = try services.planImport(of: file)
         #expect(plan.new.count == 2)
@@ -148,7 +148,7 @@ struct HistoryExportTests {
         #expect(restored.map(\.name) == original.map(\.name))
         #expect(restored.map(\.focusSeconds) == original.map(\.focusSeconds))
         #expect(restored.map(\.timeZoneIdentifier) == original.map(\.timeZoneIdentifier))
-        #expect(services.symbol(for: "Essay") == "pencil")
+        #expect(services.symbol(for: "Essay") == "lightbulb.fill")
 
         // Restoring the same file again changes nothing.
         let again = try services.planImport(of: file)

@@ -252,7 +252,9 @@ private struct HistoryWeek: View {
         }
         .sheet(item: $opened) { summary in
             SessionCard(summary: summary, now: today, calendar: calendar,
+                        symbol: services.symbol(for: summary.name),
                         rename: { services.renameSession(summary.id, to: $0) },
+                        setSymbol: { services.setSymbol($0, for: summary.name) },
                         delete: { services.deleteSessions([summary.id]) })
                 .fittedSheet()
         }

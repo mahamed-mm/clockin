@@ -128,6 +128,44 @@ enum Copy {
         return String(localized: "Paused at \(TimeFormat.time(pausedAt))")
     }
 
+    // MARK: Symbols
+
+    /// What VoiceOver calls each symbol in the picker.
+    static func symbolName(_ id: String) -> String {
+        switch id {
+        case "book.closed.fill": String(localized: "Book")
+        case "books.vertical.fill": String(localized: "Books")
+        case "graduationcap.fill": String(localized: "Graduation cap")
+        case "pencil": String(localized: "Pencil")
+        case "briefcase.fill": String(localized: "Briefcase")
+        case "chevron.left.forwardslash.chevron.right": String(localized: "Code")
+        case "function": String(localized: "Function")
+        case "flask.fill": String(localized: "Flask")
+        case "globe": String(localized: "Globe")
+        case "music.note": String(localized: "Music note")
+        case "paintbrush.pointed.fill": String(localized: "Paintbrush")
+        case "pencil.and.ruler.fill": String(localized: "Pencil and ruler")
+        case "dumbbell.fill": String(localized: "Dumbbell")
+        case "figure.mind.and.body": String(localized: "Meditation")
+        case "house.fill": String(localized: "House")
+        case "fork.knife": String(localized: "Fork and knife")
+        case "envelope.fill": String(localized: "Envelope")
+        case "person.2.fill": String(localized: "Two people")
+        case "calendar": String(localized: "Calendar")
+        case "lightbulb.fill": String(localized: "Light bulb")
+        case "magnifyingglass": String(localized: "Magnifying glass")
+        case "chart.bar.fill": String(localized: "Bar chart")
+        case "hammer.fill": String(localized: "Hammer")
+        case "leaf.fill": String(localized: "Leaf")
+        default: id
+        }
+    }
+
+    static var changeSymbol: String { String(localized: "Change symbol") }
+
+    /// "Symbol for Chemistry"
+    static func symbolFor(_ name: String) -> String { String(localized: "Symbol for \(displayName(name))") }
+
     // MARK: History
 
     /// One calm line about the week under History's strip: "Mostly mornings
