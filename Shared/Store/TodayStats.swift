@@ -204,7 +204,9 @@ struct WeekFacts: Equatable, Sendable {
     var longestSeconds: TimeInterval
     /// The day with the most focus; the earlier one on a tie.
     var busiestDay: Date
-    var daysWithFocus: Int
+    /// The days with focus, each at its start, in order.
+    var focusDays: [Date]
+    var daysWithFocus: Int { focusDays.count }
     /// The part of the day most of the focus started in, when one had at
     /// least 60% of it.
     var mostlyIn: PartOfDay?
@@ -225,7 +227,7 @@ struct WeekFacts: Equatable, Sendable {
             byDay[calendar.startOfDay(for: session.completedAt), default: 0] += session.seconds
             byPart[PartOfDay(session.startedAt, calendar: calendar), default: 0] += session.seconds
         }
-        daysWithFocus = byDay.count
+        focusDays = byDay.keys.sorted()
         busiestDay = byDay.max { a, b in a.value == b.value ? a.key > b.key : a.value < b.value }?.key
             ?? calendar.startOfDay(for: first.completedAt)
         let total = totalSeconds
