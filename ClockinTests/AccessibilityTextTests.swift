@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import Clockin
 
@@ -88,5 +89,33 @@ struct PillStrokeTests {
         let dashed = SessionPills.currentStroke(pillHeight: 6, differentiateWithoutColor: true)
         #expect(dashed.dash.count == 2)
         #expect(dashed.lineWidth == plain.lineWidth)
+    }
+}
+
+/// The pill a completed session fills, and the liquid filling it.
+struct LiquidPillTests {
+    @Test func onlyAJustCompletedSessionFills() {
+        #expect(SessionPills.fillingPill(from: 1, to: 2, justCompleted: true) == 1)
+        // Launching, a restore or an undo isn't a completion.
+        #expect(SessionPills.fillingPill(from: 1, to: 2, justCompleted: false) == nil)
+        #expect(SessionPills.fillingPill(from: 0, to: 3, justCompleted: true) == nil)
+        #expect(SessionPills.fillingPill(from: 2, to: 1, justCompleted: true) == nil)
+        // Past the set there's no pill to fill, only the "+N".
+        #expect(SessionPills.fillingPill(from: 4, to: 5, justCompleted: true) == nil)
+        #expect(SessionPills.fillingPill(from: 3, to: 4, justCompleted: true) == 3)
+    }
+
+    @Test func emptyAndFullAreFlat() {
+        let rect = CGRect(x: 0, y: 0, width: 20, height: 6)
+        #expect(LiquidFill(level: 0).path(in: rect).isEmpty)
+        #expect(LiquidFill(level: 1).path(in: rect) == Path(rect))
+        #expect(LiquidFill.amplitude(at: 0) == 0)
+        #expect(abs(LiquidFill.amplitude(at: 1)) < 1e-12)
+        #expect(LiquidFill.amplitude(at: 0.5) > 0.1)
+        // Fuller fills further.
+        let half = LiquidFill(level: 0.5).path(in: rect).boundingRect
+        let most = LiquidFill(level: 0.9).path(in: rect).boundingRect
+        #expect(most.maxX > half.maxX)
+        #expect(half.maxX > 5 && half.maxX < 15)
     }
 }

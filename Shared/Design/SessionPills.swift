@@ -26,7 +26,11 @@ struct SessionPills: View {
     /// Shows "2 of 4 today" after the pills.
     var showsCaption = false
     var tint: Color = Retro.orange
+    /// A pill filling as its session completes: which, and how full (0...1).
+    /// Only the app passes one; widgets and the Live Activity stay still.
+    var fill: (index: Int, level: Double)? = nil
     @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
 
     /// Pure state for pill `index`; kept separate so it can be unit tested.
@@ -43,6 +47,13 @@ struct SessionPills: View {
         let width = max(1.5, pillHeight * 0.25)
         guard differentiateWithoutColor else { return StrokeStyle(lineWidth: width) }
         return StrokeStyle(lineWidth: width, lineCap: .round, dash: [pillHeight * 0.5, pillHeight * 0.6])
+    }
+
+    /// The pill to fill when the count goes from `old` to `new`: only one
+    /// session more, just completed (not a launch, a restore or an undo).
+    static func fillingPill(from old: Int, to new: Int, justCompleted: Bool) -> Int? {
+        guard justCompleted, new == old + 1, old < setSize else { return nil }
+        return old
     }
 
     /// Sessions beyond the set of four, shown as "+N".
@@ -76,8 +87,20 @@ struct SessionPills: View {
     }
 
     private func pillView(_ index: Int) -> some View {
-        pill(Self.state(index: index, completed: completed, inProgress: inProgress))
-            .frame(width: pillWidth, height: pillHeight)
+        let filling = fill.map { $0.index == index } ?? false
+        // One shape whatever happens, so a pill that starts filling doesn't cross-fade.
+        return ZStack {
+            // Still outlined as the session in progress while it fills.
+            pill(filling ? .current : Self.state(index: index, completed: completed, inProgress: inProgress))
+            if let fill, filling {
+                Capsule()
+                    .fill(Self.colors[index % Self.setSize])
+                    .opacity(reduceMotion ? fill.level : 1)
+                    .mask { LiquidFill(level: reduceMotion ? 1 : fill.level) }
+                    .widgetAccentable()
+            }
+        }
+        .frame(width: pillWidth, height: pillHeight)
     }
 
     private var horizontal: some View {
@@ -120,6 +143,44 @@ struct SessionPills: View {
                 .strokeBorder(Retro.ink.opacity(contrast == .increased ? 0.65 : 0.3),
                               lineWidth: contrast == .increased ? 1.5 : 1)
         }
+    }
+}
+
+/// A pill filling up from the left like liquid, its edge a slight wave
+/// that settles flat as it fills.
+struct LiquidFill: Shape {
+    /// 0 empty to 1 full.
+    var level: Double
+
+    var animatableData: Double {
+        get { level }
+        set { level = newValue }
+    }
+
+    /// How far the edge bulges, as a fraction of the height: none empty or full.
+    static func amplitude(at level: Double) -> Double {
+        0.22 * sin(.pi * min(1, max(0, level)))
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let level = min(1, max(0, level))
+        guard level > 0 else { return Path() }
+        guard level < 1 else { return Path(rect) }
+        let wave = Self.amplitude(at: level) * rect.height
+        // Room for the wave, so it starts off the left edge and ends past the right.
+        let edge = rect.minX - wave + (rect.width + 2 * wave) * level
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        let steps = 12
+        for i in 0...steps {
+            let y = rect.minY + rect.height * Double(i) / Double(steps)
+            // The wave slides along as it fills.
+            let x = edge + wave * sin(2 * .pi * (Double(i) / Double(steps)) + 6 * .pi * level)
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.closeSubpath()
+        return path
     }
 }
 

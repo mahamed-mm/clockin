@@ -153,11 +153,46 @@ struct TodaySessionPills: View {
         _records = Query(filter: FocusRecord.completed(on: day))
     }
 
+    @Environment(AppServices.self) private var services
+    /// The count on show, which moves on a moment after a completion so the
+    /// new pill can fill rather than appear.
+    @State private var shown: Int?
+    /// The pill filling, and how full it is.
+    @State private var filling: Int?
+    @State private var level = 1.0
+
     var body: some View {
         let count = TodayStats.rows(saved: records.map(\.row), pending: engine.pendingRecords(on: day)).fullCount
-        SessionPills(completed: count, inProgress: inProgress,
-                     pillWidth: 20 * scale, pillHeight: 5.5 * scale, spacing: 4 * scale, tint: tint)
-            .animation(Motion.calm(reduceMotion), value: count)
+        // A session just finished stays in progress until its pill fills.
+        SessionPills(completed: shown ?? count, inProgress: inProgress || (shown ?? count) < count,
+                     pillWidth: 20 * scale, pillHeight: 5.5 * scale, spacing: 4 * scale, tint: tint,
+                     fill: filling.map { ($0, level) })
+            .animation(Motion.calm(reduceMotion), value: shown ?? count)
+            .onAppear { shown = count }
+            .onChange(of: count) { old, new in fill(from: old, to: new) }
+    }
+
+    /// A session just completed: its pill fills left to right after the
+    /// celebration, or fades in with Reduce Motion; at once in Low Power Mode.
+    private func fill(from old: Int, to new: Int) {
+        guard let index = SessionPills.fillingPill(from: old, to: new, justCompleted: engine.stage.completedFocus != nil),
+              !services.power.isConstrained else {
+            shown = new
+            return
+        }
+        var still = Transaction(animation: nil)
+        still.disablesAnimations = true
+        withTransaction(still) {
+            shown = new
+            filling = index
+            level = 0
+        }
+        let pour: Animation = reduceMotion ? .easeInOut(duration: 0.2 * Motion.speed) : .easeInOut(duration: 0.6 * Motion.speed)
+        withAnimation(pour.delay(Motion.afterCelebration * Motion.speed)) {
+            level = 1
+        } completion: {
+            filling = nil
+        }
     }
 }
 
