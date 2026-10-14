@@ -7,6 +7,10 @@ struct FocusView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @AppStorage("lastSessionName") private var sessionName = ""
+    @AppStorage(Onboarding.dialHintKey) private var dialHintSeen = false
+    @AppStorage(Onboarding.welcomeKey) private var welcomeSeen = false
+    /// At most two saved sessions: enough to tell a first launch and a first finish.
+    @Query(Onboarding.firstSessions) private var firstSessions: [FocusRecord]
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @Environment(\.accessibilitySwitchControlEnabled) private var switchControl
@@ -28,6 +32,16 @@ struct FocusView: View {
                                             bottom: Space.l, trailing: Space.gutter)
 
     private var bedside: BedsideController { services.bedside }
+
+    private var savedSessions: Int { firstSessions.count + engine.pendingRecords.count }
+
+    private var teachesDial: Bool {
+        Onboarding.showsDialHint(seen: dialHintSeen, savedSessions: savedSessions, stage: engine.stage)
+    }
+
+    private var welcomes: Bool {
+        Onboarding.showsWelcome(seen: welcomeSeen, savedSessions: savedSessions, stage: engine.stage)
+    }
 
     private var onItsSide: Bool { verticalSizeClass == .compact }
 
@@ -64,7 +78,13 @@ struct FocusView: View {
         .accessibilityAction(.magicTap) { primaryAction.2() }
         .animation(Motion.calm(reduceMotion), value: engine.stage)
         .animation(Motion.calm(reduceMotion), value: bedsideSession != nil)
-        .onChange(of: engine.stage) { touched() }
+        .onChange(of: engine.stage) { old, new in
+            touched()
+            // Each first-launch hint goes once its moment has passed.
+            if case .idle = old, new != .idle { dialHintSeen = true }
+            if case .focusComplete = old, new.completedFocus == nil { welcomeSeen = true }
+        }
+        .onChange(of: services.settings.length) { dialHintSeen = true }
         .task(id: stepBackWindow) { await stepBack(during: stepBackWindow) }
     }
 
@@ -147,7 +167,7 @@ struct FocusView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .measuredHeight($headerHeight)
                     .opacity(chromeOpacity)
-                DialFace(stage: engine.stage, size: side, celebration: services.celebrations)
+                DialFace(stage: engine.stage, size: side, celebration: services.celebrations, teaches: teachesDial)
                     .frame(maxWidth: .infinity)
                 sessionSlot
                     // Its natural height, whatever room the dial leaves: text
@@ -189,7 +209,7 @@ struct FocusView: View {
         GeometryReader { proxy in
             DialFace(stage: engine.stage,
                      size: max(0, min(proxy.size.width, proxy.size.height)),
-                     celebration: services.celebrations)
+                     celebration: services.celebrations, teaches: teachesDial)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minHeight: 160)
@@ -205,6 +225,13 @@ struct FocusView: View {
             switch engine.stage {
             case .idle:
                 VStack(spacing: Space.s) {
+                    if teachesDial {
+                        Text(Copy.dragToSet)
+                            .font(.retro(.meta))
+                            .foregroundStyle(Retro.inkSoft)
+                            .multilineTextAlignment(.center)
+                            .transition(.opacity)
+                    }
                     LengthChips()
                     nameField
                         .glassEffectID("session", in: glass)
@@ -219,6 +246,11 @@ struct FocusView: View {
                 VStack(spacing: Space.xs) {
                     CompletionSummary(focus: focus, day: services.today)
                     OvertimeChip(focus: focus)
+                    if welcomes {
+                        WelcomeLine()
+                            .padding(.top, Space.xs)
+                            .transition(.opacity)
+                    }
                 }
             }
         }

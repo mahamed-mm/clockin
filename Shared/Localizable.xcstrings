@@ -353,6 +353,9 @@
     "Done for now" : {
 
     },
+    "Drag the knob to set the time" : {
+
+    },
     "Early, with Finish now" : {
 
     },
@@ -568,6 +571,9 @@
     "Pause or Resume Focus" : {
 
     },
+    "Pause, +5 and History are there when you need them." : {
+
+    },
     "Paused" : {
 
     },
@@ -679,6 +685,9 @@
     "Show bedside clock" : {
 
     },
+    "Show first-launch hints again" : {
+
+    },
     "Shows the session, to rename or delete it" : {
 
     },
@@ -740,6 +749,9 @@
 
     },
     "Test timers" : {
+
+    },
+    "That's the whole app." : {
 
     },
     "The file couldn't be read." : {

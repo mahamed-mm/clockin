@@ -67,6 +67,12 @@ enum Copy {
         String(localized: "\(TimeFormat.spokenDuration(TimeInterval(minutes * 60))) over")
     }
 
+    /// First launch, under the dial.
+    static var dragToSet: String { String(localized: "Drag the knob to set the time") }
+    /// After the very first session.
+    static var wholeApp: String { String(localized: "That's the whole app.") }
+    static var wholeAppDetail: String { String(localized: "Pause, +5 and History are there when you need them.") }
+
     /// "+5 min" read aloud: "Add 5 minutes".
     static func extendSpoken(seconds: TimeInterval) -> String {
         String(localized: "Add \(TimeFormat.spokenDuration(seconds))")

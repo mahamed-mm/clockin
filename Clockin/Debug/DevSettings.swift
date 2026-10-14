@@ -29,6 +29,11 @@ struct DevMenu: View {
             } label: {
                 Label("Replay celebration", systemImage: "sparkles")
             }
+            Button {
+                Onboarding.reset()
+            } label: {
+                Label("Show first-launch hints again", systemImage: "hand.point.up.left")
+            }
             Menu {
                 ForEach(hapticEvents, id: \.0) { title, event in
                     Button(title) { services.debugReplay(event) }

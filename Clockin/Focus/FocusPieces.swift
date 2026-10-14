@@ -177,6 +177,9 @@ struct DialFace: View {
     var showsCountdown = true
     /// Today's session pills under the countdown (bedside shows its own).
     var showsPills = true
+    /// First launch: a ghost thumb shows how the knob turns.
+    var teaches = false
+    @AppStorage(Onboarding.dialHintKey) private var dialHintSeen = false
     @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The length under the finger while the knob is dragged; saved on release.
@@ -234,6 +237,10 @@ struct DialFace: View {
                 IdleKnobGlow(size: size, fraction: Double(idleMinutes) / 60)
                     .animation(Motion.snappy(reduceMotion), value: idleMinutes)
                     .transition(.opacity)
+                if teaches {
+                    GhostThumb(size: size, minutes: idleMinutes)
+                        .transition(.opacity)
+                }
             }
 
             if case .focusComplete = stage {
@@ -350,6 +357,7 @@ struct DialFace: View {
     private var lengthDrag: some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.dialSpace))
             .onChanged { drag in
+                dialHintSeen = true
                 let center = CGPoint(x: size / 2, y: size / 2)
                 let angle = DialLength.angle(of: drag.location, around: center)
                 // The drag starts on the knob, so it starts from the current
@@ -515,6 +523,80 @@ private struct IdleKnobGlow: View {
             .modifier(BreatheThrice(low: 0.08, high: 0.38, resting: 0.2))
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+    }
+}
+
+/// First launch: a faint thumb on the knob shows the dial turns, sweeping
+/// five minutes on and back three times, then resting there. Still with
+/// Reduce Motion. It never takes a touch.
+private struct GhostThumb: View {
+    let size: CGFloat
+    let minutes: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppServices.self) private var services
+    @State private var play = false
+
+    var body: some View {
+        let still = reduceMotion || services.power.isConstrained
+        thumb(sweep: 0)
+            .opacity(0)
+            .overlay {
+                if still {
+                    thumb(sweep: 0)
+                } else {
+                    Color.clear.keyframeAnimator(initialValue: 0.0, trigger: play) { _, sweep in
+                        thumb(sweep: sweep)
+                    } keyframes: { [speed = Motion.speed] _ in
+                        LinearKeyframe(0, duration: 0.8 * speed)
+                        CubicKeyframe(1, duration: 0.9 * speed)
+                        CubicKeyframe(1, duration: 0.25 * speed)
+                        CubicKeyframe(0, duration: 0.9 * speed)
+                        CubicKeyframe(0, duration: 0.5 * speed)
+                        CubicKeyframe(1, duration: 0.9 * speed)
+                        CubicKeyframe(1, duration: 0.25 * speed)
+                        CubicKeyframe(0, duration: 0.9 * speed)
+                        CubicKeyframe(0, duration: 0.5 * speed)
+                        CubicKeyframe(1, duration: 0.9 * speed)
+                        CubicKeyframe(1, duration: 0.25 * speed)
+                        CubicKeyframe(0, duration: 0.9 * speed)
+                        CubicKeyframe(0, duration: 0.5 * speed)
+                    }
+                    .onAppear { play.toggle() }
+                }
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    /// The fingertip on the knob, `sweep` of five minutes further round.
+    private nonisolated func thumb(sweep: Double) -> some View {
+        let angle = (Double(minutes) + 5 * sweep) / 60 * 2 * .pi
+        let radius = size / 2 * RetroDial.arcRadiusRatio(showsTicks: true)
+        let glyph = size * 0.13
+        return Image(systemName: "hand.point.up.left.fill")
+            .font(.system(size: glyph))
+            .foregroundStyle(Retro.ink.opacity(0.45))
+            // The fingertip is the glyph's top-left corner.
+            .offset(x: glyph * 0.42, y: glyph * 0.5)
+            .offset(x: radius * sin(angle), y: -radius * cos(angle))
+            .frame(width: size, height: size)
+    }
+}
+
+/// After the very first session: says that's all there is to it.
+struct WelcomeLine: View {
+    var body: some View {
+        VStack(spacing: Space.xxs) {
+            Text(Copy.wholeApp)
+                .retroFont(.headline)
+                .foregroundStyle(Retro.ink)
+            Text(Copy.wholeAppDetail)
+                .font(.retro(.meta))
+                .foregroundStyle(Retro.inkSoft)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 }
 

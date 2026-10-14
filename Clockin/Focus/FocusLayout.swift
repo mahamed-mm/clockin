@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 enum FocusLayout {
@@ -89,4 +90,40 @@ enum StepBack {
         guard start < wanted else { return nil }
         return DateInterval(start: start, end: wanted)
     }
+}
+
+/// First-launch teaching, done by the screen itself: a ghost thumb on the
+/// dial until the length is first set or a session starts, and one closing
+/// line after the very first session. Each shows once.
+enum Onboarding {
+    static let dialHintKey = "onboarding.dialHint"
+    static let welcomeKey = "onboarding.firstFinish"
+
+    /// At most two saved sessions: enough to tell a first launch and a first finish.
+    static var firstSessions: FetchDescriptor<FocusRecord> {
+        var descriptor = FetchDescriptor<FocusRecord>()
+        descriptor.fetchLimit = 2
+        return descriptor
+    }
+
+    /// While nothing has ever been saved, so people updating with History
+    /// never see it.
+    static func showsDialHint(seen: Bool, savedSessions: Int, stage: SessionStage) -> Bool {
+        guard !seen, savedSessions == 0, case .idle = stage else { return false }
+        return true
+    }
+
+    /// After the first session ever: the one just finished is all History has.
+    static func showsWelcome(seen: Bool, savedSessions: Int, stage: SessionStage) -> Bool {
+        guard !seen, savedSessions <= 1, case .focusComplete = stage else { return false }
+        return true
+    }
+
+    #if DEBUG
+    /// `-ResetOnboarding`, or the Dev menu: shows the hints again.
+    static func reset() {
+        UserDefaults.standard.removeObject(forKey: dialHintKey)
+        UserDefaults.standard.removeObject(forKey: welcomeKey)
+    }
+    #endif
 }

@@ -11,6 +11,7 @@ struct ClockinApp: App {
     init() {
         #if DEBUG
         DemoData.prepareFinishingSession()
+        if ProcessInfo.processInfo.arguments.contains("-ResetOnboarding") { Onboarding.reset() }
         #endif
         // Before launch finishes, so the end sound also plays while the app is open.
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
