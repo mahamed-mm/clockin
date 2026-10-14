@@ -57,6 +57,8 @@ final class AppServices: SessionEffects {
     /// Bumped on each completed focus session; drives the sunburst.
     private(set) var celebrations = 0
     private(set) var alertStatus: AlertStatus = .unknown
+    /// The end alarm is ringing right now.
+    private(set) var alarmRinging = false
     /// Start of the day the app shows as today. It moves at midnight, on time
     /// zone and clock changes, and on return to the foreground, so views that
     /// read it never keep showing yesterday while the app stays open.
@@ -182,7 +184,20 @@ final class AppServices: SessionEffects {
         }
         services.observeTimeChanges()
         services.power.observe()
+        services.watchAlarm()
         return services
+    }
+
+    /// Follows whether the end alarm is ringing, for Tick.
+    func watchAlarm() {
+        alarm.watchRinging { [weak self] ringing in self?.alarmRinging = ringing }
+    }
+
+    /// Stops the ringing alarm (Tick tapped while it rings).
+    func stopAlarm() {
+        guard alarmRinging else { return }
+        alarm.cancel()
+        alarmRinging = false
     }
 
     /// Midnight, time zone and DST changes, and the clock being set. These

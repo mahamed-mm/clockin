@@ -21,6 +21,12 @@ protocol EndAlarming: AnyObject {
     func cancel()
     /// Waits until a schedule still in flight has reached the system.
     func flush() async
+    /// Calls `report` whenever the alarm starts or stops ringing.
+    func watchRinging(_ report: @escaping @Sendable @MainActor (Bool) -> Void)
+}
+
+extension EndAlarming {
+    func watchRinging(_ report: @escaping @Sendable @MainActor (Bool) -> Void) {}
 }
 
 /// An AlarmKit alarm at the end of a running phase. It sounds through
@@ -34,6 +40,7 @@ final class EndAlarm: EndAlarming {
     /// a later cancel takes itself back.
     private var generation = 0
     private var inFlight: Task<Void, Never>?
+    private var watching: Task<Void, Never>?
 
     var permission: AlarmPermission { Self.permission(AlarmManager.shared.authorizationState) }
 
@@ -68,7 +75,21 @@ final class EndAlarm: EndAlarming {
         try? AlarmManager.shared.cancel(id: Self.id)
     }
 
+    func watchRinging(_ report: @escaping @Sendable @MainActor (Bool) -> Void) {
+        watching?.cancel()
+        watching = Task { await Self.watch(report) }
+    }
+
     // AlarmManager isn't Sendable, so its async calls are made away from the main actor.
+
+    /// Follows the system's alarms for as long as the app runs.
+    @concurrent
+    private nonisolated static func watch(_ report: @escaping @Sendable @MainActor (Bool) -> Void) async {
+        for await alarms in AlarmManager.shared.alarmUpdates {
+            let ringing = alarms.contains { $0.id == id && $0.state == .alerting }
+            await report(ringing)
+        }
+    }
 
     @concurrent
     private nonisolated static func askForPermission() async throws -> AlarmManager.AuthorizationState {

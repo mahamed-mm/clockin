@@ -119,11 +119,16 @@ enum Onboarding {
         return true
     }
 
+    /// When Tick was last on screen, for its hello after a week away.
+    static let tickLastSeenKey = "tick.lastSeen"
+
     #if DEBUG
     /// `-ResetOnboarding`, or the Dev menu: shows the hints again.
     static func reset() {
         UserDefaults.standard.removeObject(forKey: dialHintKey)
         UserDefaults.standard.removeObject(forKey: welcomeKey)
+        // Tick says hello again too.
+        UserDefaults.standard.removeObject(forKey: tickLastSeenKey)
     }
     #endif
 }

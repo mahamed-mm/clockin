@@ -429,8 +429,10 @@ struct DialFace: View {
 
 // MARK: - Tick
 
-/// Tick for the dial: the pose for where the session stands, which also
-/// changes on its own a minute past the bell (back to work) and at night.
+/// Tick for the dial: the state `TickDirector` picks for where the session
+/// stands (and the alarm), with its ring following the timer. It changes
+/// on its own a minute past the bell, at night, when dozing off, and for
+/// a set of four's streak after done.
 private struct DialTick: View {
     /// Below this the dial has no room to spare in its corner.
     static let minimumDial: CGFloat = 200
@@ -440,30 +442,122 @@ private struct DialTick: View {
     let crown: (label: String, action: () -> Void)?
     @Environment(SessionEngine.self) private var engine
     @Environment(AppServices.self) private var services
+    /// When Tick was last on screen, for hello after a week away.
+    @AppStorage(Onboarding.tickLastSeenKey) private var lastSeen: Double = 0
+    @State private var stageSince = Date.now
+    @State private var helloUntil: Date?
+    /// The state on show, which settles 0.3 s after a burst of changes.
+    @State private var shown: TickPose?
+    @State private var lastShown: Date?
+    /// The time Tick is drawn for, moved on by the schedule below.
+    @State private var clock = Date.now
 
     var body: some View {
-        let schedule = TickSchedule(wakeDates: wakeDates(after: .now))
-        TimelineView(schedule) { context in
-            TickView(pose: TickPose.forStage(stage, overtime: engine.overtime(at: context.date),
-                                             hour: services.calendar.component(.hour, from: context.date)),
-                     celebration: celebration, crown: crown)
-        }
-        .id(schedule)
+        let schedule = TickSchedule(countdownEnd: stage.runningEnd, interval: ringStep,
+                                    wakeDates: wakeDates(after: .now))
+        tick(at: clock)
+            // The schedule only moves the clock on, so Tick itself is never
+            // rebuilt when the schedule changes: its springs carry on.
+            .background {
+                TimelineView(schedule) { context in
+                    Color.clear.onChange(of: context.date, initial: true) { _, date in clock = date }
+                }
+                .id(schedule)
+            }
+        .onChange(of: StageKey(stage)) { stageSince = .now; clock = .now }
+        .onAppear(perform: greet)
+        .onDisappear { lastSeen = Date.now.timeIntervalSince1970 }
     }
 
-    /// A minute past the bell, and when night starts or ends while idle.
+    private func tick(at date: Date) -> some View {
+        let pose = director(at: date).pose(at: date)
+        let dismiss: (() -> Void)? = services.alarmRinging ? { services.stopAlarm() } : nil
+        return TickView(pose: shown ?? pose, progress: .fixed(TickPose.ringProgress(for: stage, at: date)),
+                        celebration: celebration, crown: crown, onDismiss: dismiss)
+            .onChange(of: pose, initial: true) { show(pose) }
+    }
+
+    private func director(at date: Date) -> TickDirector {
+        TickDirector(stage: stage, alarmRinging: services.alarmRinging, overtime: engine.overtime(at: date),
+                     hour: services.calendar.component(.hour, from: date), stageSince: stageSince,
+                     helloUntil: helloUntil)
+    }
+
+    /// Shows a change at once, unless one showed under 0.3 s ago; then the
+    /// latest shows when that's up.
+    private func show(_ pose: TickPose) {
+        let now = Date.now
+        let at = TickDirector.showTime(for: now, lastShown: lastShown)
+        guard at > now else {
+            shown = pose
+            lastShown = now
+            return
+        }
+        Task {
+            try? await Task.sleep(for: .seconds(at.timeIntervalSince(now)))
+            let latest = director(at: .now).pose(at: .now)
+            shown = latest
+            lastShown = .now
+        }
+    }
+
+    /// Hello on first launch or after a week away.
+    private func greet() {
+        let now = Date.now
+        if TickDirector.greets(lastSeen: lastSeen == 0 ? nil : Date(timeIntervalSince1970: lastSeen), now: now) {
+            helloUntil = now.addingTimeInterval(TickDirector.helloLength)
+        }
+        lastSeen = now.timeIntervalSince1970
+    }
+
+    /// Seconds between ring steps: each moves the arc under half a point
+    /// on Tick's 100-point ring, so it looks smooth at very little cost.
+    private var ringStep: TimeInterval {
+        guard case .active(let session) = stage else { return 60 }
+        return max(1, session.plannedDuration * 0.5 / 170)
+    }
+
+    /// A minute past the bell, night starting or ending while idle, and the
+    /// director's own changes (hello ending, dozing off, the streak).
     private func wakeDates(after date: Date) -> [Date] {
+        var dates: [Date]
         switch stage {
         case .idle:
             let calendar = services.calendar
-            return [22, 6].compactMap {
+            dates = [22, 6].compactMap {
                 calendar.nextDate(after: date, matching: DateComponents(hour: $0, minute: 0), matchingPolicy: .nextTime)
             }
         case .focusComplete:
-            return engine.overtimeChanges(after: date).prefix(1).map { $0 }
+            dates = engine.overtimeChanges(after: date).prefix(1).map { $0 }
         case .active:
-            return []
+            dates = []
         }
+        if let change = director(at: date).nextChange(after: date) { dates.append(change) }
+        return dates
+    }
+}
+
+/// Which stage it is, not where in it: changes when a session starts,
+/// switches phase, or finishes, not on every pause.
+private struct StageKey: Equatable {
+    let kind: Int
+    let id: UUID?
+    let phase: SessionPhase?
+
+    init(_ stage: SessionStage) {
+        switch stage {
+        case .idle: (kind, id, phase) = (0, nil, nil)
+        case .active(let session): (kind, id, phase) = (1, session.id, session.phase)
+        case .focusComplete(let focus): (kind, id, phase) = (2, focus.id, nil)
+        }
+    }
+}
+
+private extension SessionStage {
+    /// The end of a running phase, for the ring's steps.
+    var runningEnd: Date? {
+        if case .active(let session) = self { return session.endDate }
+        return nil
     }
 }
 

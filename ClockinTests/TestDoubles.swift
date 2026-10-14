@@ -103,6 +103,9 @@ final class SpyAlarm: EndAlarming {
     func schedule(for session: ActiveSession) { calls.append("schedule") }
     func cancel() { calls.append("cancel") }
     func flush() async { flushes += 1 }
+    /// Stands in for the system: call it to start or stop the ringing.
+    var ring: (@Sendable @MainActor (Bool) -> Void)?
+    func watchRinging(_ report: @escaping @Sendable @MainActor (Bool) -> Void) { ring = report }
 }
 
 @MainActor
