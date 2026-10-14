@@ -106,6 +106,15 @@ struct HistoryChangesTests {
         #expect(widgets.reloads == reloads + 1)
     }
 
+    @Test func theLockScreenShowsTheNamesSymbolAndANewPick() {
+        let services = makeServices()
+        services.engine.start(name: "Chemistry")
+        #expect(liveActivity.lastSymbol == "flask.fill")
+
+        services.setSymbol("lightbulb.fill", for: "chemistry")
+        #expect(liveActivity.lastSymbol == "lightbulb.fill")
+    }
+
     @Test func symbolsForNamesWithNoSessionAreForgotten() throws {
         let services = makeServices()
         services.lastSessionName = { "Typed but not started" }

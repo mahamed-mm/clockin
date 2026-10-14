@@ -6,6 +6,8 @@ struct TodayEntry: TimelineEntry {
     let date: Date
     let stats: TodayStats
     let active: ActiveSession?
+    /// The running session name's symbol.
+    var symbol = SymbolCatalog.unnamed
 }
 
 struct TodayProvider: TimelineProvider {
@@ -33,9 +35,11 @@ struct TodayProvider: TimelineProvider {
         -> [TodayEntry] {
         let snapshot = WidgetSnapshotStore().load() ?? fallbackSnapshot(state: state)
         let active = state.active
+        let symbol = DefaultsSymbolBookStore().load().symbol(for: active?.name ?? "")
         return dates.map { date in
             let stillRunning = active.flatMap { $0.isFinished(at: date) ? nil : $0 }
-            return TodayEntry(date: date, stats: snapshot.stats(at: date, active: active), active: stillRunning)
+            return TodayEntry(date: date, stats: snapshot.stats(at: date, active: active), active: stillRunning,
+                              symbol: symbol)
         }
     }
 
@@ -208,6 +212,12 @@ struct TodayWidgetView: View {
         HStack(spacing: 4) {
             Circle().fill(Retro.tint(for: active.phase)).frame(width: 6, height: 6)
                 .accessibilityHidden(true)
+            if active.phase == .focus {
+                Image(systemName: entry.symbol)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Retro.inkSoft)
+                    .accessibilityHidden(true)
+            }
             Text(active.phase == .focus ? Copy.displayName(active.name) : Copy.rest)
                 .lineLimit(1)
             Spacer(minLength: 2)

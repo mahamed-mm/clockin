@@ -619,5 +619,17 @@ struct SessionPillsTests {
         #expect(state.completedToday == nil)
         #expect(state.breakDuration == nil)
         #expect(state.phase == .focus)
+        #expect(state.symbol == nil)
+        #expect(state.nameSymbol == SymbolCatalog.unnamed)
+    }
+
+    @Test func aBreakShowsTheCupWhateverTheSymbol() {
+        var state = FocusActivityAttributes.ContentState(
+            session: ActiveSession(id: UUID(), name: "Chemistry", phase: .rest, plannedDuration: 300,
+                                   focusStartedAt: .now, state: .running(endDate: .now)),
+            symbol: "flask.fill")
+        #expect(state.nameSymbol == "cup.and.saucer.fill")
+        state.phase = .focus
+        #expect(state.nameSymbol == "flask.fill")
     }
 }

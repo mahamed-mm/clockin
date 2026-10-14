@@ -1005,6 +1005,7 @@ private struct AdjustableLength: ViewModifier {
 struct SessionChip: View {
     let session: ActiveSession
     @Environment(SessionEngine.self) private var engine
+    @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -1015,8 +1016,10 @@ struct SessionChip: View {
             let canExtend = engine.canExtend(at: context.date)
             HStack(spacing: Space.s) {
                 HStack(spacing: Space.s) {
-                    Image(systemName: session.phase == .focus ? "book.closed.fill" : "cup.and.saucer.fill")
-                        .font(.footnote.weight(.semibold))
+                    // At the name field's symbol's place, so the morph between them reads as one.
+                    Image(systemName: session.phase == .focus ? services.symbol(for: session.name)
+                                                              : SessionPhase.rest.symbol)
+                        .font(.body.weight(.semibold))
                         .foregroundStyle(Retro.tint(for: session.phase))
                         .contentTransition(.symbolEffect(.replace))
                         .accessibilityHidden(true)
@@ -1262,6 +1265,7 @@ struct BreakStyleChips: View {
 struct RecentNames: View {
     let typed: String
     let pick: (String) -> Void
+    @Environment(AppServices.self) private var services
     @Query(RecentNames.newestFirst) private var records: [FocusRecord]
 
     private static var newestFirst: FetchDescriptor<FocusRecord> {
@@ -1277,11 +1281,17 @@ struct RecentNames: View {
                 HStack(spacing: Space.xs) {
                     ForEach(names, id: \.self) { name in
                         Button { pick(name) } label: {
-                            Text(name)
-                                .font(.retro(.meta))
-                                .foregroundStyle(Retro.ink)
-                                .lineLimit(1)
-                                .retroChip()
+                            HStack(spacing: Space.xxs) {
+                                Image(systemName: services.symbol(for: name))
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Retro.inkSoft)
+                                    .accessibilityHidden(true)
+                                Text(name)
+                                    .font(.retro(.meta))
+                                    .foregroundStyle(Retro.ink)
+                                    .lineLimit(1)
+                            }
+                            .retroChip()
                         }
                         .buttonStyle(.plain)
                         .accessibilityHint(String(localized: "Uses this name"))
@@ -1305,6 +1315,7 @@ struct CompletionSummary: View {
     private let day: Date
     @Query private var today: [FocusRecord]
     @Environment(SessionEngine.self) private var engine
+    @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -1322,7 +1333,7 @@ struct CompletionSummary: View {
         layout {
             stat(TimeFormat.duration(focus.focusSeconds), "Focused", index: 0)
             if !stacked { divider }
-            stat(Copy.displayName(focus.name), "Session", index: 1)
+            stat(Copy.displayName(focus.name), "Session", symbol: services.symbol(for: focus.name), index: 1)
             if !stacked { divider }
             stat(TimeFormat.duration(total), "Today", index: 2)
         }
@@ -1338,14 +1349,22 @@ struct CompletionSummary: View {
         Rectangle().fill(Retro.ink.opacity(0.12)).frame(width: 1, height: 34)
     }
 
-    private func stat(_ value: String, _ caption: LocalizedStringKey, index: Int) -> some View {
+    private func stat(_ value: String, _ caption: LocalizedStringKey, symbol: String? = nil,
+                      index: Int) -> some View {
         VStack(spacing: Space.xxs) {
-            Text(value)
-                .retroFont(.headline)
-                .foregroundStyle(Retro.ink)
-                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
-                .minimumScaleFactor(0.7)
-                .multilineTextAlignment(.center)
+            HStack(spacing: Space.xxs) {
+                if let symbol {
+                    Image(systemName: symbol)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Retro.inkSoft)
+                }
+                Text(value)
+                    .retroFont(.headline)
+                    .foregroundStyle(Retro.ink)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+                    .minimumScaleFactor(0.7)
+                    .multilineTextAlignment(.center)
+            }
             Text(caption).retroLabel()
         }
         // Clear of the dividers, so a long name shrinks before it touches them.

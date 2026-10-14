@@ -4,7 +4,7 @@ import Foundation
 /// What AppServices needs from the Live Activity, so tests can stand in for it.
 @MainActor
 protocol LiveActivityControlling: AnyObject {
-    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval)
+    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String)
     /// Ends the session's card on a "focus done" note naming the break it
     /// earned. With `lingers` it stays on the Lock Screen until the user
     /// moves on; without, it goes at once, for a completion only noticed
@@ -24,9 +24,9 @@ final class LiveActivityController: LiveActivityControlling {
     /// before it, so an end can never overtake the request queued after it.
     private var queue: Task<Void, Never>?
 
-    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval) {
+    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String) {
         let state = FocusActivityAttributes.ContentState(session: session, completedToday: completedToday,
-                                                         breakDuration: breakDuration)
+                                                         breakDuration: breakDuration, symbol: symbol)
         let content = ActivityContent(state: state, staleDate: session.endDate)
         // Capped here too, for a long name saved by a build that didn't cap.
         let attributes = FocusActivityAttributes(sessionName: ActiveSession.cleanName(session.name),

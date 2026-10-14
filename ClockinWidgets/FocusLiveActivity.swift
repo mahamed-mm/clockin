@@ -33,9 +33,15 @@ struct FocusLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.center) {
-                    Text(Copy.displayName(context.attributes.sessionName))
-                        .retroFont(.headline)
-                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Image(systemName: state.nameSymbol)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                        Text(Copy.displayName(context.attributes.sessionName))
+                            .retroFont(.headline)
+                            .lineLimit(1)
+                    }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(spacing: 8) {
@@ -128,10 +134,16 @@ private struct LockScreenFocusView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(cardStatus(state, done: done))
                         .retroLabel()
-                    Text(Copy.displayName(context.attributes.sessionName))
-                        .retroFont(.headline)
-                        .foregroundStyle(Retro.ink)
-                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        Image(systemName: state.nameSymbol)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Retro.inkSoft)
+                            .accessibilityHidden(true)
+                        Text(Copy.displayName(context.attributes.sessionName))
+                            .retroFont(.headline)
+                            .foregroundStyle(Retro.ink)
+                            .lineLimit(1)
+                    }
                     if done {
                         Text(state.phase == .focus
                              ? Copy.breakLine(seconds: state.breakDuration ?? Preset.classic.shortBreak)

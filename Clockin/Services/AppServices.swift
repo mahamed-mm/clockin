@@ -733,7 +733,8 @@ final class AppServices: SessionEffects {
 
     private func syncLiveActivity(_ session: ActiveSession) {
         liveActivity.sync(with: session, completedToday: completedToday,
-                          breakDuration: session.nextBreakSeconds ?? plan.shortBreak)
+                          breakDuration: session.nextBreakSeconds ?? plan.shortBreak,
+                          symbol: symbol(for: session.name))
     }
 
     private func refreshWidgets() {
@@ -772,7 +773,7 @@ final class AppServices: SessionEffects {
 /// Does nothing, for previews.
 @MainActor
 private final class SilentEffects: LiveActivityControlling, EndNotifying, WidgetReloading, CompletionFeedback {
-    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval) {}
+    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String) {}
     func showFocusDone(completedToday: Int, breakDuration: TimeInterval, lingers: Bool) {}
     func endAll() {}
     func areActivitiesEnabled() async -> Bool { true }

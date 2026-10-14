@@ -332,7 +332,10 @@ private struct HistoryWeek: View {
 /// TIDE-style log row: time, name, minutes.
 private struct SessionRow: View {
     let record: FocusRecord
+    @Environment(AppServices.self) private var services
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// Every symbol in the same width, so names line up.
+    @ScaledMetric(relativeTo: .footnote) private var symbolWidth: CGFloat = 22
 
     var body: some View {
         // Time, name and minutes in a row, or stacked at large text sizes
@@ -346,10 +349,17 @@ private struct SessionRow: View {
                 .font(.retro(.meta))
                 .foregroundStyle(Retro.inkSoft)
                 .frame(minWidth: 52, alignment: .leading)
-            Text(Copy.displayName(record.name))
-                .retroFont(.headline)
-                .foregroundStyle(Retro.ink)
-                .lineLimit(stacked ? nil : 1)
+            HStack(alignment: .firstTextBaseline, spacing: Space.xxs) {
+                Image(systemName: services.symbol(for: record.name))
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Retro.inkSoft)
+                    .frame(width: symbolWidth)
+                Text(Copy.displayName(record.name))
+                    .retroFont(.headline)
+                    .foregroundStyle(Retro.ink)
+                    .lineLimit(stacked ? nil : 1)
+                    .minimumScaleFactor(stacked ? 1 : 0.85)
+            }
             if !stacked { Spacer(minLength: 8) }
             Text(TimeFormat.duration(record.focusSeconds))
                 .retroFont(.headline)

@@ -15,8 +15,16 @@ struct FocusActivityAttributes: ActivityAttributes {
         /// Length of the break that follows a focus phase, for the "done" copy.
         /// Comes from the app, which knows the real setting. Optional for older activities.
         var breakDuration: TimeInterval?
+        /// The session name's symbol. In the state rather than the attributes
+        /// so a new pick shows at once. Optional for older activities.
+        var symbol: String?
 
         var isPaused: Bool { pausedRemaining != nil }
+
+        /// Beside the name: the session's symbol, or the cup on a break.
+        var nameSymbol: String {
+            phase == .focus ? (symbol ?? SymbolCatalog.unnamed) : SessionPhase.rest.symbol
+        }
 
         /// Interval used by timer text and progress views.
         var timerRange: ClosedRange<Date> {
@@ -24,11 +32,13 @@ struct FocusActivityAttributes: ActivityAttributes {
             return end.addingTimeInterval(-plannedDuration)...end
         }
 
-        init(session: ActiveSession, completedToday: Int? = nil, breakDuration: TimeInterval? = nil) {
+        init(session: ActiveSession, completedToday: Int? = nil, breakDuration: TimeInterval? = nil,
+             symbol: String? = nil) {
             phase = session.phase
             plannedDuration = session.plannedDuration
             self.completedToday = completedToday
             self.breakDuration = breakDuration
+            self.symbol = symbol
             switch session.state {
             case .running(let end):
                 endDate = end
