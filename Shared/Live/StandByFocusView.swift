@@ -21,6 +21,12 @@ struct StandByFocusView: View {
         HStack(alignment: .center, spacing: 20) {
             LiveDial(reading: reading, phase: state.phase, lineWidthRatio: 0.09)
                 .frame(width: 116, height: 116)
+                // Tick leans on the dial, as in the app.
+                .overlay(alignment: .bottomTrailing) {
+                    TickBadge(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done))
+                        .frame(width: 46, height: 46)
+                        .offset(x: 16, y: 10)
+                }
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(status)

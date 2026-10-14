@@ -16,9 +16,8 @@ struct AlarmLiveActivity: Widget {
             let tint = context.attributes.tintColor
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Image(systemName: "alarm.waves.left.and.right.fill")
-                        .font(.title2)
-                        .foregroundStyle(tint)
+                    TickBadge(pose: .ringing)
+                        .frame(width: 44, height: 44)
                         .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.center) {
@@ -32,8 +31,9 @@ struct AlarmLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                Image(systemName: "alarm.waves.left.and.right.fill")
-                    .foregroundStyle(tint)
+                TickBadge(pose: .ringing)
+                    .frame(width: 22, height: 22)
+                    .accessibilityElement()
                     .accessibilityLabel(Copy.ringing)
             } compactTrailing: {
                 Text(Copy.ringing)
@@ -55,12 +55,8 @@ private struct RingingAlarmView: View {
 
     var body: some View {
         HStack(spacing: Space.m) {
-            Image(systemName: "alarm.waves.left.and.right.fill")
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(tint)
-                .frame(width: 52, height: 52)
-                .background(tint.opacity(0.14), in: .circle)
-                .accessibilityHidden(true)
+            TickBadge(pose: .ringing)
+                .frame(width: 56, height: 56)
             VStack(alignment: .leading, spacing: Space.xxs) {
                 Text(Copy.ringing)
                     .retroLabel()

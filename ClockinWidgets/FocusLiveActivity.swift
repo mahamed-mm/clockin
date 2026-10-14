@@ -16,10 +16,15 @@ struct FocusLiveActivity: Widget {
             let done = isDone(context)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Label(state.phase.label, systemImage: state.phase.symbol)
-                        .font(.retro(.label))
-                        .foregroundStyle(tint)
-                        .padding(.leading, 4)
+                    Label {
+                        Text(state.phase.label)
+                    } icon: {
+                        TickBadge(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done))
+                            .frame(width: 26, height: 26)
+                    }
+                    .font(.retro(.label))
+                    .foregroundStyle(tint)
+                    .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if !done {
@@ -44,8 +49,10 @@ struct FocusLiveActivity: Widget {
                     .padding(.horizontal, 8)
                 }
             } compactLeading: {
-                Image(systemName: state.phase.symbol)
-                    .foregroundStyle(tint)
+                // Tick's face: its eyes and ring say how things stand.
+                TickBadge(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done))
+                    .frame(width: 22, height: 22)
+                    .accessibilityElement()
                     .accessibilityLabel(cardStatus(state, done: done))
             } compactTrailing: {
                 FocusCountdown(reading: TimerReading(state: state, done: done))
@@ -120,6 +127,11 @@ private struct LockScreenFocusView: View {
             HStack(alignment: .center, spacing: 14) {
                 LiveDial(reading: TimerReading(state: state, done: done), phase: state.phase)
                     .frame(width: 76, height: 76)
+                    .overlay(alignment: .bottomTrailing) {
+                        TickBadge(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done))
+                            .frame(width: 30, height: 30)
+                            .offset(x: 9, y: 7)
+                    }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(cardStatus(state, done: done))
                         .retroLabel()

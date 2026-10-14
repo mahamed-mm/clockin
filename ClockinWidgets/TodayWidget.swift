@@ -146,10 +146,9 @@ struct TodayWidgetView: View {
         HStack(spacing: 18) {
             ZStack {
                 miniDial
-                Image(systemName: entry.active?.phase == .rest ? "cup.and.saucer.fill" : "timer")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Retro.ink)
-                    .accessibilityHidden(true)
+                TickBadge(pose: TickPose.forWidget(entry.active, at: entry.date,
+                                                   hour: Calendar.current.component(.hour, from: entry.date)))
+                    .frame(width: 50, height: 50)
             }
             .frame(width: 104, height: 104)
             VStack(alignment: .leading, spacing: 6) {
