@@ -181,6 +181,8 @@ struct DialFace: View {
     var teaches = false
     /// Tick, leaning on the dial's lower right.
     var showsMascot = true
+    /// What Tick's crown does, and its name for VoiceOver.
+    var crown: (label: String, action: () -> Void)? = nil
     @AppStorage(Onboarding.dialHintKey) private var dialHintSeen = false
     @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -207,6 +209,16 @@ struct DialFace: View {
                 .modifier(AdjustableLength(enabled: setsLength))
                 // Bedside prints the countdown beside the dial; read it there, once.
                 .accessibilityHidden(!showsCountdown)
+        }
+        // Tick leans on the rim in the square's empty corner, so the layout
+        // around the dial is untouched. Too cramped on small dials. Its own
+        // element, beside the dial's, so its crown can be used with VoiceOver.
+        .overlay {
+            if showsMascot, size >= DialTick.minimumDial {
+                DialTick(stage: stage, celebration: celebration, crown: crown)
+                    .frame(width: size * 0.3, height: size * 0.3)
+                    .position(x: size * 0.9, y: size * 0.88)
+            }
         }
     }
 
@@ -263,14 +275,6 @@ struct DialFace: View {
 
             center(session: session)
                 .padding(size * 0.25)
-
-            // Tick leans on the rim in the square's empty corner, so the
-            // layout around the dial is untouched. Too cramped on small dials.
-            if showsMascot, size >= DialTick.minimumDial {
-                DialTick(stage: stage, celebration: celebration)
-                    .frame(width: size * 0.3, height: size * 0.3)
-                    .position(x: size * 0.9, y: size * 0.88)
-            }
         }
         .frame(width: size, height: size)
         .coordinateSpace(.named(Self.dialSpace))
@@ -433,6 +437,7 @@ private struct DialTick: View {
 
     let stage: SessionStage
     let celebration: Int
+    let crown: (label: String, action: () -> Void)?
     @Environment(SessionEngine.self) private var engine
     @Environment(AppServices.self) private var services
 
@@ -441,7 +446,7 @@ private struct DialTick: View {
         TimelineView(schedule) { context in
             TickView(pose: TickPose.forStage(stage, overtime: engine.overtime(at: context.date),
                                              hour: services.calendar.component(.hour, from: context.date)),
-                     celebration: celebration)
+                     celebration: celebration, crown: crown)
         }
         .id(schedule)
     }

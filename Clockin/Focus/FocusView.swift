@@ -167,7 +167,8 @@ struct FocusView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .measuredHeight($headerHeight)
                     .opacity(chromeOpacity)
-                DialFace(stage: engine.stage, size: side, celebration: services.celebrations, teaches: teachesDial)
+                DialFace(stage: engine.stage, size: side, celebration: services.celebrations, teaches: teachesDial,
+                         crown: tickCrown)
                     .frame(maxWidth: .infinity)
                 sessionSlot
                     // Its natural height, whatever room the dial leaves: text
@@ -209,7 +210,7 @@ struct FocusView: View {
         GeometryReader { proxy in
             DialFace(stage: engine.stage,
                      size: max(0, min(proxy.size.width, proxy.size.height)),
-                     celebration: services.celebrations, teaches: teachesDial)
+                     celebration: services.celebrations, teaches: teachesDial, crown: tickCrown)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minHeight: 160)
@@ -333,6 +334,12 @@ struct FocusView: View {
         case .active(let session): Retro.tint(for: session.phase)
         case .focusComplete: Retro.avocado
         }
+    }
+
+    /// Tick's crown is the start button: it does what the big button does.
+    private var tickCrown: (label: String, action: () -> Void) {
+        let (label, _, action) = primaryAction
+        return (label, action)
     }
 
     private var primaryAction: (String, String, () -> Void) {

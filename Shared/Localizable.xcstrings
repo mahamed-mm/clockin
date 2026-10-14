@@ -59,6 +59,16 @@
         }
       }
     },
+    "%@, %lld points, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld points, %3$@"
+          }
+        }
+      }
+    },
     "%@, one in progress" : {
 
     },
@@ -224,10 +234,16 @@
     "A dimmed landscape clock for the nightstand. Show it during a session, even with orientation lock on." : {
 
     },
+    "A set of four done" : {
+
+    },
     "About" : {
 
     },
     "Add %@" : {
+
+    },
+    "Alarm ringing" : {
 
     },
     "Alarms are off, so Clockin can only notify you. Turn on" : {
@@ -251,6 +267,9 @@
     "All on %@ this week." : {
 
     },
+    "All states" : {
+
+    },
     "Already focusing. %@." : {
 
     },
@@ -267,6 +286,9 @@
 
     },
     "Asked on your first start" : {
+
+    },
+    "Asleep" : {
 
     },
     "At work" : {
@@ -354,6 +376,9 @@
 
     },
     "Dismiss" : {
+
+    },
+    "Done" : {
 
     },
     "Done for now" : {
@@ -457,6 +482,9 @@
         }
       }
     },
+    "Focusing" : {
+
+    },
     "Focusing for %@." : {
 
     },
@@ -524,6 +552,9 @@
 
     },
     "Name" : {
+
+    },
+    "Next" : {
 
     },
     "Next week" : {
@@ -610,6 +641,9 @@
     "Planned" : {
 
     },
+    "Previous" : {
+
+    },
     "Previous week" : {
 
     },
@@ -626,6 +660,9 @@
 
     },
     "Recent names" : {
+
+    },
+    "Reduce Motion" : {
 
     },
     "Rename" : {
@@ -649,6 +686,9 @@
     "Resume Focus" : {
 
     },
+    "Ring from the sheet" : {
+
+    },
     "Ring when time's up" : {
 
     },
@@ -665,6 +705,9 @@
 
     },
     "Save to Apple Health" : {
+
+    },
+    "Saying hello" : {
 
     },
     "Session" : {
@@ -715,6 +758,9 @@
     "Slow animations ×4" : {
 
     },
+    "Slow motion ×4" : {
+
+    },
     "Spread across the day this week; %@ was your longest day." : {
 
     },
@@ -748,13 +794,22 @@
     "Starts focus, pauses or resumes it, or starts the break." : {
 
     },
+    "State" : {
+
+    },
     "Stop" : {
 
     },
     "Stop Focus" : {
 
     },
+    "Stop alarm" : {
+
+    },
     "Stopped" : {
+
+    },
+    "Stopped early" : {
 
     },
     "Stopped. %@ of focus kept." : {
@@ -787,10 +842,19 @@
     "This week" : {
 
     },
+    "Tick" : {
+
+    },
+    "Tick gallery" : {
+
+    },
     "Time for a %lld-minute break." : {
 
     },
     "Time for a %lld-second break." : {
+
+    },
+    "Time left" : {
 
     },
     "Time's up" : {

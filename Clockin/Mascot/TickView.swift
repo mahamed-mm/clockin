@@ -20,6 +20,7 @@ private extension TickMotion {
 struct TickLoopSchedule: TimelineSchedule {
     let loops: TickLoops
     let since: Date
+    let pokedAt: Date?
     let paused: Bool
     /// The debug menu's slow motion.
     let speed: Double
@@ -33,8 +34,9 @@ struct TickLoopSchedule: TimelineSchedule {
                 return date
             }
             let frame = date.timeIntervalSince(since) / speed + 1 / 30
-            // The face swaps behind a blink in the first 0.18 s.
-            let soonest = frame < 0.2 ? frame : loops.nextMovement(from: frame)
+            // The face swaps behind a blink in the first 0.18 s; a poke lasts 0.6 s.
+            let poking = pokedAt.map { date.timeIntervalSince($0) / speed < TickTouch.pokeLength } ?? false
+            let soonest = frame < 0.2 || poking ? frame : loops.nextMovement(from: frame)
             next = since.addingTimeInterval(soonest * speed)
             return date
         }
@@ -52,13 +54,18 @@ enum TickProgress: Equatable {
 /// body to the new pose, the face changes behind a blink, and each state
 /// has its idle loop. The loops stop when Tick is off screen, the app is
 /// in the background, the phone is saving power, or Reduce Motion is on
-/// (then states cross-fade). Decorative: the dial beside it is what
-/// VoiceOver reads.
+/// (then states cross-fade). Its crown works the timer, a tap on its body
+/// makes it giggle, and while ringing any tap stops the alarm.
 struct TickView: View {
     let pose: TickPose
     var progress: TickProgress = .sheet
     /// Increments when a focus session completes, for the "ding" hop.
     var celebration = 0
+    /// What the crown does (start, pause, resume), and its name for
+    /// VoiceOver. Without it the crown is just part of Tick.
+    var crown: (label: String, action: () -> Void)? = nil
+    /// Stops the alarm, while ringing.
+    var onDismiss: (() -> Void)? = nil
 
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @Environment(\.tickReduceMotion) private var galleryReduceMotion
@@ -75,6 +82,11 @@ struct TickView: View {
     /// happen, not on showing or coming back from the background.
     @State private var entering = false
     @State private var activeSince = Date.now
+    /// The crown held down.
+    @State private var pressing = false
+    @State private var crownTaps = 0
+    @State private var pokedAt: Date?
+    @State private var pokes = 0
     @State private var seed = Double.random(in: 0..<100)
 
     private var reduceMotion: Bool { systemReduceMotion || galleryReduceMotion }
@@ -85,15 +97,17 @@ struct TickView: View {
     var body: some View {
         Group {
             if still {
-                // Cross-fades between stills.
-                figure(motion: .still, face: TickFace(pose))
-                    .id(pose)
-                    .transition(.opacity)
+                // Cross-fades between stills; a poke still changes the face.
+                TimelineView(.explicit(pokedAt.map { [$0, $0.addingTimeInterval(TickTouch.pokeLength)] } ?? [])) { context in
+                    figure(motion: .still, face: face(at: context.date).0)
+                }
+                .id(pose)
+                .transition(.opacity)
             } else {
                 // Frames only while something moves (30 a second), none between.
-                TimelineView(TickLoopSchedule(loops: loops, since: since, paused: paused, speed: Motion.speed)) { context in
+                TimelineView(TickLoopSchedule(loops: loops, since: since, pokedAt: pokedAt, paused: paused, speed: Motion.speed)) { context in
                     let elapsed = context.date.timeIntervalSince(since) / Motion.speed
-                    let motion = paused ? TickMotion.still : loops.motion(at: elapsed)
+                    let motion = paused ? TickMotion.still : withPoke(loops.motion(at: elapsed), at: context.date)
                     let (face, swapBlink) = face(at: context.date)
                     GeometryReader { proxy in
                         let side = min(proxy.size.width, proxy.size.height)
@@ -118,6 +132,11 @@ struct TickView: View {
             }
         }
         .animation(still ? Motion.calm(true) : .spring(duration: 0.45 * Motion.speed, bounce: 0.25), value: pose)
+        .animation(.spring(duration: 0.22, bounce: 0.45), value: pressing)
+        .overlay { touchAreas }
+        .sensoryFeedback(.impact(weight: .light), trigger: crownTaps)
+        .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.7), trigger: pokes)
+        .modifier(TickAccessibility(pose: pose, crown: crown, onDismiss: onDismiss))
         .onChange(of: pose) { old, _ in
             since = .now
             facePose = old
@@ -137,8 +156,63 @@ struct TickView: View {
         .onAppear { onScreen = true }
         .onDisappear { onScreen = false }
 
-        .allowsHitTesting(false)
+    }
+
+    // MARK: Touch
+
+    /// The crown and the body take touches, each at least 44 pt; while
+    /// ringing, all of Tick does.
+    private var touchAreas: some View {
+        GeometryReader { proxy in
+            let side = min(proxy.size.width, proxy.size.height)
+            let unit = side / 100
+            let origin = CGPoint(x: (proxy.size.width - side) / 2, y: (proxy.size.height - side) / 2)
+            let rig = TickRig(pose)
+            if pose == .ringing {
+                Button { touch(.body) } label: { Color.clear.contentShape(.rect) }
+                    .buttonStyle(TickPressStyle(pressing: .constant(false)))
+            } else {
+                let body = TickTouch.bodyCenter(rig)
+                Button { touch(.body) } label: {
+                    Circle().fill(.clear).contentShape(.circle)
+                        .frame(width: max(44, 62 * unit), height: max(44, 62 * unit))
+                }
+                .buttonStyle(TickPressStyle(pressing: .constant(false)))
+                .position(x: origin.x + body.x * unit, y: origin.y + body.y * unit)
+
+                let crownPoint = TickTouch.crownCenter(rig)
+                Button { touch(.crown) } label: {
+                    Circle().fill(.clear).contentShape(.circle)
+                        .frame(width: max(44, 26 * unit), height: max(44, 26 * unit))
+                }
+                .buttonStyle(TickPressStyle(pressing: crown == nil ? .constant(false) : $pressing))
+                .position(x: origin.x + crownPoint.x * unit, y: origin.y + crownPoint.y * unit)
+            }
+        }
         .accessibilityHidden(true)
+    }
+
+    private func touch(_ region: TickTouch.Region) {
+        switch TickTouch.action(for: region, pose: pose, crownWorks: crown != nil) {
+        case .dismissAlarm:
+            onDismiss?()
+        case .crown:
+            crownTaps += 1
+            crown?.action()
+        case .poke:
+            pokedAt = .now
+            pokes += 1
+        }
+    }
+
+    /// A poke adds a quick squish.
+    private func withPoke(_ motion: TickMotion, at date: Date) -> TickMotion {
+        guard let pokedAt else { return motion }
+        let t = date.timeIntervalSince(pokedAt) / Motion.speed
+        guard t >= 0, t < 0.3 else { return motion }
+        var motion = motion
+        motion.squash += 0.6 * sin(.pi * t / 0.3)
+        return motion
     }
 
     /// How far beyond its square Tick may reach, as a fraction of its size.
@@ -150,7 +224,9 @@ struct TickView: View {
     private func figure(motion: TickMotion, face: TickFace, blink: Double = 0) -> TickFigure {
         var face = face
         face.blink = blink
-        return TickFigure(rig: TickRig(pose), face: face, palette: .standard, motion: motion, progress: ringLeft)
+        var rig = TickRig(pose)
+        rig.crownPress = pressing ? 1 : 0
+        return TickFigure(rig: rig, face: face, palette: .standard, motion: motion, progress: ringLeft)
     }
 
     private var ringLeft: Double {
@@ -164,6 +240,13 @@ struct TickView: View {
     /// old state's eyes, brows and mouth until the blink has shut.
     private func face(at date: Date) -> (TickFace, Double) {
         var face = TickFace(pose)
+        if let pokedAt, date.timeIntervalSince(pokedAt) / Motion.speed < TickTouch.pokeLength,
+           date >= pokedAt, pose != .ringing {
+            // A giggle.
+            face.eyes = .happy
+            face.mouth = .openSmile
+            return (face, 0)
+        }
         guard let faceSwap, let facePose else { return (face, 0) }
         let into = date.timeIntervalSince(faceSwap) / Motion.speed
         guard into < 0.18 else { return (face, 0) }
@@ -175,5 +258,42 @@ struct TickView: View {
             return (face, into / 0.07)
         }
         return (face, 1 - (into - 0.07) / 0.11)
+    }
+}
+
+/// Reports the press, so the crown can sink while held.
+private struct TickPressStyle: ButtonStyle {
+    @Binding var pressing: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .onChange(of: configuration.isPressed) { _, pressed in pressing = pressed }
+    }
+}
+
+/// Tick as one VoiceOver element when it does something: "Tick", what
+/// it's doing, and the crown's action (or stopping the alarm). Otherwise
+/// decorative: the dial beside it says it all.
+private struct TickAccessibility: ViewModifier {
+    let pose: TickPose
+    let crown: (label: String, action: () -> Void)?
+    let onDismiss: (() -> Void)?
+
+    func body(content: Content) -> some View {
+        if crown == nil && onDismiss == nil {
+            content.accessibilityHidden(true)
+        } else {
+            content
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(String(localized: "Tick"))
+                .accessibilityValue(pose.spokenState)
+                .accessibilityActions {
+                    if pose == .ringing, let onDismiss {
+                        Button(String(localized: "Stop alarm"), action: onDismiss)
+                    } else if let crown {
+                        Button(crown.label, action: crown.action)
+                    }
+                }
+        }
     }
 }
