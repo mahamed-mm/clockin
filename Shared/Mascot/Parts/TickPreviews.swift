@@ -9,11 +9,11 @@ private struct TickPreview: View {
         HStack(spacing: 16) {
             ForEach([ColorScheme.light, .dark], id: \.self) { scheme in
                 VStack(spacing: 12) {
-                    TickPartsFigure(pose: pose, palette: .standard).frame(width: 180, height: 180)
+                    TickFigure(pose: pose, palette: .standard).frame(width: 180, height: 180)
                     HStack(alignment: .bottom, spacing: 12) {
-                        TickPartsFigure(pose: pose, palette: .standard).frame(width: 60, height: 60)
-                        TickPartsFigure(pose: pose, palette: .standard).frame(width: 20, height: 20)
-                        TickPartsFigure(pose: pose, palette: .standard).frame(width: 8, height: 8)
+                        TickFigure(pose: pose, palette: .standard).frame(width: 60, height: 60)
+                        TickFigure(pose: pose, palette: .standard).frame(width: 20, height: 20)
+                        TickFigure(pose: pose, palette: .standard).frame(width: 8, height: 8)
                     }
                 }
                 .padding(12)

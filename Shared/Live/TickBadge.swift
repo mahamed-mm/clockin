@@ -5,9 +5,9 @@ import WidgetKit
 /// widget. A new pose fades in. On tinted and clear Home Screens Tick is
 /// drawn in one tone, like the dials.
 ///
-/// Tick is drawn into a bitmap here, in the extension, and handed over as
-/// an image: on a real iPhone the Dynamic Island leaves a Canvas blank
-/// (the simulator and the Lock Screen draw it).
+/// Tick is drawn into one small bitmap here, in the extension, and handed
+/// over as an image: the simplest thing for the system to show on every
+/// Live Activity surface.
 struct TickBadge: View {
     let pose: TickPose
     @Environment(\.widgetRenderingMode) private var renderingMode

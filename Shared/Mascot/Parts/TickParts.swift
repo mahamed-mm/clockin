@@ -73,32 +73,3 @@ private struct BodyMotion: ViewModifier {
             .offset(x: 1.5 * look.motion.tremble * follow, y: look.motion.bob * follow)
     }
 }
-
-/// Tick at any size: the parts drawn in their 100-unit square, scaled to
-/// fit, with the detail picked from the size unless given.
-struct TickPartsFigure: View {
-    var pose: TickPose
-    var palette: TickPalette
-    var motion: TickMotion = .still
-    var detail: TickDetail? = nil
-    /// The ring's time left; the character sheet's own when nil.
-    var progress: Double? = nil
-
-    var body: some View {
-        GeometryReader { proxy in
-            let side = min(proxy.size.width, proxy.size.height)
-            TickParts(rig: TickRig(pose), face: face, progress: motion.ring ?? progress ?? pose.sheetProgress,
-                      palette: palette, motion: motion, detail: detail ?? .fitting(points: side))
-                .scaleEffect(side / 100, anchor: .topLeading)
-                .frame(width: side, height: side, alignment: .topLeading)
-                .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-        }
-        .aspectRatio(1, contentMode: .fit)
-    }
-
-    private var face: TickFace {
-        var face = TickFace(pose)
-        face.blink = motion.blink
-        return face
-    }
-}

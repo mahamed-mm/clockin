@@ -8,7 +8,7 @@ struct TickPartsTests {
     @Test(arguments: TickPose.allCases)
     func everyStateDrawsAtEveryDetail(_ pose: TickPose) {
         for size in [180.0, 60, 20, 8] {
-            let renderer = ImageRenderer(content: TickPartsFigure(pose: pose, palette: .standard).frame(width: size, height: size))
+            let renderer = ImageRenderer(content: TickFigure(pose: pose, palette: .standard).frame(width: size, height: size))
             renderer.scale = 2
             #expect(renderer.uiImage != nil, "\(pose) at \(size) pt")
         }

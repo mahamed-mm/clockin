@@ -19,7 +19,7 @@ struct RenderTick {
     static func main() throws {
         let arguments = CommandLine.arguments.dropFirst()
         guard let mode = arguments.first, let out = arguments.dropFirst().first else {
-            print("usage: render-tick sheet|shapes|hero|compare <file.png> | icon|pairs <directory>")
+            print("usage: render-tick sheet|shapes|hero <file.png> | icon <directory>")
             exit(2)
         }
         switch mode {
@@ -32,19 +32,6 @@ struct RenderTick {
                 CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
             }
             try write(Hero(), scale: 2, to: URL(fileURLWithPath: out))
-        case "pairs":
-            // Old and new renderers, pose by pose, for comparing pixels.
-            let directory = URL(fileURLWithPath: out)
-            for pose in TickPose.allCases {
-                for (size, scheme) in [(180.0, ColorScheme.light), (180, .dark), (60, .light), (20, .light), (8, .light)] {
-                    let name = "\(pose.rawValue)-\(Int(size))-\(scheme == .dark ? "dark" : "light")"
-                    try write(Cell(pose: pose, size: size, scheme: scheme, parts: false), scale: 2,
-                              to: directory.appendingPathComponent("old-\(name).png"))
-                    try write(Cell(pose: pose, size: size, scheme: scheme, parts: true), scale: 2,
-                              to: directory.appendingPathComponent("new-\(name).png"))
-                }
-            }
-        case "compare": try write(Comparison(), scale: 2, to: URL(fileURLWithPath: out))
         case "icon":
             // The icon's Tick layers: 1024 px, transparent, for Icon Composer bundles.
             let directory = URL(fileURLWithPath: out)
@@ -101,61 +88,6 @@ struct ContactSheet: View {
                     // True 16 px (8 pt on this 2x sheet); the glyph fills ~90% of it.
                     TickFigure(pose: pose, palette: palette).frame(width: 8, height: 8)
                         .background(paper)
-                }
-            }
-        }
-        .padding(24)
-        .background(Color(white: 0.97))
-        .foregroundStyle(Color(white: 0.15))
-    }
-}
-
-/// One pose at one size on its page, from the old renderer or the parts.
-struct Cell: View {
-    let pose: TickPose
-    let size: Double
-    let scheme: ColorScheme
-    let parts: Bool
-
-    var body: some View {
-        Group {
-            if parts {
-                TickPartsFigure(pose: pose, palette: .assets(in: assets))
-            } else {
-                TickFigure(pose: pose, palette: .assets(in: assets))
-            }
-        }
-        .frame(width: size, height: size)
-        .padding(size >= 60 ? 8 : 2)
-        .background(Color("Paper", bundle: assets))
-        .environment(\.colorScheme, scheme)
-    }
-}
-
-/// Old and new side by side for every pose: 180 pt light and dark, 60 pt, 20 pt, 16 px.
-struct Comparison: View {
-    var body: some View {
-        Grid(horizontalSpacing: 10, verticalSpacing: 10) {
-            GridRow {
-                Text("pose").bold()
-                Text("180 light: old · new").bold().gridCellColumns(2)
-                Text("180 dark: old · new").bold().gridCellColumns(2)
-                Text("60 · 20 · 16 px: old, new").bold().gridCellColumns(6)
-            }
-            .font(.system(size: 13))
-            ForEach(TickPose.allCases, id: \.self) { pose in
-                GridRow {
-                    Text(pose.rawValue).font(.system(size: 15, weight: .semibold))
-                    Cell(pose: pose, size: 180, scheme: .light, parts: false)
-                    Cell(pose: pose, size: 180, scheme: .light, parts: true)
-                    Cell(pose: pose, size: 180, scheme: .dark, parts: false)
-                    Cell(pose: pose, size: 180, scheme: .dark, parts: true)
-                    Cell(pose: pose, size: 60, scheme: .light, parts: false)
-                    Cell(pose: pose, size: 60, scheme: .light, parts: true)
-                    Cell(pose: pose, size: 20, scheme: .light, parts: false)
-                    Cell(pose: pose, size: 20, scheme: .light, parts: true)
-                    Cell(pose: pose, size: 8, scheme: .light, parts: false)
-                    Cell(pose: pose, size: 8, scheme: .light, parts: true)
                 }
             }
         }

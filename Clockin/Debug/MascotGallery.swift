@@ -78,7 +78,7 @@ struct MascotGallery: View {
     }
 
     private func cell(_ pose: TickPose, size: Double, scheme: ColorScheme) -> some View {
-        TickPartsFigure(pose: pose, palette: .standard, progress: usesSheetRing ? nil : progress)
+        TickFigure(pose: pose, palette: .standard, progress: usesSheetRing ? nil : progress)
             .frame(width: size, height: size)
             .padding(size >= 60 ? Space.s : Space.xs)
             .background(Retro.paper, in: .rect(cornerRadius: max(4, size * 0.1)))

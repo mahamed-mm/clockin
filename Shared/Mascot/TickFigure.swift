@@ -115,23 +115,32 @@ enum TickDetail: Equatable, Sendable {
 
 /// Tick, Clockin's mascot: a little cream-and-terracotta kitchen timer
 /// whose ring is its own timer and whose crown is the start button. Drawn
-/// from shapes on a 100-unit square, choosing its detail from its size.
+/// from its parts (`TickParts`) in a 100-unit square scaled to fit, with
+/// the detail picked from the size unless given.
 struct TickFigure: View {
     var pose: TickPose
     var palette: TickPalette
     var motion: TickMotion = .still
     /// Nil picks the detail from the size it's drawn at.
     var detail: TickDetail? = nil
+    /// The ring's time left; the character sheet's own when nil.
+    var progress: Double? = nil
 
     var body: some View {
-        Canvas { context, size in
-            let side = min(size.width, size.height)
-            let scale = side / 100
-            context.translateBy(x: (size.width - side) / 2, y: (size.height - side) / 2)
-            context.scaleBy(x: scale, y: scale)
-            TickDrawing(pose: pose, palette: palette, motion: motion,
-                        detail: detail ?? .fitting(points: side)).draw(in: &context)
+        GeometryReader { proxy in
+            let side = min(proxy.size.width, proxy.size.height)
+            TickParts(rig: TickRig(pose), face: face, progress: motion.ring ?? progress ?? pose.sheetProgress,
+                      palette: palette, motion: motion, detail: detail ?? .fitting(points: side))
+                .scaleEffect(side / 100, anchor: .topLeading)
+                .frame(width: side, height: side, alignment: .topLeading)
+                .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
         }
         .aspectRatio(1, contentMode: .fit)
+    }
+
+    private var face: TickFace {
+        var face = TickFace(pose)
+        face.blink = motion.blink
+        return face
     }
 }
