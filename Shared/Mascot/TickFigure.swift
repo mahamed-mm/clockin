@@ -45,6 +45,15 @@ struct TickPalette: Sendable {
     static let cream = Color(red: 0.953, green: 0.914, blue: 0.839)
     static let darkInk = Color(red: 0.165, green: 0.129, blue: 0.106)
 
+    /// The app icon's Tick: deep terracotta limbs, so one picture reads on
+    /// the light and the dark icon, and on the Settings thumbnails.
+    static var icon: TickPalette {
+        var palette = fixed(dark: false)
+        palette.limbs = Color(red: 0.45, green: 0.16, blue: 0.08)
+        palette.shadow = .clear
+        return palette
+    }
+
     /// Exact light or dark values, for the icon script.
     static func fixed(dark: Bool) -> TickPalette {
         TickPalette(face: cream,

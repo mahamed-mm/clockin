@@ -98,10 +98,14 @@ struct SettingsSheet: View {
             }
             .pickerStyle(.segmented)
             .listRowBackground(rowBackground)
+            AppIconPicker(selection: services.appIconChoice) { choice in
+                Task { await services.chooseAppIcon(choice) }
+            }
+            .listRowBackground(rowBackground)
         } header: {
             Text("Appearance").retroLabel()
         } footer: {
-            Text("The widget and Lock Screen follow your iPhone's setting.")
+            Text("The widget and Lock Screen follow your iPhone's setting. The app icon is Tick at work or on a break.")
         }
     }
 
@@ -390,6 +394,41 @@ struct SettingsSheet: View {
     }
 
     private var rowBackground: Color { Retro.paperDeep.opacity(0.6) }
+}
+
+/// The two app icons side by side, each drawn as a small icon tile.
+private struct AppIconPicker: View {
+    let selection: AppIconChoice
+    let choose: (AppIconChoice) -> Void
+    @ScaledMetric(relativeTo: .body) private var tile: CGFloat = 60
+
+    var body: some View {
+        HStack(spacing: Space.l) {
+            ForEach(AppIconChoice.allCases) { choice in
+                Button { choose(choice) } label: {
+                    VStack(spacing: Space.xs) {
+                        TickFigure(pose: choice.pose, palette: .icon, detail: .simplified)
+                            .padding(tile * 0.08)
+                            .frame(width: tile, height: tile)
+                            .background(TickPalette.cream, in: .rect(cornerRadius: tile * 0.225))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: tile * 0.225 + 3)
+                                    .strokeBorder(selection == choice ? Retro.orange : .clear, lineWidth: 2.5)
+                                    .padding(-4)
+                            }
+                        Text(choice.title)
+                            .font(.retro(.meta))
+                            .foregroundStyle(selection == choice ? Retro.ink : Retro.inkSoft)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(String(localized: "App icon: \(choice.title)"))
+                .accessibilityAddTraits(selection == choice ? .isSelected : [])
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, Space.xs)
+    }
 }
 
 /// A settings row's words with a quiet symbol column in front, like

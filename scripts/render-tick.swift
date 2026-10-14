@@ -16,6 +16,12 @@ struct RenderTick {
         switch mode {
         case "sheet": try write(ContactSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "shapes": try write(Silhouettes(), scale: 2, to: URL(fileURLWithPath: out))
+        case "icon":
+            // The icon's Tick layers: 1024 px, transparent, for Icon Composer bundles.
+            let directory = URL(fileURLWithPath: out)
+            for (pose, name) in [(TickPose.working, "tick-working"), (.onBreak, "tick-break")] {
+                try write(IconLayer(pose: pose), scale: 1, to: directory.appendingPathComponent("\(name).png"))
+            }
         default:
             print("unknown mode \(mode)")
             exit(2)
@@ -92,5 +98,18 @@ struct Silhouettes: View {
         .padding(20)
         .background(Color.white)
         .foregroundStyle(Color(white: 0.2))
+    }
+}
+
+/// One icon layer: Tick, large and centred, on transparency. The limbs are
+/// deep terracotta so the same picture reads on the light and dark icon.
+struct IconLayer: View {
+    let pose: TickPose
+
+    var body: some View {
+        TickFigure(pose: pose, palette: .icon, detail: .simplified)
+            .frame(width: 860, height: 860)
+            .offset(y: 30)
+            .frame(width: 1024, height: 1024)
     }
 }

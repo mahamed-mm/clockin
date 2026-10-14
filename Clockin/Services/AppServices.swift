@@ -82,6 +82,9 @@ final class AppServices: SessionEffects {
     @ObservationIgnored private let notifications: EndNotifying
     @ObservationIgnored private let alarm: EndAlarming
     @ObservationIgnored private let mindful: MindfulLogging
+    @ObservationIgnored private let appIcon: AppIconSwitching
+    /// The Home Screen icon chosen in Settings.
+    private(set) var appIconChoice: AppIconChoice
     @ObservationIgnored private let widgets: WidgetReloading
     @ObservationIgnored private let haptics: CompletionFeedback
     @ObservationIgnored private let announce: @MainActor (String) -> Void
@@ -111,6 +114,7 @@ final class AppServices: SessionEffects {
          notifications: EndNotifying,
          alarm: EndAlarming = NoAlarm(),
          mindful: MindfulLogging = NoMindfulLog(),
+         appIcon: AppIconSwitching = SystemAppIcon(),
          widgets: WidgetReloading,
          haptics: CompletionFeedback,
          announce: @escaping @MainActor (String) -> Void) {
@@ -120,6 +124,8 @@ final class AppServices: SessionEffects {
         self.notifications = notifications
         self.alarm = alarm
         self.mindful = mindful
+        self.appIcon = appIcon
+        appIconChoice = appIcon.current
         self.widgets = widgets
         self.haptics = haptics
         self.announce = announce
@@ -465,6 +471,14 @@ final class AppServices: SessionEffects {
         }
         if let session = engine.active, !session.isPaused { scheduleEndAlert(for: session) }
         await refreshAlertStatus()
+    }
+
+    // MARK: App icon
+
+    /// Settings › App icon: Tick at work, or Tick on a break.
+    func chooseAppIcon(_ choice: AppIconChoice) async {
+        await appIcon.choose(choice)
+        appIconChoice = appIcon.current
     }
 
     // MARK: Health

@@ -254,6 +254,9 @@
     "Already focusing. %@." : {
 
     },
+    "App icon: %@" : {
+
+    },
     "Appearance" : {
 
     },
@@ -264,6 +267,9 @@
 
     },
     "Asked on your first start" : {
+
+    },
+    "At work" : {
 
     },
     "Back to it. %@." : {
@@ -547,6 +553,9 @@
     "On" : {
 
     },
+    "On a break" : {
+
+    },
     "On a break. %@." : {
 
     },
@@ -766,7 +775,7 @@
     "The file couldn't be read." : {
 
     },
-    "The widget and Lock Screen follow your iPhone's setting." : {
+    "The widget and Lock Screen follow your iPhone's setting. The app icon is Tick at work or on a break." : {
 
     },
     "This backup is from a newer version of Clockin." : {
