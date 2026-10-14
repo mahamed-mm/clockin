@@ -850,22 +850,43 @@ private struct FitsTheDial: ViewModifier {
 /// "2 of 4" under the dial's label while stretching: one dot a stretch,
 /// done ones filled, the current one ringed. In ink, so it never reads as
 /// one of the set's stripe colours.
-private struct StepDots: View {
+struct StepDots: View {
+    enum Style: Equatable { case done, current, upcoming }
+
     let index: Int
     let count: Int
     let size: CGFloat
+
+    /// Step `n` (from 1) while on step `index`.
+    nonisolated static func style(_ n: Int, index: Int) -> Style {
+        n < index ? .done : n == index ? .current : .upcoming
+    }
 
     var body: some View {
         let dot = max(4, size * 0.016)
         HStack(spacing: dot * 0.9) {
             ForEach(1...max(1, count), id: \.self) { n in
-                Circle()
-                    .fill(n < index ? Retro.inkSoft : .clear)
-                    .strokeBorder(n <= index ? Retro.ink : Retro.inkSoft.opacity(0.6), lineWidth: max(1, dot * 0.22))
-                    .frame(width: dot, height: dot)
+                step(Self.style(n, index: index), dot: dot)
+                    // Room for the larger current dot, so nothing shifts as it moves.
+                    .frame(width: dot * 1.4, height: dot * 1.4)
             }
         }
         .accessibilityHidden(true)
+    }
+
+    /// The current step filled and larger, done ones soft, the rest outlined:
+    /// clear at a glance and without colour.
+    @ViewBuilder
+    private func step(_ style: Style, dot: CGFloat) -> some View {
+        switch style {
+        case .current:
+            Circle().fill(Retro.ink).frame(width: dot * 1.4, height: dot * 1.4)
+        case .done:
+            Circle().fill(Retro.inkSoft.opacity(0.45)).frame(width: dot, height: dot)
+        case .upcoming:
+            Circle().strokeBorder(Retro.inkSoft.opacity(0.6), lineWidth: max(1, dot * 0.22))
+                .frame(width: dot, height: dot)
+        }
     }
 }
 

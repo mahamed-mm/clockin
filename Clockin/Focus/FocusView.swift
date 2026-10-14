@@ -34,6 +34,15 @@ struct FocusView: View {
 
     private var bedside: BedsideController { services.bedside }
 
+    /// Screenshots with `-DemoData` leave out the simulator's alert warnings.
+    private var hidesAlertHint: Bool {
+        #if DEBUG
+        DemoData.isRequested
+        #else
+        false
+        #endif
+    }
+
     private var savedSessions: Int { firstSessions.count + engine.pendingRecords.count }
 
     private var teachesDial: Bool {
@@ -345,7 +354,7 @@ struct FocusView: View {
                 // keeps its height on Start and Cancel even when the hint wraps.
                 // At the largest text sizes it can run to several lines,
                 // so then it only takes space when it shows.
-                if idle || !dynamicTypeSize.isAccessibilitySize {
+                if (idle || !dynamicTypeSize.isAccessibilitySize) && !hidesAlertHint {
                     AlertHint(status: services.alertStatus)
                         .opacity(idle && !undoable ? 1 : 0)
                         .allowsHitTesting(idle && !undoable)

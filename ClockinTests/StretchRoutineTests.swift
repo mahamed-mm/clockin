@@ -137,3 +137,12 @@ struct StretchRoutineTests {
         #expect(guide.changes(after: start).count == entries.count)
     }
 }
+
+/// The stretch routine's dots under the dial.
+struct StepDotsTests {
+    @Test func theCurrentStepStandsOut() {
+        #expect(StepDots.style(1, index: 2) == .done)
+        #expect(StepDots.style(2, index: 2) == .current)
+        #expect(StepDots.style(3, index: 2) == .upcoming)
+    }
+}
