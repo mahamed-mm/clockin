@@ -93,9 +93,13 @@ struct TickMotion: Equatable, Sendable {
     var tremble: Double = 0
     /// The ring's time left, 0...1, instead of the pose's own.
     var ring: Double? = nil
-    /// 0...1 of a breath: Tick grows up to 2%. Applied round the whole
-    /// figure by `TickView`, so a breath never redraws the parts.
+    /// 0...1 of a breath: Tick grows by `breathDepth`. Applied round the
+    /// whole figure by `TickView`, so a breath never redraws the parts.
     var breath: Double = 0
+    /// How much a breath grows Tick: 2% calm, up to 5% puffing hard.
+    var breathDepth: Double = 0.02
+    /// 0...1 of a puff of breath drifting off the mouth, worn out.
+    var puff: Double = 0
     /// Degrees added to the tapping foot.
     var footTap: Double = 0
     /// 0...1 of reaching up and pressing the crown.

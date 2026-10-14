@@ -43,7 +43,7 @@ struct TickLoopSchedule: TimelineSchedule {
             var upcoming = since.addingTimeInterval(soonest * speed)
             if let workout {
                 // The next combo frame, or the next combo's start.
-                let step = date.addingTimeInterval(WorkoutLoops.frameInterval)
+                let step = date.addingTimeInterval(workout.frameInterval(at: date))
                 upcoming = min(upcoming, max(step, workout.nextMovement(from: step)))
             }
             next = upcoming
@@ -146,8 +146,8 @@ struct TickView: View {
                             .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
                     }
                     // Breathing, squash and the alarm's shake move the whole drawn layer, about the feet.
-                    .scaleEffect(x: (1 + 0.02 * motion.breath - motion.shrink) * (1 + 0.12 * motion.squash),
-                                 y: (1 + 0.02 * motion.breath - motion.shrink) * (1 - 0.12 * motion.squash),
+                    .scaleEffect(x: (1 + motion.breathDepth * motion.breath - motion.shrink) * (1 + 0.12 * motion.squash),
+                                 y: (1 + motion.breathDepth * motion.breath - motion.shrink) * (1 - 0.12 * motion.squash),
                                  anchor: Self.feet)
                     .rotationEffect(.degrees(motion.lean), anchor: Self.feet)
                     .offset(x: 1.5 * motion.tremble)
@@ -229,12 +229,17 @@ struct TickView: View {
         }
     }
 
-    /// A punch landing: the lines at the glove.
+    /// The workout's own: punches landing, hard breathing and its puffs,
+    /// and the blinks that hide its face changes.
     private func withWorkout(_ motion: TickMotion, _ frame: WorkoutFrame?) -> TickMotion {
         guard let frame else { return motion }
         var motion = motion
         motion.impact = frame.motion.impact
         motion.impactAt = frame.motion.impactAt
+        motion.breath = frame.motion.breath
+        motion.breathDepth = frame.motion.breathDepth
+        motion.puff = frame.motion.puff
+        motion.blink = max(motion.blink, frame.motion.blink)
         return motion
     }
 

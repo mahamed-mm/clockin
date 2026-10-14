@@ -120,6 +120,9 @@ struct TickEffectsPart: View {
             star
                 .offset(y: -16 * look.motion.starAbove)
                 .opacity(rig.star * (1 - look.motion.starAbove))
+            if look.motion.puff > 0 {
+                puff
+            }
             if look.motion.impact > 0 {
                 Ink(impactLines)
                     .stroke(look.palette.limbs.opacity(0.75),
@@ -127,6 +130,19 @@ struct TickEffectsPart: View {
                     .opacity(look.motion.impact)
             }
         }
+    }
+
+    /// A little cloud of breath drifting off the mouth, up and away to the
+    /// right, fading as it goes.
+    private var puff: some View {
+        let p = look.motion.puff
+        let mouth = CGPoint(x: 50 + look.face.gazeX + 7 + 7 * p, y: look.centerY + 7 - 3 * p)
+        let sizes = look.handmade ? [(0.0, 0.0, 2.2), (3.0, -1.6, 1.6), (5.2, -3.4, 1.1)] : [(0.0, 0.0, 2.8), (4.0, -2.4, 2)]
+        var cloud = Path()
+        for (dx, dy, r) in sizes { cloud.addPath(TickPath.circle(CGPoint(x: mouth.x + dx, y: mouth.y + dy), r * (0.6 + 0.6 * p))) }
+        return Ink(cloud)
+            .stroke(look.palette.eyes.opacity(0.45), lineWidth: look.handmade ? 1.2 : 1.6)
+            .opacity(sin(.pi * p))
     }
 
     /// A burst of short lines fanning out round where a punch or kick lands,

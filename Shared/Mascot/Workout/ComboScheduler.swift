@@ -93,15 +93,25 @@ struct ComboScheduler: Equatable, Sendable {
 
     /// The combo under way at `elapsed`, if any.
     func entry(at elapsed: TimeInterval) -> Entry? {
-        // The last combo starting at or before `elapsed`, by halving.
+        guard let index = lastStarted(by: elapsed) else { return nil }
+        return elapsed < entries[index].end ? entries[index] : nil
+    }
+
+    /// When the last combo over by `elapsed` ended.
+    func lastEnd(by elapsed: TimeInterval) -> TimeInterval? {
+        guard let index = lastStarted(by: elapsed) else { return nil }
+        if entries[index].end <= elapsed { return entries[index].end }
+        return index > 0 ? entries[index - 1].end : nil
+    }
+
+    /// The last combo starting at or before `elapsed`, by halving.
+    private func lastStarted(by elapsed: TimeInterval) -> Int? {
         var low = 0, high = entries.count
         while low < high {
             let mid = (low + high) / 2
             if entries[mid].start <= elapsed { low = mid + 1 } else { high = mid }
         }
-        guard low > 0 else { return nil }
-        let entry = entries[low - 1]
-        return elapsed < entry.end ? entry : nil
+        return low > 0 ? low - 1 : nil
     }
 
     /// The start of the next combo after `elapsed`.

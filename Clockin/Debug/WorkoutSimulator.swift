@@ -14,8 +14,10 @@ struct WorkoutSimulator: View {
     @State private var showsEnvelope = false
     /// Moves playing one after another, at a tempo, and when they started.
     @State private var playing: (moves: [WorkoutMove], tempo: Double, start: Date)?
-    /// When the live session ends, while one runs.
-    @State private var liveEnd: Date?
+    /// When the live session started, and the time left then, while one runs.
+    @State private var live: (start: Date, left: TimeInterval)?
+    /// How much faster than real time the live session runs.
+    @State private var speed = 1.0
 
     /// The moment shown: from the scrubber, or the time left that gives the chosen energy.
     private var energy: WorkoutEnergy {
@@ -28,10 +30,19 @@ struct WorkoutSimulator: View {
         VStack(alignment: .leading, spacing: Space.s) {
             Text("Workout").retroLabel()
             Group {
-                if let liveEnd {
-                    // The real thing: TickView working through a session ending then.
+                if let live, speed == 1 {
+                    // The real thing: TickView working through a session.
                     TickView(pose: .working, progress: .fixed(1 - energy.elapsed / planned),
-                             workout: TickWorkout(planned: planned, endDate: liveEnd, pausedRemaining: nil, seed: 1))
+                             workout: workout(live))
+                } else if let live {
+                    // Sped up: the session's clock runs `speed` times as fast.
+                    TimelineView(.animation) { context in
+                        let date = simulated(context.date, live)
+                        let frame = WorkoutLoops(workout: workout(live)).frame(at: date)
+                        TickFigure(rig: frame.rig, face: frame.face, palette: .standard, motion: frame.motion,
+                                   progress: workout(live).remaining(at: date) / planned)
+                            .scaleEffect(1 + frame.motion.breathDepth * frame.motion.breath, anchor: UnitPoint(x: 0.5, y: 0.92))
+                    }
                 } else {
                     TimelineView(.animation(paused: playing == nil)) { context in
                         let frame = frame(at: context.date, params: params)
@@ -49,17 +60,21 @@ struct WorkoutSimulator: View {
                 try? await Task.sleep(for: .seconds(length * Motion.speed))
                 self.playing = nil
             }
-            if liveEnd != nil {
-                // The live session's moment, a second at a time.
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    let now = liveEnd.map { WorkoutEnergy.at(planned: planned, remaining: $0.timeIntervalSince(context.date)) } ?? energy
+            if let live {
+                // The live session's moment, a few times a second.
+                TimelineView(.periodic(from: .now, by: 0.25)) { context in
+                    let now = workout(live).energy(at: simulated(context.date, live))
                     readout(now, WorkoutParams(now))
                 }
             } else {
                 readout(energy, params)
             }
-            Toggle("Live session", isOn: Binding(get: { liveEnd != nil },
-                                                 set: { liveEnd = $0 ? .now.addingTimeInterval(left) : nil }))
+            Toggle("Live session", isOn: Binding(get: { live != nil }, set: { live = $0 ? (.now, left) : nil }))
+            Picker("Speed", selection: $speed) {
+                ForEach([1.0, 10, 50], id: \.self) { Text("\(Int($0))×").tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: speed) { if let live { self.live = (.now, workout(live).remaining(at: simulated(.now, live))) } }
             Picker("Session", selection: $planned) {
                 ForEach([900.0, 1500, 3000], id: \.self) { Text("\(Int($0 / 60)) min").tag($0) }
             }
@@ -68,7 +83,7 @@ struct WorkoutSimulator: View {
             HStack {
                 Text("Time left")
                 Slider(value: $left, in: 0...planned) { editing in
-                    if !editing, liveEnd != nil { liveEnd = .now.addingTimeInterval(left) }
+                    if !editing, live != nil { live = (.now, left) }
                 }
                 Text(TimeFormat.clock(left)).monospacedDigit()
             }
@@ -89,7 +104,7 @@ struct WorkoutSimulator: View {
                         .font(.system(size: 12))
                 }
             }
-            .disabled(liveEnd != nil)
+            .disabled(live != nil)
             Text("Combos").retroLabel()
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: Space.xs)], spacing: Space.xs) {
                 ForEach(WorkoutCombo.library + [.stretch, .finalPush(lasting: 10, tempo: 1.3)], id: \.name) { combo in
@@ -98,11 +113,21 @@ struct WorkoutSimulator: View {
                         .font(.system(size: 12))
                 }
             }
-            .disabled(liveEnd != nil)
+            .disabled(live != nil)
         }
         .font(.retro(.meta))
         .padding(Space.m)
         .background(Retro.paperDeep, in: .rect(cornerRadius: Radius.card))
+    }
+
+    /// The live session: it ends `left` seconds of session time after it started.
+    private func workout(_ live: (start: Date, left: TimeInterval)) -> TickWorkout {
+        TickWorkout(planned: planned, endDate: live.start.addingTimeInterval(live.left), pausedRemaining: nil, seed: 1)
+    }
+
+    /// The session's clock at `date`, running `speed` times as fast from the start.
+    private func simulated(_ date: Date, _ live: (start: Date, left: TimeInterval)) -> Date {
+        live.start.addingTimeInterval(date.timeIntervalSince(live.start) * speed)
     }
 
     /// The playing move's moment (at the tempo, and in slow motion if

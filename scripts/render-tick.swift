@@ -27,6 +27,7 @@ struct RenderTick {
         case "shapes": try write(Silhouettes(), scale: 2, to: URL(fileURLWithPath: out))
         case "workout": try write(WorkoutSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "moves": try write(MoveSheet(), scale: 2, to: URL(fileURLWithPath: out))
+        case "breath": try write(BreathSheet(), scale: 2, to: URL(fileURLWithPath: out))
         case "hero":
             // The README's banner: the name in Fraunces, Tick working, resting, done.
             for font in ["Display", "Title", "Text"] {
@@ -153,6 +154,31 @@ struct MoveSheet: View {
         .padding(20)
         .background(Color(white: 0.97))
         .foregroundStyle(Color(white: 0.15))
+    }
+}
+
+/// Two worn-out breaths, light and dark: the panting mouth and the puffs.
+struct BreathSheet: View {
+    var body: some View {
+        let palette = TickPalette.assets(in: assets)
+        let paper = Color("Paper", bundle: assets)
+        let loops = WorkoutLoops(workout: TickWorkout(planned: 1500, endDate: Date(timeIntervalSinceReferenceDate: 1500),
+                                                      pausedRemaining: nil, seed: 1))
+        VStack(spacing: 8) {
+            ForEach([ColorScheme.light, .dark], id: \.self) { scheme in
+                HStack(spacing: 6) {
+                    ForEach(0..<10, id: \.self) { i in
+                        let frame = loops.frame(at: Date(timeIntervalSinceReferenceDate: 1446 + 0.24 * Double(i)))
+                        TickFigure(rig: frame.rig, face: frame.face, palette: palette, motion: frame.motion, progress: 0.04)
+                            .frame(width: 106, height: 106)
+                            .background(paper)
+                            .environment(\.colorScheme, scheme)
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .background(Color(white: 0.97))
     }
 }
 

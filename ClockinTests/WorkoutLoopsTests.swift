@@ -57,13 +57,94 @@ struct WorkoutLoopsTests {
             frames += 1
         }
         let window = loops.workout.energy(at: now).elapsed...loops.workout.energy(at: end).elapsed
-        let busy = loops.scheduler.entries.reduce(0.0) { sum, entry in
-            sum + max(0, min(entry.end, window.upperBound) - max(entry.start, window.lowerBound))
+        // Each combo, then the bounces after it while the round goes on.
+        let entries = loops.scheduler.entries
+        let busy = zip(entries, entries.dropFirst()).reduce(0.0) { sum, pair in
+            let (entry, next) = pair
+            let end = entry.end + (next.start - entry.end <= WorkoutLoops.roundGap ? WorkoutLoops.bounceLength : 0)
+            return sum + max(0, min(end, window.upperBound) - max(entry.start, window.lowerBound))
         }
         #expect(busy > 3)
         #expect(Double(frames) > busy * 30 * 0.9)
         // About 15 blinks a minute, 6 frames each.
         #expect(Double(frames) < busy * 30 + 130, "\(frames) frames for \(busy) s of combos")
-        #expect(Double(frames) < 60 * 30 * 0.4)
+        #expect(Double(frames) < 60 * 30 * 0.55)
+    }
+
+    // MARK: Tiring
+
+    @Test func aBlinkHidesEachFaceChange() {
+        let loops = loops(left: 900)
+        #expect(loops.faceChanges == [1320, 1440, 1490])
+        for change in loops.faceChanges {
+            #expect(loops.faceBlink(at: change) == 1)
+            #expect(loops.faceBlink(at: change - 0.1) == 0 && loops.faceBlink(at: change + 0.1) == 0)
+            let before = WorkoutParams(.at(planned: 1500, remaining: 1500 - change + 0.05)).face
+            let after = WorkoutParams(.at(planned: 1500, remaining: 1500 - change - 0.05)).face
+            #expect(before != after, "at \(change)")
+            // Drawn: the eyes are shut right as the face changes.
+            #expect(loops.frame(at: loops.workout.date(atElapsed: change)!).motion.blink == 1)
+        }
+    }
+
+    @Test func breathingHardOnceTired() {
+        let loops = loops(left: 900)
+        let fresh = loops.workout.date(atElapsed: 1100)!
+        #expect(loops.frame(at: fresh).motion.breath == 0)
+        // From 5 minutes left it never stops, at 15 frames a second between combos.
+        let tired = loops.scheduler.entries.first { $0.start > 1250 }!
+        let resting = loops.workout.date(atElapsed: tired.start - 0.5)!
+        #expect(loops.nextMovement(from: resting) == resting)
+        #expect(loops.frameInterval(at: resting) == 1.0 / 15)
+        #expect(loops.frameInterval(at: loops.workout.date(atElapsed: tired.start + 0.1)!) == 1.0 / 30)
+        #expect(loops.frame(at: resting).motion.breathDepth > 0.02)
+    }
+
+    @Test func breathsQuickenWithoutJumping() {
+        let loops = loops(left: 900)
+        var last = loops.breath(at: 1200).0
+        var peaks: [TimeInterval] = []
+        var rising = true
+        for step in 1...30_000 {
+            let elapsed = 1200 + Double(step) / 100
+            let breath = loops.breath(at: elapsed).0
+            #expect(abs(breath - last) < 0.05, "at \(elapsed)")
+            if rising, breath < last { peaks.append(elapsed) }
+            rising = breath >= last
+            last = breath
+        }
+        // 2.2 s apart at first, 1.5 s by the end of tired, 1.2 s worn out.
+        let gaps = zip(peaks, peaks.dropFirst()).map { $1 - $0 }
+        #expect(abs(gaps.first! - 2.2) < 0.05)
+        let lateTired = Array(zip(peaks, gaps)).last { $0.0 < 1435 }!.1
+        #expect(abs(lateTired - 1.5) < 0.05)
+        #expect(abs(gaps.last! - 1.2) < 0.05)
+    }
+
+    @Test func pantingMouthKeepsTime() {
+        let loops = loops(left: 900)
+        let exhausted = loops.scheduler.entries.first { $0.start > 1445 }!
+        let rest = loops.workout.date(atElapsed: exhausted.start - 0.3)!
+        let frame = loops.frame(at: rest)
+        #expect(frame.face.mouth == .pant)
+        #expect(abs(frame.face.mouthOpen - (0.35 + 0.65 * frame.motion.breath)) < 1e-9)
+    }
+
+    @Test func bouncesAfterACombo() {
+        let loops = loops(left: 900)
+        let entries = loops.scheduler.entries.filter { $0.start > 600 && $0.start < 1100 }
+        let params = WorkoutParams(.at(planned: 1500, remaining: 900))
+        for (entry, next) in zip(entries, entries.dropFirst()) {
+            let inRound = next.start - entry.end <= WorkoutLoops.roundGap
+            // A bounce between combos in a round; still after the round.
+            #expect((loops.bounce(at: entry.end + 0.2, params: params) < 0) == inRound)
+            #expect(loops.bounce(at: entry.end + 1.3, params: params) == 0)
+        }
+        #expect(entries.contains { _ in true })
+        // Once settled it's the plain stance again.
+        let entry = entries.first { e in loops.scheduler.nextStart(after: e.start)! - e.end > 1.5 }!
+        let settled = loops.frame(at: loops.workout.date(atElapsed: entry.end + 1.3)!).rig
+        let stance = TickRig(workout: WorkoutParams(.at(planned: 1500, remaining: 1500 - entry.end - 1.3)))
+        #expect(abs(settled.centerY - stance.centerY) < 1e-6 && abs(settled.rightLeg.end.y - stance.rightLeg.end.y) < 1e-6)
     }
 }
