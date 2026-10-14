@@ -244,3 +244,12 @@ enum TimeFormat {
         return rest == 0 ? String(localized: "\(hours) h") : String(localized: "\(hours) h \(rest) min")
     }
 }
+
+extension TickPalette {
+    /// Tick in the app's colours: the limbs follow the ink, so they stay
+    /// visible on the dark page; the face and its features never change.
+    static var retro: TickPalette {
+        TickPalette(face: TickPalette.cream, rim: Retro.rust, features: TickPalette.darkInk, limbs: Retro.ink,
+                    prop: Retro.mustard, accent: Retro.orange, shadow: Retro.ink.opacity(0.14))
+    }
+}
