@@ -45,6 +45,7 @@ extension TickPose {
 ///   later; it's dropped as soon as the stage moves on.
 /// - Hello, once: on first launch or back after a week away, then ready.
 /// - A cancelled focus session: interrupted for a moment, then ready.
+/// - Just after a break ran out: ready, up and stretching, even at night.
 /// - Idle at night, or idle for ten minutes, Tick falls asleep.
 struct TickDirector: Equatable {
     var stage: SessionStage
@@ -58,6 +59,8 @@ struct TickDirector: Equatable {
     var helloUntil: Date? = nil
     /// Until when Tick shrugs off a cancelled session.
     var interruptedUntil: Date? = nil
+    /// Until when the app says "Break's over" (see `BreakOverMoment`).
+    var breakOverUntil: Date? = nil
 
     /// How long done shows before a set of four's streak.
     static let streakDelay: TimeInterval = 3
@@ -78,6 +81,7 @@ struct TickDirector: Equatable {
         case .idle:
             if let interruptedUntil, now < interruptedUntil { return .interrupted }
             if let helloUntil, now < helloUntil { return .hello }
+            if backToWork(at: now) { return .ready }
             if TickPose.isNight(hour: hour) || now.timeIntervalSince(stageSince) >= Self.dozeAfter { return .sleeping }
             return .ready
         case .active(let session):
@@ -98,6 +102,7 @@ struct TickDirector: Equatable {
         case .idle:
             if let helloUntil, helloUntil > now { dates.append(helloUntil) }
             if let interruptedUntil, interruptedUntil > now { dates.append(interruptedUntil) }
+            if let breakOverUntil, breakOverUntil > now { dates.append(breakOverUntil) }
             dates.append(stageSince.addingTimeInterval(Self.dozeAfter))
         case .focusComplete(let focus) where focus.isLongBreak == true && focus.outcome != .endedEarly:
             dates.append(stageSince.addingTimeInterval(Self.streakDelay))
@@ -105,6 +110,12 @@ struct TickDirector: Equatable {
             break
         }
         return dates.filter { $0 > now }.min()
+    }
+
+    /// Just back from a break: ready to go, and coming in with a stretch and a yawn.
+    func backToWork(at now: Date) -> Bool {
+        guard case .idle = stage, !alarmRinging, let breakOverUntil else { return false }
+        return now < breakOverUntil
     }
 
     /// Whether Tick greets: on first launch, or back after a week away.

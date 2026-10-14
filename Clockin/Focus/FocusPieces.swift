@@ -77,16 +77,23 @@ struct FocusHeader: View {
 
     private var title: String {
         switch stage {
-        case .idle: Copy.focus
+        case .idle: engine.breakOver == nil ? Copy.focus : Copy.breakOver
         case .active(let session): session.isLongBreak == true ? Copy.longBreak : session.phase.label
         case .focusComplete(let focus): focus.outcome == .endedEarly ? Copy.endedEarly : Copy.focusComplete
         }
     }
 
+    /// Full sessions so far today, saved or waiting to be saved.
+    private var fullToday: Int {
+        let saved = TodayStats.fetchRecords(on: services.today, calendar: services.calendar,
+                                            context: services.container.mainContext)
+        return TodayStats.rows(saved: saved.map(\.row), pending: engine.pendingRecords(on: services.today)).fullCount
+    }
+
     /// When an unchanged stage's meta line reads differently: a completion
     /// turns old once its break would be over, or at midnight.
     private var metaChanges: [Date] {
-        guard case .focusComplete(let focus) = stage else { return [] }
+        guard case .focusComplete(let focus) = stage else { return engine.breakOverEnds.map { [$0] } ?? [] }
         let breakOver = focus.completedAt.addingTimeInterval(engine.breakLength(after: focus))
         return [breakOver, services.calendar.dayRange(containing: focus.completedAt).upperBound]
     }
@@ -94,6 +101,10 @@ struct FocusHeader: View {
     private func meta(at now: Date) -> String {
         switch stage {
         case .idle:
+            if let moment = engine.breakOver {
+                return Copy.nextSession(name: moment.name, position: BreakOverMoment.nextPosition(fullToday: fullToday),
+                                        setSize: TimerPlan.sessionsPerSet)
+            }
             return String(localized: "\(TimeFormat.duration(services.plan.focus)) session")
         case .active(let session):
             if session.isPaused {
@@ -166,7 +177,7 @@ struct TodaySessionPills: View {
         // A session just finished stays in progress until its pill fills.
         SessionPills(completed: shown ?? count, inProgress: inProgress || (shown ?? count) < count,
                      pillWidth: 20 * scale, pillHeight: 5.5 * scale, spacing: 4 * scale, tint: tint,
-                     fill: filling.map { ($0, level) })
+                     fill: filling.map { ($0, level) }, upNext: engine.stage == .idle && engine.breakOver != nil)
             .animation(Motion.calm(reduceMotion), value: shown ?? count)
             .onAppear { shown = count }
             .onChange(of: count) { old, new in fill(from: old, to: new) }
@@ -562,14 +573,14 @@ private struct DialTick: View {
         let dismiss: (() -> Void)? = services.alarmRinging ? { services.stopAlarm() } : nil
         return TickView(pose: shown ?? pose, progress: .fixed(TickPose.ringProgress(for: stage, at: date)),
                         celebration: celebration, crown: crown, onDismiss: dismiss, workout: workout,
-                        breakActivity: breakActivity)
+                        breakActivity: breakActivity, backToWork: director(at: date).backToWork(at: date))
             .onChange(of: pose, initial: true) { show(pose) }
     }
 
     private func director(at date: Date) -> TickDirector {
         TickDirector(stage: stage, alarmRinging: services.alarmRinging, overtime: engine.overtime(at: date),
                      hour: services.calendar.component(.hour, from: date), stageSince: stageSince,
-                     helloUntil: helloUntil, interruptedUntil: interruptedUntil)
+                     helloUntil: helloUntil, interruptedUntil: interruptedUntil, breakOverUntil: engine.breakOverEnds)
     }
 
     /// The focus session as a workout: running or paused, or just finished;

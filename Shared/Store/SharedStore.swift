@@ -52,7 +52,7 @@ enum SharedStore {
 /// Decoding rule: every field added after 1.0 must be Optional (or decoded
 /// with a default), so state written by an older build always loads.
 struct PersistedSessionState: Codable, Equatable, Sendable {
-    static let currentFormat = 3
+    static let currentFormat = 4
 
     var active: ActiveSession?
     /// Set after a focus phase completes, until a break starts or the user moves on. (Format 3.)
@@ -61,6 +61,8 @@ struct PersistedSessionState: Codable, Equatable, Sendable {
     var completedFocusName: String?
     /// Finished sessions the store couldn't take yet; retried on reconcile. (Format 2.)
     var pendingRecords: [CompletedFocus]?
+    /// A break that ran out moments ago, while it's still worth saying so. (Format 4.)
+    var breakOver: BreakOverMoment?
     /// The format that wrote this. Missing means format 1 (1.0).
     var format: Int? = PersistedSessionState.currentFormat
 }

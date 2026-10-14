@@ -87,6 +87,8 @@ struct TickView: View {
     /// The break as it's being spent: stretching or breathing, Tick puts
     /// the mug away and leads it.
     var breakActivity: TickBreak? = nil
+    /// Just back from a break: ready comes in with a stretch and a yawn.
+    var backToWork = false
 
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @Environment(\.tickReduceMotion) private var galleryReduceMotion
@@ -122,7 +124,7 @@ struct TickView: View {
         // Working out, or paused worn out, Tick breathes hard instead of in calm spells.
         let breathesHard = workoutLoops.map { !$0.isCalm && (pose == .working || (pose == .waiting && $0.pausedMoving)) } ?? false
         return TickLoops(pose: pose, seed: seed, entering: entering, breathes: !breathesHard && !breathing,
-                         gearsUp: gearingUp, mug: activeBreak == nil)
+                         gearsUp: gearingUp, mug: activeBreak == nil, backToWork: backToWork && pose == .ready)
     }
 
     /// The break, while Tick is leading it rather than resting with the mug.
@@ -141,6 +143,17 @@ struct TickView: View {
     private var rejoinsRest: Date? {
         guard let activeBreak, let t = BreakLoops(activity: activeBreak).rejoinsRest else { return nil }
         return activeBreak.date(atStyleElapsed: t)
+    }
+
+    /// Back from a break, seen happen: up on its feet, a reach and a yawn,
+    /// easing into ready over the last half second.
+    private func stretchingIn(elapsed: TimeInterval) -> WorkoutFrame? {
+        let move = StretchMove.backToWork
+        guard pose == .ready, backToWork, entering, elapsed < move.duration else { return nil }
+        let stretch = move.pose(at: elapsed)
+        let rig = BreakLoops.mixed(TickRig.standing.applying(stretch), TickRig(.ready),
+                                   (elapsed - (move.duration - 0.5)) / 0.5)
+        return WorkoutFrame(rig: rig, face: TickFace(.ready).applying(stretch))
     }
 
     /// The workout behind Tick: working through one, paused in one, or just done.
@@ -210,7 +223,7 @@ struct TickView: View {
                                               breakLoops: breakLoops)) { context in
                     let elapsed = context.date.timeIntervalSince(since) / Motion.speed
                     let frame = workoutFrame(workoutLoops, at: context.date, elapsed: elapsed)
-                        ?? breakLoops?.frame(at: context.date)
+                        ?? breakLoops?.frame(at: context.date) ?? stretchingIn(elapsed: elapsed)
                     let motion = paused ? TickMotion.still : withPoke(withWorkout(loops.motion(at: elapsed), frame), at: context.date)
                     let (face, swapBlink) = face(at: context.date, base: frame?.face)
                     GeometryReader { proxy in
@@ -358,7 +371,8 @@ struct TickView: View {
 
     private func figure(motion: TickMotion, face: TickFace, blink: Double = 0, rig: TickRig? = nil) -> TickFigure {
         var face = face
-        face.blink = blink
+        // The loop's blink, or eyes the frame itself closes (a stretch, a yawn).
+        face.blink = max(face.blink, blink)
         var rig = rig ?? TickRig(pose)
         rig.crownPress = pressing ? 1 : 0
         return TickFigure(rig: rig, face: face, palette: .standard, motion: motion, progress: ringLeft)

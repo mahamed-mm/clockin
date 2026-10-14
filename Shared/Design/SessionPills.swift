@@ -29,6 +29,8 @@ struct SessionPills: View {
     /// A pill filling as its session completes: which, and how full (0...1).
     /// Only the app passes one; widgets and the Live Activity stay still.
     var fill: (index: Int, level: Double)? = nil
+    /// The next session's pill outlined, pulsing once: up next, not yet in progress.
+    var upNext = false
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
@@ -88,10 +90,13 @@ struct SessionPills: View {
 
     private func pillView(_ index: Int) -> some View {
         let filling = fill.map { $0.index == index } ?? false
+        let next = upNext && !inProgress && index == completed
         // One shape whatever happens, so a pill that starts filling doesn't cross-fade.
         return ZStack {
             // Still outlined as the session in progress while it fills.
-            pill(filling ? .current : Self.state(index: index, completed: completed, inProgress: inProgress))
+            pill(filling || next ? .current
+                 : Self.state(index: index, completed: completed, inProgress: inProgress))
+                .modifier(PulseOnce(active: next))
             if let fill, filling {
                 Capsule()
                     .fill(Self.colors[index % Self.setSize])
@@ -142,6 +147,29 @@ struct SessionPills: View {
             Capsule()
                 .strokeBorder(Retro.ink.opacity(contrast == .increased ? 0.65 : 0.3),
                               lineWidth: contrast == .increased ? 1.5 : 1)
+        }
+    }
+}
+
+/// One gentle swell, when the pill comes up next; a fade with Reduce Motion.
+private struct PulseOnce: ViewModifier {
+    let active: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content.keyframeAnimator(initialValue: 1.0, trigger: active) { view, value in
+            if reduceMotion {
+                view.opacity(value)
+            } else {
+                view.scaleEffect(value)
+            }
+        } keyframes: { [active, reduceMotion] _ in
+            if active {
+                CubicKeyframe(reduceMotion ? 0.3 : 1.35, duration: 0.35)
+                CubicKeyframe(1.0, duration: 0.5)
+            } else {
+                LinearKeyframe(1.0, duration: 0.01)
+            }
         }
     }
 }

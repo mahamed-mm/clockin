@@ -84,7 +84,21 @@ struct FocusView: View {
             if case .idle = old, new != .idle { dialHintSeen = true }
             if case .focusComplete = old, new.completedFocus == nil { welcomeSeen = true }
         }
-        .onChange(of: services.settings.length) { dialHintSeen = true }
+        .onChange(of: services.settings.length) {
+            dialHintSeen = true
+            // Choosing a length is setting up the next session already.
+            engine.dismissBreakOver()
+        }
+        .onChange(of: engine.breakOver?.endedAt, initial: true) {
+            // Break's over: the next session is the last one again.
+            if let name = engine.breakOver?.name, !name.isEmpty { sessionName = name }
+        }
+        .task(id: engine.breakOverEnds) {
+            // Ten minutes on, or at midnight, it goes back to plain waiting.
+            guard let ends = engine.breakOverEnds else { return }
+            try? await Task.sleep(for: .seconds(max(0, ends.timeIntervalSinceNow) + 0.1))
+            if !Task.isCancelled { engine.reconcile() }
+        }
         .task(id: stepBackWindow) { await stepBack(during: stepBackWindow) }
     }
 
@@ -123,6 +137,7 @@ struct FocusView: View {
             ZStack {
                 PaperBackground(wash: wash)
                     .animation(Motion.tint(reduceMotion), value: engine.stage)
+                    .animation(Motion.tint(reduceMotion), value: engine.breakOver)
                     .onTapGesture { nameFocused = false }
                 if wide {
                     HStack(spacing: Space.xxl) {
@@ -198,7 +213,8 @@ struct FocusView: View {
     /// A soft colour wash at the top of the page for each phase.
     private var wash: Color? {
         switch engine.stage {
-        case .idle: nil
+        // Back from a break, the focus colour comes back in.
+        case .idle: engine.breakOver == nil ? nil : Retro.orange
         case .active(let session): Retro.tint(for: session.phase)
         case .focusComplete: Retro.mustard
         }

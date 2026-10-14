@@ -628,6 +628,16 @@
     "Next week" : {
 
     },
+    "Next: %@ · session %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Next: %1$@ · session %2$lld of %3$lld"
+          }
+        }
+      }
+    },
     "No sessions this week." : {
 
     },

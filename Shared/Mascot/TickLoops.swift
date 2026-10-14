@@ -17,6 +17,8 @@ struct TickLoops {
     var gearsUp = false
     /// On a break with the mug in hand; off while stretching or breathing.
     var mug = true
+    /// Ready after a break ran out: its entry is a stretch and a yawn.
+    var backToWork = false
 
     /// How long the state's entry lasts.
     var entryLength: TimeInterval {
@@ -28,7 +30,8 @@ struct TickLoops {
         case .done: 0.95
         case .onBreak: mug ? 0.45 : 0
         case .streak: 0.7
-        case .waiting, .interrupted, .sleeping, .ready: 0
+        case .ready: backToWork ? StretchMove.backToWork.duration : 0
+        case .waiting, .interrupted, .sleeping: 0
         }
     }
 

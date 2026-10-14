@@ -91,6 +91,9 @@ final class SessionEngine {
     @ObservationIgnored private var completionTask: Task<Void, Never>?
     @ObservationIgnored private var undoDeadline: Date?
     @ObservationIgnored private var undoExpiry: Task<Void, Never>?
+    /// A break that ran out moments ago, while the app should say so. Set
+    /// only when a break runs to its end; any other change clears it.
+    private(set) var breakOver: BreakOverMoment?
     /// Finished sessions the log refused; saved with the state and retried.
     /// Observed, so today's totals can include them while they wait.
     private(set) var pendingRecords: [CompletedFocus]
@@ -111,6 +114,8 @@ final class SessionEngine {
             stage = .active(active)
         } else if let focus = saved.completedFocus {
             stage = .focusComplete(focus)
+        } else if let moment = saved.breakOver, moment.isShowing(at: now(), calendar: calendar) {
+            breakOver = moment
         } else if saved.completedFocusName != nil {
             // 1.0 kept only the name, so the completion can't be dated. The
             // session is already in History; offering a break now would be a guess.
@@ -138,6 +143,9 @@ final class SessionEngine {
         Freshness.of(endedAt: focus.completedAt, now: date, recentWindow: breakLength(after: focus),
                      calendar: calendar)
     }
+
+    /// When "Break's over" stops showing on its own, while it shows.
+    var breakOverEnds: Date? { breakOver?.ends(calendar: calendar) }
 
     /// The break a completed focus phase earned.
     func breakLength(after focus: CompletedFocus) -> TimeInterval {
@@ -357,6 +365,14 @@ final class SessionEngine {
         persist()
     }
 
+    /// Puts "Break's over" away: a length was chosen, so the next session is
+    /// already being set up.
+    func dismissBreakOver() {
+        guard breakOver != nil else { return }
+        breakOver = nil
+        persist()
+    }
+
     /// Ends a break early, or dismisses the "focus complete" state.
     func skipBreak() {
         switch stage {
@@ -372,6 +388,7 @@ final class SessionEngine {
     /// Checks whether the current phase has run out. Call on launch, when
     /// returning to the foreground, and when the scheduled end fires.
     func reconcile() {
+        if let moment = breakOver, !moment.isShowing(at: now(), calendar: calendar) { dismissBreakOver() }
         retryPendingRecords()
         retimeAfterClockSetBack()
         guard let session = active, session.isFinished(at: now()) else {
@@ -390,7 +407,9 @@ final class SessionEngine {
         case .rest:
             let freshness = Freshness.of(endedAt: endedAt, now: now(), recentWindow: session.plannedDuration,
                                          calendar: calendar)
-            apply(.idle, event: .breakFinished(freshness))
+            let moment = BreakOverMoment(endedAt: endedAt, name: session.name, wasLong: session.isLongBreak == true)
+            apply(.idle, event: .breakFinished(freshness),
+                  breakOver: moment.isShowing(at: now(), calendar: calendar) ? moment : nil)
         }
     }
 
@@ -446,8 +465,9 @@ final class SessionEngine {
         apply(.active(session), event: .restored)
     }
 
-    private func apply(_ newStage: SessionStage, event: SessionEvent) {
+    private func apply(_ newStage: SessionStage, event: SessionEvent, breakOver: BreakOverMoment? = nil) {
         clearUndo()
+        self.breakOver = breakOver
         stage = newStage
         persist()
         scheduleCompletionCheck()
@@ -494,6 +514,7 @@ final class SessionEngine {
         case .focusComplete(let focus): state.completedFocus = focus
         }
         state.pendingRecords = pendingRecords.isEmpty ? nil : pendingRecords
+        if stage == .idle { state.breakOver = breakOver }
         store.save(state)
     }
 

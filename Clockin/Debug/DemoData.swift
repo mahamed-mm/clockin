@@ -44,11 +44,17 @@ enum DemoData {
     /// Saves a session to open on, before `AppServices` loads the saved state:
     /// - `-DemoFinishing`: a focus session that runs out 3 seconds after launch.
     /// - `-DemoOvertime`: one that ran out four minutes ago, kept going since.
+    /// - `-DemoBreakOver`: a break that ran out 30 seconds ago.
     /// - `-DemoBreak`: a break halfway through, spent as `-DemoBreakStyle`
     ///   says (rest, stretch or breathe) from launch. Seconds long with `-ShortTimers`.
     @MainActor
     static func prepareFinishingSession(now: Date = .now) {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-DemoBreakOver") {
+            let moment = BreakOverMoment(endedAt: now.addingTimeInterval(-30), name: "Thesis outline", wasLong: false)
+            DefaultsSessionStateStore().save(PersistedSessionState(breakOver: moment))
+            return
+        }
         if arguments.contains("-DemoBreak") {
             prepareBreak(now: now, short: arguments.contains("-ShortTimers"))
             return
