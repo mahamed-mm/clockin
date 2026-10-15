@@ -130,6 +130,7 @@ Debug builds accept these launch arguments (Product → Scheme → Edit Scheme �
 | `-ShortTimers` | 10-second focus and 5-second break (15-second long break), for this run only |
 | `-SlowAnimations` | Plays every animation 4× slower |
 | `-DemoData` | Fills an empty store with six weeks of sample sessions and a few symbol picks, and hides the debug menu and the alert hints |
+| `-DemoNow 09:41` | Shows today at 09:41 in the app and the widgets: Tick's hour and the `-DemoData` sessions move, while timers keep the real clock. Pair it with `xcrun simctl status_bar booted override --time 09:41` |
 | `-DemoFinishing` | Starts a 25-minute session that ends 3 seconds after launch |
 | `-DemoOvertime` | A 25-minute session that ended four minutes before launch, for the overtime screen |
 | `-DemoBreak` | A break halfway through (seconds long with `-ShortTimers`); add `-DemoBreakStyle stretch` or `breathe` to spend it that way from launch |
@@ -150,7 +151,7 @@ Copy lives in `Shared/Design/Copy.swift` (one phrase per moment) and `Shared/Loc
 
 The sounds are made from scratch: `scripts/make-chime.sh` for the end chime and `scripts/make-sounds.sh` for the timer's ratchet, wind-up and clicks.
 
-README screenshots come from a simulator launched with `-DemoData`, captured with `xcrun simctl io <device> screenshot --mask=alpha` and framed by `scripts/frame-screenshot.sh`.
+README screenshots come from a freshly erased simulator launched with `-DemoData -DemoNow 09:41`, its status bar set with `xcrun simctl status_bar booted override --time 09:41`, captured with `xcrun simctl io <device> screenshot --mask=alpha` and framed by `scripts/frame-screenshot.sh`.
 
 `scripts/render-tick.sh` draws Tick on the Mac from the app's own code: `sheet` and `shapes` for contact sheets of every pose, `workout`, `moves`, `breath` and `ending` for the workout's stances, moves and last minute, `break` for the break's stretches, `icon` for the app icons' layers (`Clockin/AppIcon.icon`, `Clockin/AppIconBreak.icon`) and `hero` for the banner.
 

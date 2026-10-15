@@ -10,7 +10,7 @@ enum DemoData {
     static var isRequested: Bool { ProcessInfo.processInfo.arguments.contains("-DemoData") }
 
     @MainActor
-    static func seedIfRequested(into services: AppServices, now: Date = .now) {
+    static func seedIfRequested(into services: AppServices, now: Date = DemoClock.now) {
         let context = services.container.mainContext
         guard isRequested, (try? context.fetchCount(FetchDescriptor<FocusRecord>())) == 0 else { return }
         for session in DemoHistory.make(now: now, calendar: services.calendar) {

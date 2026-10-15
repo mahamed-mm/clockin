@@ -586,7 +586,7 @@ private struct DialTick: View {
 
     private func director(at date: Date) -> TickDirector {
         TickDirector(stage: stage, alarmRinging: services.alarmRinging, overtime: engine.overtime(at: date),
-                     hour: services.calendar.component(.hour, from: date), stageSince: stageSince,
+                     hour: TickPose.hour(at: date, calendar: services.calendar), stageSince: stageSince,
                      helloUntil: helloUntil, interruptedUntil: interruptedUntil, breakOverUntil: engine.breakOverEnds)
     }
 
@@ -653,10 +653,7 @@ private struct DialTick: View {
         var dates: [Date]
         switch stage {
         case .idle:
-            let calendar = services.calendar
-            dates = [22, 6].compactMap {
-                calendar.nextDate(after: date, matching: DateComponents(hour: $0, minute: 0), matchingPolicy: .nextTime)
-            }
+            dates = TickPose.nightChanges(after: date, calendar: services.calendar)
         case .focusComplete:
             dates = engine.overtimeChanges(after: date).prefix(1).map { $0 }
         case .active:

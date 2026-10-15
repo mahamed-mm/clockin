@@ -36,7 +36,7 @@ struct LockScreenView: View {
     // MARK: Circular
 
     private var circular: some View {
-        let hour = Calendar.autoupdatingCurrent.component(.hour, from: entry.date)
+        let hour = TickPose.hour(at: entry.date, calendar: .autoupdatingCurrent)
         return ZStack {
             AccessoryWidgetBackground()
             Group {

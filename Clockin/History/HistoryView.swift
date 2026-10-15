@@ -237,7 +237,7 @@ private struct HistoryHeader: View {
                 // Small and still, for company; large text needs the room more.
                 if !dynamicTypeSize.isAccessibilitySize {
                     let pose = TickPose.forHistory(engine.stage, fullToday: today.fullCount,
-                                                   hour: services.calendar.component(.hour, from: .now))
+                                                   hour: TickPose.hour(at: .now, calendar: services.calendar))
                     TickView(pose: pose, progress: .fixed(TickPose.ringProgress(for: engine.stage, at: .now)))
                         .environment(\.tickReduceMotion, true)
                         .frame(width: 56, height: 56)

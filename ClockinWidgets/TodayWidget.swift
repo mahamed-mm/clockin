@@ -174,7 +174,7 @@ struct TodayWidgetView: View {
                 miniDial
                 // Its ring shows the time left as of this entry.
                 TickBadge(pose: TickPose.forWidget(entry.active, at: entry.date,
-                                                   hour: Calendar.current.component(.hour, from: entry.date)),
+                                                   hour: TickPose.hour(at: entry.date, calendar: .autoupdatingCurrent)),
                           progress: TickPose.ringProgress(for: entry.active.map(SessionStage.active) ?? .idle,
                                                           at: entry.date))
                     .frame(width: 50, height: 50)

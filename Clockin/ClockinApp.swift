@@ -10,6 +10,7 @@ struct ClockinApp: App {
 
     init() {
         #if DEBUG
+        DemoClock.prepare()
         DemoData.prepareFinishingSession()
         if ProcessInfo.processInfo.arguments.contains("-ResetOnboarding") { Onboarding.reset() }
         #endif
