@@ -9,5 +9,6 @@ struct ClockinWidgetsBundle: WidgetBundle {
         FocusLiveActivity()
         AlarmLiveActivity()
         FocusControl()
+        ParkControl()
     }
 }

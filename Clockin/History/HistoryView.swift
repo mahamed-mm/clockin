@@ -96,7 +96,8 @@ struct HistoryView: View {
             .sheet(item: $opened) { card in
                 let summary = card.summary
                 SessionCard(summary: summary, now: services.today, calendar: services.calendar,
-                            symbol: services.symbol(for: summary.name), opening: card.mode,
+                            symbol: services.symbol(for: summary.name),
+                            thoughts: services.thoughts.thoughts(for: summary.id), opening: card.mode,
                             rename: { services.renameSession(summary.id, to: $0) },
                             setSymbol: { services.setSymbol($0, for: summary.name) },
                             delete: { services.deleteSessions([summary.id]) })

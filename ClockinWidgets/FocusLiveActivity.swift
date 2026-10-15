@@ -167,7 +167,20 @@ private struct LockScreenFocusView: View {
                 }
                 Spacer(minLength: 4)
                 if !done {
-                    PauseResumeButton(isPaused: state.isPaused, sessionID: context.attributes.sessionID, tint: tint)
+                    VStack(spacing: 8) {
+                        PauseResumeButton(isPaused: state.isPaused, sessionID: context.attributes.sessionID, tint: tint)
+                        if state.phase == .focus {
+                            // Opens the app to the park field. The thought itself never shows here.
+                            Link(destination: URL(string: "clockin://park")!) {
+                                Image(systemName: "note.text")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(Retro.ink)
+                                    .frame(width: 44, height: 32)
+                                    .background(Retro.ink.opacity(0.08), in: .capsule)
+                            }
+                            .accessibilityLabel(Copy.parkThought)
+                        }
+                    }
                 }
             }
             SessionPills(completed: state.completedToday ?? 0,

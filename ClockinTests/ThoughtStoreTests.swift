@@ -228,3 +228,46 @@ struct ThoughtBackupTests {
             "id,name,started_at,completed_at,focus_seconds,planned_seconds,outcome,time_zone,symbol"))
     }
 }
+
+/// Parking a thought from Siri or Shortcuts, and what Copy all copies.
+@MainActor
+struct ParkThoughtIntentTests {
+    let clock = FakeClock()
+    let sounds = SpySounds()
+
+    func makeServices() -> AppServices {
+        AppServices(container: AppServices.makeEmptyContainer(), stateStore: InMemorySessionStateStore(),
+                    now: { [clock] in clock.now }, calendar: osloCalendar, schedulesCompletion: false,
+                    liveActivity: SpyLiveActivity(), notifications: SpyNotifier(), alarm: SpyAlarm(),
+                    widgets: SpyWidgets(), haptics: SpyHaptics(), sounds: sounds, announce: { _ in })
+    }
+
+    @Test func siriParksInTheRunningSession() async {
+        let services = makeServices()
+        services.engine.start(name: "Essay")
+        sounds.played = []
+        let outcome = await services.intentPark("Call the vet")
+        #expect(outcome == .parked)
+        #expect(services.engine.active?.thoughts?.map(\.text) == ["Call the vet"])
+        #expect(!outcome.dialog.contains("vet"), "Siri never says the thought back")
+        #expect(sounds.played.isEmpty)
+    }
+
+    @Test func withNothingRunningItSaysSo() async {
+        let services = makeServices()
+        #expect(await services.intentPark("Call the vet") == .nowhereToPark)
+        services.engine.start(name: "Essay")
+        clock.advance(Preset.classic.focus)
+        services.reconcile()
+        services.engine.startBreak()
+        #expect(await services.intentPark("Call the vet") == .nowhereToPark)
+        #expect(await services.intentPark("   ") == .nowhereToPark)
+    }
+
+    @Test func copyAllIsOneThoughtPerLine() {
+        let now = clock.now
+        let text = ParkedList.plainText([ParkedThought(id: UUID(), text: "Buy milk", parkedAt: now, done: true),
+                                         ParkedThought(id: UUID(), text: "Email Sam", parkedAt: now)])
+        #expect(text == "✓ Buy milk\nEmail Sam")
+    }
+}

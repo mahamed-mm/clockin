@@ -323,6 +323,12 @@ struct FocusView: View {
                         .glassEffectID("session", in: glass)
                         .glassEffectTransition(.matchedGeometry)
                     RecentNames(typed: sessionName) { sessionName = $0 }
+                    if !services.thoughts.unfiled.isEmpty {
+                        ParkedList(thoughts: services.thoughts.unfiled, title: Copy.parkedEarlier,
+                                   toggle: toggleThought, clear: services.clearUnfiledThoughts)
+                            .padding(.top, Space.xs)
+                            .transition(.opacity)
+                    }
                 }
             case .active(let session):
                 VStack(spacing: Space.s) {
@@ -332,12 +338,14 @@ struct FocusView: View {
                     if session.phase == .rest {
                         BreakStyleChips(session: session)
                             .transition(.opacity)
+                        thoughtsAfterFocus
                     }
                 }
             case .focusComplete(let focus):
                 VStack(spacing: Space.xs) {
                     CompletionSummary(focus: focus, day: services.today)
                     OvertimeChip(focus: focus)
+                    thoughtsAfterFocus
                     if welcomes {
                         WelcomeLine()
                             .padding(.top, Space.xs)
@@ -346,6 +354,23 @@ struct FocusView: View {
                 }
             }
         }
+    }
+
+    /// What was parked during the focus session just done, at the
+    /// completion screen and through the break.
+    @ViewBuilder
+    private var thoughtsAfterFocus: some View {
+        if let after = services.thoughtsAfterFocus, !after.thoughts.isEmpty {
+            ParkedList(thoughts: after.thoughts, toggle: toggleThought) {
+                services.clearThoughts(of: after.session)
+            }
+            .padding(.top, Space.xs)
+            .transition(.opacity)
+        }
+    }
+
+    private func toggleThought(_ thought: ParkedThought) {
+        services.setThoughtDone(thought.done != true, thought.id)
     }
 
     private var nameField: some View {

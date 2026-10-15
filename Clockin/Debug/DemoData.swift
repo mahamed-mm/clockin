@@ -40,6 +40,7 @@ enum DemoData {
     /// Saves a session to open on, before `AppServices` loads the saved state:
     /// - `-DemoFinishing`: a focus session that runs out 3 seconds after launch.
     /// - `-DemoOvertime`: one that ran out four minutes ago, kept going since.
+    /// - `-DemoThoughts` with either: two thoughts parked in it.
     /// - `-DemoBreakOver`: a break that ran out 30 seconds ago.
     /// - `-DemoBreak`: a break halfway through, spent as `-DemoBreakStyle`
     ///   says (rest, stretch or breathe) from launch. Seconds long with `-ShortTimers`.
@@ -63,11 +64,18 @@ enum DemoData {
         } else {
             return
         }
-        let session = ActiveSession(id: UUID(), name: "Thesis outline", phase: .focus,
+        var session = ActiveSession(id: UUID(), name: "Thesis outline", phase: .focus,
                                     plannedDuration: Preset.classic.focus,
                                     focusStartedAt: now.addingTimeInterval(end - Preset.classic.focus),
                                     state: .running(endDate: now.addingTimeInterval(end)))
+        if arguments.contains("-DemoThoughts") { session.thoughts = demoThoughts(now: now) }
         DefaultsSessionStateStore().save(PersistedSessionState(active: session))
+    }
+
+    /// `-DemoThoughts`: two thoughts parked in the demo session.
+    static func demoThoughts(now: Date) -> [ParkedThought] {
+        [ParkedThought(id: UUID(), text: "Email Sam about Friday", parkedAt: now.addingTimeInterval(-900)),
+         ParkedThought(id: UUID(), text: "Book the dentist", parkedAt: now.addingTimeInterval(-420))]
     }
 
     @MainActor

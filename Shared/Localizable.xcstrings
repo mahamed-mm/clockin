@@ -1075,6 +1075,16 @@
         }
       }
     },
+    "Clear" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fjern"
+          }
+        }
+      }
+    },
     "Clear filter" : {
       "localizations" : {
         "nb" : {
@@ -1134,6 +1144,26 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Fullført"
+          }
+        }
+      }
+    },
+    "Copied" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kopiert"
+          }
+        }
+      }
+    },
+    "Copy all" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kopier alle"
           }
         }
       }
@@ -2073,6 +2103,16 @@
         }
       }
     },
+    "No focus session is running, so there's nowhere to park it." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingen fokusøkt kjører, så det er ingen steder å parkere den."
+          }
+        }
+      }
+    },
     "No other sessions" : {
       "localizations" : {
         "nb" : {
@@ -2263,6 +2303,16 @@
         }
       }
     },
+    "Opens Clockin to put a thought aside for after the session." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Åpner Clockin for å legge en tanke til side til etter økten."
+          }
+        }
+      }
+    },
     "Opens Focus" : {
       "localizations" : {
         "nb" : {
@@ -2313,6 +2363,16 @@
         }
       }
     },
+    "Park a Thought" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Parker en tanke"
+          }
+        }
+      }
+    },
     "Park a thought" : {
       "localizations" : {
         "nb" : {
@@ -2323,12 +2383,32 @@
         }
       }
     },
+    "Parked earlier" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Parkert tidligere"
+          }
+        }
+      }
+    },
     "Parked for after this session." : {
       "localizations" : {
         "nb" : {
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Parkert til etter denne økten."
+          }
+        }
+      }
+    },
+    "Parked thoughts" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Parkerte tanker"
           }
         }
       }
@@ -2482,6 +2562,26 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Forrige uke"
+          }
+        }
+      }
+    },
+    "Puts a thought aside for after the focus session that's running." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Legger en tanke til side til etter fokusøkten som kjører."
+          }
+        }
+      }
+    },
+    "Puts it back on the list" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Setter den tilbake på listen"
           }
         }
       }
@@ -2804,6 +2904,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Innstillinger"
+          }
+        }
+      }
+    },
+    "Share" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Del"
           }
         }
       }
@@ -3287,6 +3397,16 @@
         }
       }
     },
+    "Thought" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tanke"
+          }
+        }
+      }
+    },
     "Tick" : {
       "localizations" : {
         "nb" : {
@@ -3316,6 +3436,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Tikk-takk"
+          }
+        }
+      }
+    },
+    "Ticks it off" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Krysser den av"
           }
         }
       }
@@ -3549,6 +3679,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Hva fokuserer du på?"
+          }
+        }
+      }
+    },
+    "What's the thought?" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hva er tanken?"
           }
         }
       }

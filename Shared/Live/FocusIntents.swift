@@ -15,6 +15,9 @@ enum IntentOutcome: Equatable, Sendable {
     case breakEnded
     case dismissed
     case nothingRunning
+    /// Never says the thought back: Siri may be speaking aloud.
+    case parked
+    case nowhereToPark
 
     var dialog: String {
         switch self {
@@ -40,6 +43,10 @@ enum IntentOutcome: Equatable, Sendable {
             String(localized: "All done.")
         case .nothingRunning:
             String(localized: "Nothing's running in Clockin.")
+        case .parked:
+            Copy.thoughtParked
+        case .nowhereToPark:
+            String(localized: "No focus session is running, so there's nowhere to park it.")
         }
     }
 }
@@ -53,6 +60,27 @@ extension IntentBridge {
     static var stopFocus: (@MainActor () async -> IntentOutcome)?
     /// Whatever the big button in the app would do now.
     static var primaryAction: (@MainActor () async -> IntentOutcome)?
+    /// Parks a thought in the running focus session.
+    static var parkThought: (@MainActor (_ text: String) async -> IntentOutcome)?
+}
+
+/// Puts a thought aside for after the running focus session, from Siri or
+/// Shortcuts. A Live Activity intent so it runs in the app, which keeps the
+/// session.
+struct ParkThoughtIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Park a Thought"
+    static let description = IntentDescription("Puts a thought aside for after the focus session that's running.")
+
+    @Parameter(title: "Thought", requestValueDialog: "What's the thought?")
+    var thought: String
+
+    init() {}
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let outcome = await IntentBridge.parkThought?(thought) ?? .nowhereToPark
+        return .result(dialog: IntentDialog(stringLiteral: outcome.dialog))
+    }
 }
 
 // All of these are Live Activity intents so they run in the app, which

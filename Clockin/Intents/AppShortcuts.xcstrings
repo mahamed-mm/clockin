@@ -152,6 +152,40 @@
           }
         }
       }
+    },
+    "Park a thought in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Park a thought in ${applicationName}"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Parker en tanke i ${applicationName}"
+          }
+        }
+      }
+    },
+    "Park a thought with ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Park a thought with ${applicationName}"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Parker en tanke med ${applicationName}"
+          }
+        }
+      }
     }
   },
   "sourceLanguage": "en",

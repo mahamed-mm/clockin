@@ -21,5 +21,9 @@ struct ClockinShortcuts: AppShortcutsProvider {
             "Stop \(.applicationName)",
             "Stop my focus in \(.applicationName)",
         ], shortTitle: "Stop", systemImageName: "stop.fill")
+        AppShortcut(intent: ParkThoughtIntent(), phrases: [
+            "Park a thought in \(.applicationName)",
+            "Park a thought with \(.applicationName)",
+        ], shortTitle: "Park a Thought", systemImageName: "note.text")
     }
 }

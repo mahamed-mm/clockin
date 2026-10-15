@@ -7,6 +7,7 @@ enum AppTab: Hashable {
 struct RootView: View {
     @State private var tab: AppTab = .focus
     @Environment(SessionEngine.self) private var engine
+    @Environment(AppServices.self) private var services
 
     var body: some View {
         TabView(selection: $tab) {
@@ -33,7 +34,10 @@ struct RootView: View {
         .tabViewStyle(.sidebarAdaptable)
         .tint(Retro.orangeText)
         .onOpenURL { url in
-            if url.scheme == "clockin" { tab = url.host() == "history" ? .history : .focus }
+            guard url.scheme == "clockin" else { return }
+            tab = url.host() == "history" ? .history : .focus
+            // Straight to the field, while there's a focus session to park in.
+            if url.host() == "park", engine.active?.phase == .focus { services.parkFieldOpen = true }
         }
     }
 }

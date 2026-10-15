@@ -305,6 +305,17 @@ enum Copy {
     /// "2 parked", on the session chip. Never a score: just how many are waiting.
     static func parked(_ count: Int) -> String { String(localized: "\(count) parked") }
 
+    static var parkedThoughts: String { String(localized: "Parked thoughts") }
+    /// A cancelled session's thoughts, kept on the Focus screen.
+    static var parkedEarlier: String { String(localized: "Parked earlier") }
+    static var copyAll: String { String(localized: "Copy all") }
+    static var copied: String { String(localized: "Copied") }
+    static var share: String { String(localized: "Share") }
+    static var clear: String { String(localized: "Clear") }
+    static var thoughtDone: String { String(localized: "Done") }
+    static var markDone: String { String(localized: "Ticks it off") }
+    static var markNotDone: String { String(localized: "Puts it back on the list") }
+
     /// "2 thoughts parked", the chip read aloud.
     static func parkedSpoken(_ count: Int) -> String { String(localized: "\(count) thoughts parked") }
 

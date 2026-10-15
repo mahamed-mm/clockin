@@ -135,6 +135,7 @@ Debug builds accept these launch arguments (Product → Scheme → Edit Scheme �
 | `-DemoMascot calm` | Tick during focus (`workout`, `calm` or `off`), as if picked in Settings |
 | `-DemoFinishing` | Starts a 25-minute session that ends 3 seconds after launch |
 | `-DemoOvertime` | A 25-minute session that ended four minutes before launch, for the overtime screen |
+| `-DemoThoughts` | With `-DemoFinishing` or `-DemoOvertime`: two thoughts parked in that session |
 | `-DemoBreak` | A break halfway through (seconds long with `-ShortTimers`); add `-DemoBreakStyle stretch` or `breathe` to spend it that way from launch |
 | `-DemoBreakOver` | A break that ran out 30 seconds before launch, for the "Break's over" screen |
 | `-ResetOnboarding` | Shows the first-launch hints again (also in the debug menu) |

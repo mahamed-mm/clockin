@@ -10,6 +10,8 @@ struct SessionCard: View {
     let calendar: Calendar
     /// The name's symbol.
     let symbol: String
+    /// Thoughts parked during it and kept with it.
+    var thoughts: [ParkedThought] = []
     /// Saves a new name.
     let rename: (String) -> Void
     /// Picks the symbol for every session with this name.
@@ -22,12 +24,14 @@ struct SessionCard: View {
     @State private var draft: String
     @FocusState private var fieldFocused: Bool
 
-    init(summary: SessionSummary, now: Date, calendar: Calendar, symbol: String, opening mode: Mode = .viewing,
-         rename: @escaping (String) -> Void, setSymbol: @escaping (String) -> Void, delete: @escaping () -> Void) {
+    init(summary: SessionSummary, now: Date, calendar: Calendar, symbol: String, thoughts: [ParkedThought] = [],
+         opening mode: Mode = .viewing, rename: @escaping (String) -> Void, setSymbol: @escaping (String) -> Void,
+         delete: @escaping () -> Void) {
         self.summary = summary
         self.now = now
         self.calendar = calendar
         self.symbol = symbol
+        self.thoughts = thoughts
         self.rename = rename
         self.setSymbol = setSymbol
         self.delete = delete
@@ -73,6 +77,9 @@ struct SessionCard: View {
             } else {
                 ForEach(summary.rows, id: \.self) { row in
                     CardRow(label: row.label, value: row.value)
+                }
+                if !thoughts.isEmpty {
+                    CardThoughts(thoughts: thoughts)
                 }
             }
         } actions: {

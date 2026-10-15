@@ -221,6 +221,7 @@ final class AppServices: SessionEffects {
         IntentBridge.resumeFocus = { [weak services] in await services?.intentResume() ?? .nothingRunning }
         IntentBridge.stopFocus = { [weak services] in await services?.intentStop() ?? .nothingRunning }
         IntentBridge.primaryAction = { [weak services] in await services?.intentPrimary() ?? .nothingRunning }
+        IntentBridge.parkThought = { [weak services] text in await services?.intentPark(text) ?? .nowhereToPark }
         services.engine.undoWindow = {
             // Reaching Undo takes longer with a screen reader or switches.
             UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning
@@ -786,6 +787,14 @@ final class AppServices: SessionEffects {
             }
             await settle()
             return outcome
+        }
+    }
+
+    func intentPark(_ text: String) async -> IntentOutcome {
+        await withoutSounds {
+            engine.reconcile()
+            guard engine.active?.phase == .focus else { return .nowhereToPark }
+            return park(text) ? .parked : .nowhereToPark
         }
     }
 
