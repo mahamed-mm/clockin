@@ -230,7 +230,7 @@ struct FocusView: View {
                             .padding(.vertical, Space.l)
                         ScrollView {
                             VStack(alignment: .leading, spacing: Space.l) {
-                                FocusHeader(stage: engine.stage)
+                                FocusHeader(stage: engine.stage, nextName: sessionName)
                                     .opacity(chromeOpacity)
                                 sessionSlot
                                     .opacity(chromeOpacity)
@@ -263,7 +263,7 @@ struct FocusView: View {
                                         width: viewport.width - Self.margins.leading - Self.margins.trailing)
         return ScrollView {
             VStack(spacing: Self.spacing) {
-                FocusHeader(stage: engine.stage)
+                FocusHeader(stage: engine.stage, nextName: sessionName)
                     .fixedSize(horizontal: false, vertical: true)
                     .measuredHeight($headerHeight)
                     .opacity(chromeOpacity)

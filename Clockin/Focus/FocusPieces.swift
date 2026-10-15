@@ -7,6 +7,8 @@ import SwiftUI
 /// Serif phase title with a time-range line underneath (Tiimo-style).
 struct FocusHeader: View {
     let stage: SessionStage
+    /// The name in the field: after a break, "Next:" names what Start focus will start.
+    let nextName: String
     @Environment(AppServices.self) private var services
     @Environment(SessionEngine.self) private var engine
     @State private var showingSettings = false
@@ -101,8 +103,8 @@ struct FocusHeader: View {
     private func meta(at now: Date) -> String {
         switch stage {
         case .idle:
-            if let moment = engine.breakOver {
-                return Copy.nextSession(name: moment.name, position: BreakOverMoment.nextPosition(fullToday: fullToday),
+            if engine.breakOver != nil {
+                return Copy.nextSession(name: nextName, position: BreakOverMoment.nextPosition(fullToday: fullToday),
                                         setSize: TimerPlan.sessionsPerSet)
             }
             return String(localized: "\(TimeFormat.duration(services.plan.focus)) session")
