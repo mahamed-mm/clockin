@@ -42,8 +42,8 @@ struct BreakStyleTests {
         engine.chooseBreakStyle(.stretch)
         #expect(engine.active?.breakStyle == .stretch)
         #expect(engine.active?.breakStyleFrom == 70)
-        // Nothing about the time changed, so nothing else hears of it.
-        #expect(effects.events == events)
+        // Nothing about the time changed; only that the style did, for the Lock Screen.
+        #expect(effects.events == events + [.breakStyleChanged])
         #expect(engine.active?.endDate == clock.now.addingTimeInterval(Preset.classic.shortBreak - 70))
         // Saved, so a relaunch shows it.
         #expect(store.state.active?.breakStyle == .stretch)
@@ -54,8 +54,44 @@ struct BreakStyleTests {
         let engine = makeEngine(style: .stretch)
         onABreak(engine)
         clock.advance(30)
+        let events = effects.events
         engine.chooseBreakStyle(.stretch)
         #expect(engine.active?.breakStyleFrom == 0)
+        #expect(effects.events == events)
+    }
+
+    @Test func outsideTheAppABreakIsNamedWithItsStyle() {
+        #expect(Copy.breakLabel(style: nil, isLong: false) == "Break")
+        #expect(Copy.breakLabel(style: .rest, isLong: false) == "Break")
+        #expect(Copy.breakLabel(style: .stretch, isLong: false) == "Break · Stretch")
+        #expect(Copy.breakLabel(style: .breathe, isLong: false) == "Break · Breathe")
+        #expect(Copy.breakLabel(style: nil, isLong: true) == "Long break")
+        #expect(Copy.breakLabel(style: .rest, isLong: true) == "Long break")
+        #expect(Copy.breakLabel(style: .stretch, isLong: true) == "Long break · Stretch")
+        #expect(Copy.breakLabel(style: .breathe, isLong: true) == "Long break · Breathe")
+    }
+
+    @Test func theLockScreenAndTheWidgetsNameTheBreakAlike() throws {
+        let engine = makeEngine(style: .breathe)
+        onABreak(engine)
+        let session = try #require(engine.active)
+        let card = FocusActivityAttributes.ContentState(session: session)
+        #expect(card.breakStyle == .breathe)
+        #expect(card.phaseLabel == "Break · Breathe")
+        #expect(card.phaseLabel == session.breakLabel)
+        let line = LockScreenLine(stats: TodayStats(focusSeconds: 0, sessionCount: 1), active: session,
+                                  symbol: "flask.fill", at: clock.now)
+        #expect(line == .running(name: "Break · Breathe", symbol: SessionPhase.rest.symbol, phase: .rest,
+                                 end: try #require(session.endDate)))
+    }
+
+    @Test func focusHasNoBreakStyleOnTheCard() throws {
+        let engine = makeEngine(style: .stretch)
+        engine.start(name: "Essay")
+        let session = try #require(engine.active)
+        #expect(session.breakLabel == nil)
+        #expect(FocusActivityAttributes.ContentState(session: session).breakStyle == nil)
+        #expect(FocusActivityAttributes.ContentState(session: session).phaseLabel == "Focus")
     }
 
     @Test func aPausedBreakCountsOnlyItsOwnTime() {

@@ -51,7 +51,7 @@ A break is rest, a stretch or breathing (Settings › Break › During breaks, o
 - **Breathe:** `BreathCycle` is 4 s in, 6 s out from when Breathe began. The halo and Tick's breath are one number that the render server animates from turn to turn (`BreathFollower`), so the app itself wakes only at the turns, for the words on the dial and a soft tap. Still, they hold at half.
 - **The dial's words:** `BreakGuide` gives the label ("Breathe in", "Neck roll"), the dots and the VoiceOver value, and the moments they change, so the dial redraws only then.
 - **Break's over:** after a break runs out, `TickDirector` keeps Tick ready (even at night) for the ten minutes "Break's over" shows, and its entrance is a quick reach up and a yawn (`StretchMove.backToWork`), seen only if the change happened on screen.
-- **Live Activity, island, widget, bedside:** unchanged. They can't follow breaths or stretches without push updates (the same limit as the workout), and the bedside clock always rests.
+- **Live Activity, island, widget, bedside:** they name the style and nothing more: "Break · Stretch", "Long break · Breathe", plain "Break" for a rest (`Copy.breakLabel`, shared by `ContentState.phaseLabel` and `ActiveSession.breakLabel`). A chip sends `breakStyleChanged`, which updates the card and the widgets. They can't follow breaths or stretches without push updates (the same limit as the workout), so once the stretches are done the card still says Stretch. The bedside clock always rests.
 
 ## Waiting, watching and catching
 

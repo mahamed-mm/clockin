@@ -24,8 +24,17 @@ struct FocusActivityAttributes: ActivityAttributes {
         /// The break is the long one after a set, so a new set comes next.
         /// Optional for older activities.
         var isLongBreak: Bool?
+        /// Break only: how it's spent, sent again when a chip changes it.
+        /// Optional for older activities, which rest.
+        var breakStyle: BreakStyle?
 
         var isPaused: Bool { pausedRemaining != nil }
+
+        /// "Focus", "Break", "Long break" or "Break · Stretch": the same words
+        /// as `ActiveSession.breakLabel`.
+        var phaseLabel: String {
+            phase == .focus ? Copy.focus : Copy.breakLabel(style: breakStyle, isLong: isLongBreak == true)
+        }
 
         /// Beside the name: the session's symbol, or the cup on a break.
         var nameSymbol: String {
@@ -59,6 +68,7 @@ struct FocusActivityAttributes: ActivityAttributes {
             self.symbol = symbol
             self.canExtend = canExtend
             isLongBreak = session.isLongBreak
+            breakStyle = session.phase == .rest ? session.breakStyle : nil
             switch session.state {
             case .running(let end):
                 endDate = end

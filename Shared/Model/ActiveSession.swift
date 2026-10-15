@@ -68,6 +68,11 @@ struct ActiveSession: Codable, Equatable, Sendable {
         return false
     }
 
+    /// Break only: its name outside the app, "Break · Stretch". Nil during focus.
+    var breakLabel: String? {
+        phase == .rest ? Copy.breakLabel(style: breakStyle, isLong: isLongBreak == true) : nil
+    }
+
     var endDate: Date? {
         if case .running(let end) = state { return end }
         return nil

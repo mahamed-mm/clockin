@@ -42,6 +42,24 @@ struct LockScreenLineTests {
         #expect(line.pose(hour: 12) == .onBreak)
     }
 
+    @Test func aBreakSaysHowItsSpent() {
+        let end = now.addingTimeInterval(120)
+        func name(_ style: BreakStyle?, long: Bool = false, paused: Bool = false) -> String? {
+            var rest = session(.rest, state: paused ? .paused(remaining: 60) : .running(endDate: end))
+            rest.breakStyle = style
+            rest.isLongBreak = long ? true : nil
+            switch LockScreenLine(stats: today, active: rest, symbol: "flask.fill", at: now) {
+            case .running(let name, _, _, _), .paused(let name, _, _): return name
+            case .today: return nil
+            }
+        }
+        #expect(name(.rest) == "Break")
+        #expect(name(.stretch) == "Break · Stretch")
+        #expect(name(.breathe, paused: true) == "Break · Breathe")
+        #expect(name(.stretch, long: true) == "Long break · Stretch")
+        #expect(name(nil, long: true) == "Long break")
+    }
+
     @Test func aSessionThatRanOutIsTodayAgain() {
         let line = LockScreenLine(stats: today, active: session(state: .running(endDate: now.addingTimeInterval(-1))),
                                   symbol: "flask.fill", at: now)

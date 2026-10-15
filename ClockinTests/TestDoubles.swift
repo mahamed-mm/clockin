@@ -58,12 +58,14 @@ final class SpyLiveActivity: LiveActivityControlling {
     var lastCompletedToday: Int?
     var lastSymbol: String?
     var lastCanExtend: Bool?
+    var lastSession: ActiveSession?
     var enabled = true
     var flushes = 0
 
     func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String,
               canExtend: Bool) {
         calls.append("sync")
+        lastSession = session
         lastSymbol = symbol
         lastCanExtend = canExtend
         lastBreakDuration = breakDuration

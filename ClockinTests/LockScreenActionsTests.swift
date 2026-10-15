@@ -138,5 +138,10 @@ struct LockScreenActionsTests {
         let json = #"{"phase":"focus","plannedDuration":1500,"endDate":0}"#
         let state = try JSONDecoder().decode(FocusActivityAttributes.ContentState.self, from: Data(json.utf8))
         #expect(state.canExtend == nil)
+        // A break from before styles rests, and says so the old way.
+        let rest = #"{"phase":"rest","plannedDuration":300,"endDate":0}"#
+        let card = try JSONDecoder().decode(FocusActivityAttributes.ContentState.self, from: Data(rest.utf8))
+        #expect(card.breakStyle == nil)
+        #expect(card.phaseLabel == "Break")
     }
 }

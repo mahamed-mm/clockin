@@ -7,14 +7,14 @@ enum LockScreenLine: Equatable {
     case running(name: String, symbol: String, phase: SessionPhase, end: Date)
     case paused(name: String, symbol: String, phase: SessionPhase)
 
-    /// `symbol` is the running name's; a break shows the cup and says Break.
+    /// `symbol` is the running name's; a break shows the cup and its `breakLabel`.
     init(stats: TodayStats, active: ActiveSession?, symbol: String, at date: Date) {
         guard let active, !active.isFinished(at: date) else {
             self = .today(seconds: stats.focusSeconds, sessions: stats.sessionCount)
             return
         }
         let focus = active.phase == .focus
-        let name = focus ? Copy.displayName(active.name) : Copy.rest
+        let name = active.breakLabel ?? Copy.displayName(active.name)
         let shown = focus ? symbol : SessionPhase.rest.symbol
         if let end = active.endDate {
             self = .running(name: name, symbol: shown, phase: active.phase, end: end)

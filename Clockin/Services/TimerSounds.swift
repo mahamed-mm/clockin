@@ -22,7 +22,8 @@ enum TimerSound: String, CaseIterable, Sendable {
         case .paused: .clunk
         case .resumed: .click
         case .cancelled, .focusCompleted, .breakFinished, .breakSkipped, .completionDismissed, .restored,
-             .historySaved, .extended, .finishedEarly, .overtimeKept, .breakOverEnded: nil
+             .historySaved, .extended, .finishedEarly, .overtimeKept, .breakOverEnded,
+             .breakStyleChanged: nil
         }
     }
 }

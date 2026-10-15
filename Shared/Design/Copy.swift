@@ -143,6 +143,16 @@ enum Copy {
     static var longBreak: String { String(localized: "Long break") }
     static var paused: String { String(localized: "Paused") }
 
+    /// A break as the Lock Screen, island and widgets name it: "Break",
+    /// "Long break", or with how it's spent, "Break · Stretch". A rest needs
+    /// no word, as on the dial; the breaths and stretches themselves only
+    /// the app can follow.
+    static func breakLabel(style: BreakStyle?, isLong: Bool) -> String {
+        let base = isLong ? longBreak : rest
+        guard let style, style != .rest else { return base }
+        return String(localized: "\(base) · \(style.title)")
+    }
+
     /// "Paused at 9:36". The dial already shows the time left; a session
     /// paused by an older build says how much instead: "Paused · 12:34 left".
     static func pausedMeta(at pausedAt: Date?, remaining: TimeInterval) -> String {

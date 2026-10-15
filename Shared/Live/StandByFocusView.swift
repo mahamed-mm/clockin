@@ -87,7 +87,7 @@ struct StandByFocusView: View {
 
     private var status: String {
         if done { return state.doneStatus }
-        return state.isPaused ? Copy.paused : state.phase.label
+        return state.isPaused ? Copy.paused : state.phaseLabel
     }
 
     private var detail: String {

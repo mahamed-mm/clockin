@@ -284,6 +284,9 @@ final class AppServices: SessionEffects {
         case .paused:
             if let session = engine.active { syncLiveActivity(session) }
             cancelEndAlert()
+        case .breakStyleChanged:
+            // Only the card's words change; the alert still rings at the same time.
+            if let session = engine.active { syncLiveActivity(session) }
         case .cancelled:
             liveActivity.endAll()
             cancelEndAlert()
@@ -1070,7 +1073,7 @@ struct EventStamp: Equatable {
         case .breakStarted: .impact(flexibility: .soft, intensity: 0.7)
         case .breakSkipped: .impact(weight: .light)
         case .breakFinished(let freshness): freshness == .stale ? nil : .success
-        case .focusCompleted, .completionDismissed, .restored, .historySaved, .breakOverEnded, nil: nil
+        case .focusCompleted, .completionDismissed, .restored, .historySaved, .breakOverEnded, .breakStyleChanged, nil: nil
         }
     }
 }

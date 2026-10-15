@@ -54,6 +54,24 @@ struct AppServicesTests {
         #expect(widgets.reloads == 1)
     }
 
+    @Test func aNewBreakStyleReachesTheCardAndTheWidget() {
+        let services = makeServices()
+        finishFocus(services)
+        services.engine.startBreak()
+        let next: BreakStyle = services.engine.active?.breakStyle == .breathe ? .stretch : .breathe
+        liveActivity.calls = []
+        notifier.calls = []
+        let reloads = widgets.reloads
+        services.engine.chooseBreakStyle(next)
+
+        #expect(liveActivity.calls == ["sync"])
+        #expect(liveActivity.lastSession?.breakStyle == next)
+        #expect(widgets.reloads == reloads + 1)
+        // Its time didn't move, so neither does the alert.
+        #expect(notifier.calls.isEmpty)
+        #expect(services.lastEvent.feedback == nil)
+    }
+
     @Test func pauseKeepsTheCardAndDropsTheAlert() {
         let services = makeServices()
         services.engine.start(name: "Essay")

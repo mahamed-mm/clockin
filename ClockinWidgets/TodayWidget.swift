@@ -119,7 +119,7 @@ struct TodayWidgetView: View {
                         .foregroundStyle(Retro.ink)
                         .padding(.horizontal, 30)
                 }
-                Text(active.phase == .focus ? Copy.displayName(active.name) : Copy.rest)
+                Text(active.breakLabel ?? Copy.displayName(active.name))
                     .retroLabel()
                     .lineLimit(1)
             }
@@ -248,7 +248,7 @@ struct ActiveLine: View {
                     .foregroundStyle(Retro.inkSoft)
                     .accessibilityHidden(true)
             }
-            Text(active.phase == .focus ? Copy.displayName(active.name) : Copy.rest)
+            Text(active.breakLabel ?? Copy.displayName(active.name))
                 .lineLimit(1)
             Spacer(minLength: 2)
             if let end = active.endDate {
