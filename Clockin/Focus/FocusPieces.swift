@@ -110,14 +110,14 @@ struct FocusHeader: View {
             if session.isPaused {
                 return Copy.pausedMeta(at: session.pausedAt, remaining: session.remaining(at: now))
             }
-            let end = session.endDate ?? now
+            let end = TimeFormat.shown(session.endDate ?? now)
             return session.phase == .focus
                 ? TimeFormat.range(end.addingTimeInterval(-session.plannedDuration), end)
                 : String(localized: "Until \(TimeFormat.time(end))")
         case .focusComplete(let focus):
             // An old completion opens quietly, saying when it was.
             return engine.freshness(of: focus, at: now) == .stale
-                ? TimeFormat.finished(focus.completedAt, now: now)
+                ? TimeFormat.finished(TimeFormat.shown(focus.completedAt), now: TimeFormat.shown(now))
                 : Copy.breakLine(seconds: engine.breakLength(after: focus))
         }
     }

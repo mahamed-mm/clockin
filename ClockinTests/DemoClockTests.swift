@@ -11,8 +11,9 @@ struct DemoClockTests {
         #expect(UserDefaults.standard.string(forKey: DemoClock.argumentKey) == nil)
         #expect(SharedStore.defaults.object(forKey: DemoClock.defaultsKey) == nil)
         #expect(DemoClock.offset == 0)
-        #expect(TickPose.demoShift == 0)
+        #expect(TimeFormat.demoShift == 0)
         let now = Date.now
+        #expect(TimeFormat.shown(now) == now)
         #expect(TickPose.hour(at: now, calendar: osloCalendar) == osloCalendar.component(.hour, from: now))
     }
 

@@ -6,25 +6,18 @@ extension TickPose {
 
     /// The hour Tick goes by at `date`. `shift` moves the time of day shown;
     /// it's zero except in Debug with `-DemoNow` (`DemoClock`).
-    static func hour(at date: Date, calendar: Calendar, shift: TimeInterval = demoShift) -> Int {
+    static func hour(at date: Date, calendar: Calendar, shift: TimeInterval = TimeFormat.demoShift) -> Int {
         calendar.component(.hour, from: date.addingTimeInterval(shift))
     }
 
     /// When night next starts and ends after `date`, in real time, so a still
     /// Tick falls asleep and wakes on time.
-    static func nightChanges(after date: Date, calendar: Calendar, shift: TimeInterval = demoShift) -> [Date] {
+    static func nightChanges(after date: Date, calendar: Calendar,
+                             shift: TimeInterval = TimeFormat.demoShift) -> [Date] {
         [22, 6].compactMap {
             calendar.nextDate(after: date.addingTimeInterval(shift), matching: DateComponents(hour: $0, minute: 0),
                               matchingPolicy: .nextTime)?.addingTimeInterval(-shift)
         }
-    }
-
-    static var demoShift: TimeInterval {
-        #if DEBUG
-        DemoClock.offset
-        #else
-        0
-        #endif
     }
 
     /// Tick in the app, for where the session stands. `overtime` is the

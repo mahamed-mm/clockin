@@ -226,6 +226,19 @@ enum TimeFormat {
         date.formatted(date: .omitted, time: .shortened)
     }
 
+    /// The time of day shown for a running session's `date`. Its timers keep
+    /// the real clock; in Debug, `-DemoNow` moves what's shown (`DemoClock`).
+    static func shown(_ date: Date) -> Date { date.addingTimeInterval(demoShift) }
+
+    /// Zero, except in Debug with `-DemoNow`.
+    static var demoShift: TimeInterval {
+        #if DEBUG
+        DemoClock.offset
+        #else
+        0
+        #endif
+    }
+
     /// "14:05 → 14:30"
     static func range(_ start: Date, _ end: Date) -> String {
         time(start) + rangeArrow + time(end)

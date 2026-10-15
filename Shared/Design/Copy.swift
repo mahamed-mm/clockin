@@ -125,7 +125,7 @@ enum Copy {
     /// paused by an older build says how much instead: "Paused · 12:34 left".
     static func pausedMeta(at pausedAt: Date?, remaining: TimeInterval) -> String {
         guard let pausedAt else { return String(localized: "Paused · \(TimeFormat.clock(remaining)) left") }
-        return String(localized: "Paused at \(TimeFormat.time(pausedAt))")
+        return String(localized: "Paused at \(TimeFormat.time(TimeFormat.shown(pausedAt)))")
     }
 
     /// "1 hour, 15 minutes of focus today": a widget's big total, read aloud.
@@ -243,10 +243,12 @@ enum Copy {
     }
 
     /// "Ends 14:30"
-    static func ends(_ date: Date) -> String { String(localized: "Ends \(TimeFormat.time(date))") }
+    static func ends(_ date: Date) -> String { String(localized: "Ends \(TimeFormat.time(TimeFormat.shown(date)))") }
 
     /// "Break until 14:30"
-    static func breakUntil(_ date: Date) -> String { String(localized: "Break until \(TimeFormat.time(date))") }
+    static func breakUntil(_ date: Date) -> String {
+        String(localized: "Break until \(TimeFormat.time(TimeFormat.shown(date)))")
+    }
 
     // MARK: History's subject filter (`subject` nil is "Other")
 
