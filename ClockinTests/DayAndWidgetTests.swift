@@ -153,6 +153,52 @@ struct WidgetSnapshotTests {
     }
 }
 
+/// When the widget redraws on its own: Tick sleeps at 22:00 and wakes at
+/// 06:00, and a running session adds only its end.
+struct WidgetTimelineTests {
+    func at(day: Int = 9, _ hour: Int, _ minute: Int = 0) -> Date {
+        osloCalendar.date(from: DateComponents(year: 2026, month: 10, day: day, hour: hour, minute: minute))!
+    }
+
+    func session(_ state: ActiveSession.RunState, from now: Date) -> ActiveSession {
+        ActiveSession(id: UUID(), name: "A", phase: .focus, plannedDuration: 1_500,
+                      focusStartedAt: now.addingTimeInterval(-60), state: state)
+    }
+
+    func dates(at now: Date, active: ActiveSession? = nil, shift: TimeInterval = 0) -> [Date] {
+        WidgetSnapshot.timelineDates(at: now, active: active, calendar: osloCalendar, shift: shift)
+    }
+
+    @Test func anIdleEveningRedrawsWhenNightStarts() {
+        #expect(dates(at: at(15)) == [at(15), at(22), at(day: 10, 0)])
+    }
+
+    @Test func anIdleSmallHourRedrawsWhenNightEndsAndStarts() {
+        #expect(dates(at: at(1, 30)) == [at(1, 30), at(6), at(22), at(day: 10, 0)])
+    }
+
+    @Test func lateAtNightOnlyMidnightIsLeft() {
+        #expect(dates(at: at(23, 10)) == [at(23, 10), at(day: 10, 0)])
+    }
+
+    @Test func aRunningSessionAddsOnlyItsEnd() {
+        let running = session(.running(endDate: at(21, 50) + 300), from: at(21, 50))
+        #expect(dates(at: at(21, 50), active: running) == [at(21, 50), at(21, 55), at(day: 10, 0)])
+        let paused = session(.paused(remaining: 600), from: at(21, 50))
+        #expect(dates(at: at(21, 50), active: paused) == [at(21, 50), at(day: 10, 0)])
+    }
+
+    @Test func aSessionThatAlreadyRanOutCountsAsIdle() {
+        let finished = session(.running(endDate: at(21, 40)), from: at(21, 50))
+        #expect(dates(at: at(21, 50), active: finished) == [at(21, 50), at(22), at(day: 10, 0)])
+    }
+
+    @Test func theDemoClockMovesNight() {
+        // Shown as 21:00 at 15:00: night starts an hour from now, and ends at midnight, with the next timeline.
+        #expect(dates(at: at(15), shift: 6 * 3600) == [at(15), at(16), at(day: 10, 0)])
+    }
+}
+
 /// What fills a session pill: everything except a session finished early
 /// before half its plan. Its minutes always count.
 struct FullSessionTests {

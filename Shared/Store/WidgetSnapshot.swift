@@ -85,6 +85,22 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         sessions.filter { calendar.isDate($0.completedAt, inSameDayAs: date) }
             .sorted { $0.completedAt > $1.completedAt }
     }
+
+    /// When the widget's timeline redraws, ending at midnight: now, the
+    /// running phase's end so the count updates without the app, and, with
+    /// no session going, night starting or ending so Tick sleeps and wakes.
+    /// Anything after midnight waits for the timeline that starts then.
+    static func timelineDates(at now: Date, active: ActiveSession?, calendar: Calendar = .autoupdatingCurrent,
+                              shift: TimeInterval = TimeFormat.demoShift) -> [Date] {
+        let midnight = calendar.dayRange(containing: now).upperBound
+        var changes: [Date]
+        if let active, !active.isFinished(at: now) {
+            changes = active.endDate.map { [$0] } ?? []
+        } else {
+            changes = TickPose.nightChanges(after: now, calendar: calendar, shift: shift)
+        }
+        return [now] + changes.filter { $0 > now && $0 < midnight }.sorted() + [midnight]
+    }
 }
 
 struct WidgetSnapshotStore {

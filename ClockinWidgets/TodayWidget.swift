@@ -27,13 +27,8 @@ struct TodayProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<TodayEntry>) -> Void) {
         let now = Date.now
         let state = DefaultsSessionStateStore().load()
-        let midnight = Calendar.autoupdatingCurrent.dayRange(containing: now).upperBound
-        var dates = [now]
-        // Refresh when the running phase ends so the count updates without the
-        // app. An end after midnight waits for the timeline that starts then.
-        if let end = state.active?.endDate, end > now, end < midnight { dates.append(end) }
-        dates.append(midnight)
-        completion(Timeline(entries: entries(at: dates, state: state), policy: .after(midnight)))
+        let dates = WidgetSnapshot.timelineDates(at: now, active: state.active)
+        completion(Timeline(entries: entries(at: dates, state: state), policy: .after(dates.last ?? now)))
     }
 
     private func entries(at dates: [Date], state: PersistedSessionState = DefaultsSessionStateStore().load())
