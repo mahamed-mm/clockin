@@ -252,4 +252,34 @@ enum TimeFormat {
         if hours == 0 { return String(localized: "\(minutes) min") }
         return rest == 0 ? String(localized: "\(hours) h") : String(localized: "\(hours) h \(rest) min")
     }
+
+    /// The seconds `duration` shows: whole minutes, or seconds under a
+    /// minute. For saying the same total aloud.
+    static func shownSeconds(_ seconds: TimeInterval) -> TimeInterval {
+        seconds > 0 && seconds < 60 ? seconds.rounded(.down) : (seconds / 60).rounded(.down) * 60
+    }
+
+    /// A run of `duration`'s text: digits, or the units between them.
+    struct DurationPart: Equatable {
+        var text: String
+        var isNumber: Bool
+    }
+
+    /// `duration` in runs of digits and units, "1 h 15 min" as "1", " h ",
+    /// "15", " min", in whatever language it's in.
+    static func durationParts(_ seconds: TimeInterval) -> [DurationPart] {
+        parts(of: duration(seconds))
+    }
+
+    static func parts(of text: String) -> [DurationPart] {
+        var parts: [DurationPart] = []
+        for character in text {
+            if parts.last?.isNumber == character.isNumber {
+                parts[parts.count - 1].text.append(character)
+            } else {
+                parts.append(DurationPart(text: String(character), isNumber: character.isNumber))
+            }
+        }
+        return parts
+    }
 }

@@ -128,6 +128,11 @@ enum Copy {
         return String(localized: "Paused at \(TimeFormat.time(pausedAt))")
     }
 
+    /// "1 hour, 15 minutes of focus today": a widget's big total, read aloud.
+    static func spokenFocusedToday(seconds: TimeInterval) -> String {
+        String(localized: "\(TimeFormat.spokenDuration(TimeFormat.shownSeconds(seconds))) of focus today")
+    }
+
     /// "1 h 9 min today", for the Lock Screen.
     static func focusedToday(seconds: TimeInterval) -> String {
         String(localized: "\(TimeFormat.duration(seconds)) today")

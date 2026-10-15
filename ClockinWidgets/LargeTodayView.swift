@@ -22,17 +22,8 @@ struct LargeTodayView: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Today's Focus").retroLabel()
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(entry.stats.focusMinutes, format: .number)
-                        .font(.retroDisplay(size: 40))
-                        .tracking(-1)
-                        .foregroundStyle(Retro.ink)
-                    Text("min")
-                        .retroFont(.headline)
-                        .foregroundStyle(Retro.inkSoft)
-                }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Copy.focusedToday(seconds: entry.stats.focusSeconds))
+                DurationText(seconds: entry.stats.focusSeconds, size: 40,
+                             spoken: Copy.spokenFocusedToday(seconds: entry.stats.focusSeconds))
                 SessionPills(completed: entry.stats.sessionCount, inProgress: entry.active?.phase == .focus,
                              pillWidth: 22, pillHeight: 6)
                 // Under the pills rather than beside them, so it never runs into the button.

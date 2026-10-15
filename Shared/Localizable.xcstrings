@@ -3377,16 +3377,6 @@
         }
       }
     },
-    "min" : {
-      "localizations" : {
-        "nb" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "min"
-          }
-        }
-      }
-    },
     "tempo %@ · reach %@ · rest %@–%@ s" : {
       "localizations" : {
         "en" : {

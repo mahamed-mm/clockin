@@ -133,15 +133,9 @@ struct TodayWidgetView: View {
                 ZStack {
                     RetroDial(value: min(1, Double(entry.stats.sessionCount) / Double(SessionPills.setSize)),
                               tint: Retro.orange, lineWidthRatio: 0.09)
-                    VStack(spacing: 0) {
-                        Text(entry.stats.focusMinutes, format: .number)
-                            .font(.retroDisplay(size: 30))
-                            .foregroundStyle(Retro.ink)
-                            .minimumScaleFactor(0.6)
-                        Text("min").font(.retro(.label)).foregroundStyle(Retro.inkSoft)
-                    }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(focusedToday)
+                    DurationText(seconds: entry.stats.focusSeconds, size: 30, stacks: true,
+                                 spoken: Copy.spokenFocusedToday(seconds: entry.stats.focusSeconds))
+                        .padding(.horizontal, 16)
                 }
                 SessionPills(completed: entry.stats.sessionCount,
                              pillWidth: 16, pillHeight: 5, spacing: 3)
@@ -198,24 +192,10 @@ struct TodayWidgetView: View {
         }
     }
 
+    /// Today's total as the app says it, "1 h 15 min".
     private var minutes: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
-            Text(entry.stats.focusMinutes, format: .number)
-                .font(.retroDisplay(size: 40))
-                .tracking(-1)
-                .foregroundStyle(Retro.ink)
-                .minimumScaleFactor(0.6)
-            Text("min")
-                .retroFont(.headline)
-                .foregroundStyle(Retro.inkSoft)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(focusedToday)
-    }
-
-    /// "50 minutes of focus today", rather than "50", "min".
-    private var focusedToday: String {
-        String(localized: "\(TimeFormat.spokenDuration(TimeInterval(entry.stats.focusMinutes * 60))) of focus today")
+        DurationText(seconds: entry.stats.focusSeconds, size: 40,
+                     spoken: Copy.spokenFocusedToday(seconds: entry.stats.focusSeconds))
     }
 
     /// Same reading as the app: time left, draining on its own between
