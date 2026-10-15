@@ -75,6 +75,8 @@ struct TickFace: Equatable, Sendable {
     var flush: Double = 0
     /// The eyes and mouth turned toward one side, in Tick units (right is positive).
     var gazeX: Double = 0
+    /// The eyes and mouth turned up or down, in Tick units (down is positive).
+    var gazeY: Double = 0
 }
 
 extension TickFace {
@@ -119,12 +121,12 @@ extension TickFace {
 extension TickFace: Animatable {
     /// The numbers that animate; the shapes switch.
     var animatableData: RigVector {
-        get { RigVector([browHandAngle, browHand, cheeks, blink, mouthOpen, flush, gazeX]) }
+        get { RigVector([browHandAngle, browHand, cheeks, blink, mouthOpen, flush, gazeX, gazeY]) }
         set {
             let values = newValue.values
-            guard values.count == 7 else { return }
+            guard values.count == 8 else { return }
             browHandAngle = values[0]; browHand = values[1]; cheeks = values[2]; blink = values[3]
-            mouthOpen = values[4]; flush = values[5]; gazeX = values[6]
+            mouthOpen = values[4]; flush = values[5]; gazeX = values[6]; gazeY = values[7]
         }
     }
 }

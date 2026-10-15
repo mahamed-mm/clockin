@@ -23,6 +23,8 @@ struct TickLoopSchedule: TimelineSchedule {
     let pokedAt: Date?
     /// A parked thought is on its way: frames through its flight and catch.
     var caughtAt: Date? = nil
+    /// A nod: frames through it.
+    var noddedAt: Date? = nil
     let paused: Bool
     /// The debug menu's slow motion.
     let speed: Double
@@ -46,11 +48,15 @@ struct TickLoopSchedule: TimelineSchedule {
             let catching = caughtAt.map {
                 let t = date.timeIntervalSince($0)
                 return t >= 0 && t < TickCatch.length
+            } ?? false || noddedAt.map {
+                let t = date.timeIntervalSince($0)
+                return t >= 0 && t < TickCatch.nodLength
             } ?? false
             let soonest = frame < 0.2 || poking || catching ? frame : loops.nextMovement(from: frame)
             var upcoming = since.addingTimeInterval(soonest * speed)
-            // Wake for a catch still to come.
+            // Wake for a catch or nod still to come.
             if let caughtAt, caughtAt > date { upcoming = min(upcoming, caughtAt) }
+            if let noddedAt, noddedAt > date { upcoming = min(upcoming, noddedAt) }
             if let workout {
                 // The next combo frame, or the next combo's start.
                 let step = date.addingTimeInterval(workout.frameInterval(at: date, pose: loops.pose))
@@ -99,6 +105,11 @@ struct TickView: View {
     var backToWork = false
     /// When a parked thought reaches Tick: it catches it, or nods mid-combo.
     var caughtAt: Date? = nil
+    /// What Tick watches while ready: the knob, the name field. Ignored in
+    /// any other pose, and when Tick is still.
+    var attention: TickAttention = .none
+    /// When Tick nods, approving a new symbol. Ready only.
+    var noddedAt: Date? = nil
     /// False takes the headphones off: nothing is playing, and the workout
     /// (which always wears them) isn't on. Nil leaves them to the pose.
     var listening: Bool? = nil
@@ -232,6 +243,7 @@ struct TickView: View {
                 // Frames only while something moves (30 a second), none between.
                 let workoutLoops = workoutLoops
                 TimelineView(TickLoopSchedule(loops: loops, since: since, pokedAt: pokedAt, caughtAt: caughtAt,
+                                              noddedAt: pose == .ready ? noddedAt : nil,
                                               paused: paused, speed: Motion.speed, workout: workoutLoops,
                                               breakLoops: breakLoops)) { context in
                     let elapsed = context.date.timeIntervalSince(since) / Motion.speed
@@ -240,7 +252,8 @@ struct TickView: View {
                     let motion = paused ? TickMotion.still
                         : withCatch(withPoke(withWorkout(loops.motion(at: elapsed), frame), at: context.date),
                                     at: context.date, workout: workoutLoops)
-                    let (face, swapBlink) = face(at: context.date, base: frame?.face)
+                    let (plainFace, swapBlink) = face(at: context.date, base: frame?.face)
+                    let face = pose == .ready && frame == nil ? attention.applied(to: plainFace) : plainFace
                     GeometryReader { proxy in
                         let side = min(proxy.size.width, proxy.size.height)
                         // Drawn once into a layer, so moving it costs no redraw. The
@@ -271,6 +284,8 @@ struct TickView: View {
         .animation(still ? Motion.calm(true) : .spring(duration: (pose == .waiting && workout != nil ? 0.3 : 0.45) * Motion.speed,
                                                        bounce: 0.25), value: pose)
         .animation(.spring(duration: 0.22, bounce: 0.45), value: pressing)
+        // Eyes follow the knob or the field, springing there and back.
+        .animation(.spring(duration: 0.3 * Motion.speed, bounce: 0.15), value: attention)
         // Headphones on or off as a focus sound starts or stops.
         .animation(still ? Motion.calm(true) : .spring(duration: 0.45 * Motion.speed, bounce: 0.2), value: listening)
         .overlay { touchAreas }
@@ -372,6 +387,10 @@ struct TickView: View {
 
     /// A parked thought landing: caught, or a nod mid-combo.
     private func withCatch(_ motion: TickMotion, at date: Date, workout: WorkoutLoops?) -> TickMotion {
+        var motion = motion
+        if pose == .ready, let noddedAt {
+            motion = TickCatch.apply(to: motion, at: date.timeIntervalSince(noddedAt), nod: true)
+        }
         guard let caughtAt else { return motion }
         let midCombo = workout?.move(at: caughtAt) != nil
         return TickCatch.apply(to: motion, at: date.timeIntervalSince(caughtAt), nod: midCombo)

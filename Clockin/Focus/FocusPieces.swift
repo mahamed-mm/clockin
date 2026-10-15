@@ -263,7 +263,8 @@ struct DialFace: View {
         // element, beside the dial's, so its crown can be used with VoiceOver.
         .overlay {
             if showsMascot, size >= DialTick.minimumDial {
-                DialTick(stage: stage, celebration: celebration, crown: crown, calm: calmMascot)
+                DialTick(stage: stage, celebration: celebration, crown: crown, calm: calmMascot,
+                         knobMinutes: draftMinutes)
                     .frame(width: size * 0.3, height: size * 0.3)
                     .position(x: size * 0.9, y: size * 0.88)
             }
@@ -538,8 +539,12 @@ private struct DialTick: View {
     let crown: (label: String, action: () -> Void)?
     /// Calm whatever the setting says (bedside).
     var calm = false
+    /// The knob being dragged to this many minutes, for Tick to watch.
+    var knobMinutes: Int? = nil
     @Environment(SessionEngine.self) private var engine
     @Environment(AppServices.self) private var services
+    @Environment(\.tickWatchesName) private var watchesName
+    @Environment(\.tickNodAt) private var nodAt
     /// When Tick was last on screen, for hello after a week away.
     @AppStorage(Onboarding.tickLastSeenKey) private var lastSeen: Double = 0
     @State private var stageSince = Date.now
@@ -581,11 +586,19 @@ private struct DialTick: View {
         return TickView(pose: shown ?? pose, progress: .fixed(TickPose.ringProgress(for: stage, at: date)),
                         celebration: celebration, crown: crown, onDismiss: dismiss, workout: workout,
                         breakActivity: breakActivity, backToWork: director(at: date).backToWork(at: date),
-                        caughtAt: services.lastCatch,
+                        caughtAt: services.lastCatch, attention: attention, noddedAt: nodAt,
                         listening: services.settings.mascotDuringFocus.wearsHeadphones(
                             soundPlaying: services.focusSound.state.isPlaying))
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { services.tickFrame = $0 }
             .onChange(of: pose, initial: true) { show(pose) }
+    }
+
+    /// The knob while it's dragged, else the name field while it's typed in.
+    private var attention: TickAttention {
+        if let knobMinutes {
+            return .knob(minutes: knobMinutes, angle: DialLength.angle(forMinutes: knobMinutes))
+        }
+        return watchesName ? .nameField : .none
     }
 
     private func director(at date: Date) -> TickDirector {

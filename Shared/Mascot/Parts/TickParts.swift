@@ -42,8 +42,9 @@ struct TickParts: View, Animatable {
                     TickRingArcPart(look: look)
                     TickRingRimPart(look: look)
                     TickCheeksPart(look: look)
-                    TickEyesPart(look: look, center: CGPoint(x: 50 + face.gazeX, y: look.centerY - 3))
-                    TickMouthPart(look: look, center: CGPoint(x: 50 + face.gazeX, y: look.centerY + 8))
+                    TickEyesPart(look: look, center: CGPoint(x: 50 + face.gazeX, y: look.centerY - 3 + face.gazeY))
+                    TickMouthPart(look: look, center: CGPoint(x: 50 + face.gazeX,
+                                                              y: look.centerY + 8 + 0.6 * face.gazeY))
                     TickBrowsPart(look: look)
                     TickBrowHandPart(look: look)
                     TickHeadphoneCupsPart(look: look)

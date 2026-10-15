@@ -7,10 +7,11 @@ struct TickCheeksPart: View {
     var body: some View {
         var path = Path(), flushed = Path()
         let shift = 0.6 * look.face.gazeX
+        let lift = 0.5 * look.face.gazeY
         for x in [36.5 + shift, 63.5 + shift] {
-            path.addEllipse(in: CGRect(x: x - 2.4, y: look.centerY + 3.5, width: 4.8, height: 2.8))
+            path.addEllipse(in: CGRect(x: x - 2.4, y: look.centerY + 3.5 + lift, width: 4.8, height: 2.8))
             // Redder and a little wider with effort.
-            flushed.addEllipse(in: CGRect(x: x - 3.2, y: look.centerY + 3.1, width: 6.4, height: 3.6))
+            flushed.addEllipse(in: CGRect(x: x - 3.2, y: look.centerY + 3.1 + lift, width: 6.4, height: 3.6))
         }
         return ZStack {
             Ink(path).fill(look.palette.cheeks).opacity(look.face.cheeks)
@@ -155,7 +156,7 @@ struct TickBrowsPart: View {
     let look: TickLook
 
     var body: some View {
-        let y = look.centerY - 11 - look.motion.browLift
+        let y = look.centerY - 11 - look.motion.browLift + 0.7 * look.face.gazeY
         let g = look.face.gazeX
         var path = Path()
         switch look.face.brows {

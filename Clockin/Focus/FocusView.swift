@@ -16,6 +16,8 @@ struct FocusView: View {
     @Environment(\.accessibilitySwitchControlEnabled) private var switchControl
     @FocusState private var nameFocused: Bool
     @State private var pickingSymbol = false
+    /// When the typed name last got a new symbol, for Tick's nod.
+    @State private var symbolNodAt: Date?
     /// The last tap or scroll, which the screen waits on before stepping back.
     @State private var lastTouch = Date.now
     @State private var steppedBack = false
@@ -125,6 +127,12 @@ struct FocusView: View {
             if !Task.isCancelled { engine.reconcile() }
         }
         .task(id: stepBackWindow) { await stepBack(during: stepBackWindow) }
+        .environment(\.tickWatchesName, nameFocused)
+        .environment(\.tickNodAt, symbolNodAt)
+        .onChange(of: services.symbol(for: sessionName)) { old, new in
+            // A name that finds its symbol as it's typed: Tick approves.
+            if nameFocused, new != SymbolCatalog.unnamed, new != old { symbolNodAt = .now }
+        }
     }
 
     // MARK: Parking a thought
