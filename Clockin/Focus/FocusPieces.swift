@@ -360,19 +360,8 @@ struct DialFace: View {
                     .transition(.pop(reduceMotion))
                 OvertimeLabel(size: size)
             } else {
-                LiveTimeline(TickSchedule(countdownEnd: session?.endDate)) { context in
-                    let clock = TimeFormat.clock(session?.remaining(at: context.date) ?? idleFocus)
-                    Text(clock)
-                        .font(.retroDisplay(size: size * 0.18))
-                        .tracking(-1)
-                        .foregroundStyle(Retro.ink)
-                        .retroNumber(countsDown: true)
-                        .animation(services.power.isConstrained ? nil : Motion.snappy(reduceMotion), value: clock)
-                        .modifier(BlinkWhilePaused(active: session?.isPaused == true))
-                        .minimumScaleFactor(0.5)
-                        .lineLimit(1)
-                }
-                .transition(.opacity)
+                CountdownText(session: session, idle: idleFocus, size: size * 0.18)
+                    .transition(.opacity)
             }
             if showsPills {
                 TodaySessionPills(inProgress: session?.phase == .focus, day: services.today,

@@ -11,7 +11,6 @@ struct BedsideView: View {
     private let leave: () -> Void
     @Environment(SessionEngine.self) private var engine
     @Environment(AppServices.self) private var services
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var today: [FocusRecord]
 
     init(session: ActiveSession, day: Date, leave: @escaping () -> Void) {
@@ -53,20 +52,9 @@ struct BedsideView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
 
-                    LiveTimeline(TickSchedule(countdownEnd: session.endDate)) { context in
-                        let clock = TimeFormat.clock(session.remaining(at: context.date))
-                        Text(clock)
-                            .font(.retroDisplay(size: height * 0.3))
-                            .tracking(-2)
-                            // A little softer than full ink in a dark room.
-                            .foregroundStyle(Retro.ink.opacity(0.85))
-                            .retroNumber(countsDown: true)
-                            .animation(services.power.isConstrained ? nil : Motion.snappy(reduceMotion), value: clock)
-                            .modifier(BlinkWhilePaused(active: session.isPaused))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
-                            .accessibilityLabel(TimeFormat.spoken(session.remaining(at: context.date)))
-                    }
+                    // A little softer than full ink in a dark room.
+                    CountdownText(session: session, size: height * 0.3, tracking: -2,
+                                  ink: Retro.ink.opacity(0.85), speaks: true)
 
                     HStack {
                         Text(endsLine)
