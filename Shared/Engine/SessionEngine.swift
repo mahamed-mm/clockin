@@ -265,9 +265,9 @@ final class SessionEngine {
     /// until the undo window closes.
     func cancel() {
         guard let session = active, session.phase == .focus else { return }
-        apply(.idle, event: .cancelled)
         let window = undoWindow()
-        undoableCancel = session
+        // Undoable before anyone hears of it, so they can see what was cancelled.
+        apply(.idle, event: .cancelled, undoable: session)
         undoDeadline = now().addingTimeInterval(window)
         scheduleUndoExpiry(after: window)
     }
@@ -311,7 +311,8 @@ final class SessionEngine {
         let elapsed = (session.plannedDuration - session.remaining(at: now)).rounded(.down)
         var focus = CompletedFocus(id: session.id, name: session.name, startedAt: session.focusStartedAt,
                                    completedAt: now, focusSeconds: elapsed,
-                                   plannedSeconds: session.originalPlan, outcome: .endedEarly)
+                                   plannedSeconds: session.originalPlan, outcome: .endedEarly,
+                                   thoughts: session.thoughts)
         settleBreak(for: &focus, from: session)
         record(focus)
         apply(.focusComplete(focus), event: .finishedEarly)
@@ -352,7 +353,8 @@ final class SessionEngine {
             state: .running(endDate: start.addingTimeInterval(duration)),
             isLongBreak: focus.isLongBreak,
             breakStyle: breakStyle(),
-            breakStyleFrom: 0
+            breakStyleFrom: 0,
+            afterFocusID: focus.id
         )
         apply(.active(session), event: .breakStarted)
     }
@@ -366,6 +368,20 @@ final class SessionEngine {
         session.breakStyleFrom = session.elapsed(at: now())
         stage = .active(session)
         persist()
+    }
+
+    /// Puts a thought aside for after this focus session. Nil when there's no
+    /// focus session running or nothing to park. Nothing about the session's
+    /// time changes, so nothing outside the app hears of it.
+    @discardableResult
+    func park(_ text: String) -> ParkedThought? {
+        guard var session = active, session.phase == .focus, !session.isFinished(at: now()),
+              let line = ParkedThought.clean(text) else { return nil }
+        let thought = ParkedThought(id: UUID(), text: line, parkedAt: now())
+        session.thoughts = (session.thoughts ?? []) + [thought]
+        stage = .active(session)
+        persist()
+        return thought
     }
 
     /// Plays another sound through this focus session, or none. Nothing
@@ -413,7 +429,8 @@ final class SessionEngine {
         case .focus:
             var focus = CompletedFocus(id: session.id, name: session.name, startedAt: session.focusStartedAt,
                                        completedAt: endedAt, focusSeconds: session.plannedDuration,
-                                       plannedSeconds: session.originalPlan, outcome: .completed)
+                                       plannedSeconds: session.originalPlan, outcome: .completed,
+                                       thoughts: session.thoughts)
             settleBreak(for: &focus, from: session)
             record(focus)
             apply(.focusComplete(focus), event: .focusCompleted(freshness(of: focus, at: now())))
@@ -478,8 +495,10 @@ final class SessionEngine {
         apply(.active(session), event: .restored)
     }
 
-    private func apply(_ newStage: SessionStage, event: SessionEvent, breakOver: BreakOverMoment? = nil) {
+    private func apply(_ newStage: SessionStage, event: SessionEvent, breakOver: BreakOverMoment? = nil,
+                       undoable: ActiveSession? = nil) {
         clearUndo()
+        undoableCancel = undoable
         self.breakOver = breakOver
         stage = newStage
         persist()

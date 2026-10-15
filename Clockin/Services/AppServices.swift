@@ -76,6 +76,12 @@ final class AppServices: SessionEffects {
     /// The focus session's sound, following the session.
     @ObservationIgnored let focusSound: any FocusSoundPlaying
 
+    /// Thoughts parked in finished sessions, and unfiled ones from cancelled sessions.
+    private(set) var thoughts: ThoughtBook {
+        didSet { if thoughts != oldValue { thoughtStore.save(thoughts) } }
+    }
+    @ObservationIgnored private let thoughtStore: ThoughtStoring
+
     /// The symbol picked for each session name.
     private(set) var symbolBook: SymbolBook {
         didSet { if symbolBook != oldValue { symbolStore.save(symbolBook) } }
@@ -128,6 +134,7 @@ final class AppServices: SessionEffects {
          stateStore: SessionStateStoring,
          settingsStore: SettingsStoring = InMemorySettingsStore(),
          symbolStore: SymbolBookStoring = InMemorySymbolBookStore(),
+         thoughtStore: ThoughtStoring = InMemoryThoughtStore(),
          power: PowerState? = nil,
          orientation: OrientationRequesting = SystemOrientation(),
          now: @escaping () -> Date = Date.init,
@@ -161,12 +168,14 @@ final class AppServices: SessionEffects {
         self.calendar = calendar
         self.settingsStore = settingsStore
         self.symbolStore = symbolStore
+        self.thoughtStore = thoughtStore
         self.power = power ?? PowerState(read: { false })
         bedside = BedsideController(orientation: orientation)
         self.schedulesTimers = schedulesCompletion
         history = historyUnavailable ? nil : HistoryService(container: container)
         settings = settingsStore.load()
         symbolBook = symbolStore.load()
+        thoughts = thoughtStore.load()
         today = calendar.startOfDay(for: now())
         let log: FocusLogging = historyUnavailable ? UnavailableFocusLog() : SwiftDataFocusLog(container: container)
         engine = SessionEngine(now: now, calendar: calendar, store: stateStore, log: log,
@@ -191,7 +200,7 @@ final class AppServices: SessionEffects {
         }
         let services = AppServices(container: container, historyUnavailable: historyUnavailable,
                                    stateStore: DefaultsSessionStateStore(), settingsStore: DefaultsSettingsStore(),
-                                   symbolStore: DefaultsSymbolBookStore(),
+                                   symbolStore: DefaultsSymbolBookStore(), thoughtStore: FileThoughtStore(),
                                    power: PowerState(),
                                    liveActivity: LiveActivityController(), notifications: EndNotifier(),
                                    alarm: EndAlarm(), mindful: MindfulMinutes(), widgets: SystemWidgets(),
@@ -261,6 +270,7 @@ final class AppServices: SessionEffects {
     func sessionEngine(_ engine: SessionEngine, didEmit event: SessionEvent) {
         if let sound = TimerSound.for(event) { playSound(sound) }
         if let fade = FocusSoundFade.for(event) { focusSound.follow(focusSoundCue, fade: fade, chosen: false) }
+        keepThoughts(after: event)
         switch event {
         case .started, .resumed, .breakStarted, .restored, .extended:
             if let session = engine.active {
@@ -311,6 +321,67 @@ final class AppServices: SessionEffects {
         }
         lastEvent = EventStamp(event: event, serial: lastEvent.serial + 1)
         refreshWidgets()
+    }
+
+    // MARK: Parked thoughts
+
+    /// Puts a thought aside during focus. False when there's no focus
+    /// session running, or nothing but spaces.
+    @discardableResult
+    func park(_ text: String) -> Bool {
+        engine.park(text) != nil
+    }
+
+    /// The thoughts to show after focus: the finished session's, then the
+    /// break's session's, kept or still on the session.
+    var thoughtsAfterFocus: (session: UUID, thoughts: [ParkedThought])? {
+        switch engine.stage {
+        case .focusComplete(let focus):
+            return (focus.id, thoughts.bySession[focus.id] ?? focus.thoughts ?? [])
+        case .active(let session) where session.phase == .rest:
+            guard let id = session.afterFocusID else { return nil }
+            return (id, thoughts.thoughts(for: id))
+        default:
+            return nil
+        }
+    }
+
+    func setThoughtDone(_ done: Bool, _ id: UUID) { thoughts.setDone(done, thought: id) }
+
+    func clearThoughts(of session: UUID) { thoughts.clear(session: session) }
+
+    func clearUnfiledThoughts() { thoughts.clearUnfiled() }
+
+    /// Keeps thoughts with their session when it finishes, and unfiled when
+    /// it's cancelled, so none is lost; Undo puts them back on the session.
+    private func keepThoughts(after event: SessionEvent) {
+        switch event {
+        case .focusCompleted, .finishedEarly:
+            if let focus = engine.stage.completedFocus, let parked = focus.thoughts {
+                thoughts.file(parked, under: focus.id)
+            }
+        case .cancelled:
+            if let parked = engine.undoableCancel?.thoughts { thoughts.unfile(parked) }
+        case .restored:
+            if let parked = engine.active?.thoughts { thoughts.takeBack(Set(parked.map(\.id))) }
+        default:
+            break
+        }
+    }
+
+    /// Forgets thoughts kept for sessions no longer in History, nor waiting to be.
+    func pruneThoughts() {
+        guard let history, !thoughts.bySession.isEmpty else { return }
+        do {
+            var keep = Set(try history.sessions(ids: Set(thoughts.bySession.keys)).keys)
+            keep.formUnion(engine.pendingRecords.map(\.id))
+            keep.formUnion(undoableDeletion.map(\.id))
+            if let focus = engine.stage.completedFocus { keep.insert(focus.id) }
+            if let after = engine.active?.afterFocusID { keep.insert(after) }
+            thoughts.prune(keeping: keep)
+        } catch {
+            Log.store.error("Couldn't read sessions to tidy parked thoughts: \(error, privacy: .public)")
+        }
     }
 
     // MARK: Focus sound
@@ -372,9 +443,16 @@ final class AppServices: SessionEffects {
         deletionExpiry = Task { [weak self] in
             try? await Task.sleep(for: .seconds(window))
             guard !Task.isCancelled else { return }
-            self?.undoableDeletion = []
-            self?.pruneSymbols()
+            self?.expireDeletion()
         }
+    }
+
+    /// Undo for a delete has run out: what's gone stays gone, with its
+    /// symbols and parked thoughts.
+    func expireDeletion() {
+        undoableDeletion = []
+        pruneSymbols()
+        pruneThoughts()
     }
 
     func undoDelete() {
@@ -446,6 +524,7 @@ final class AppServices: SessionEffects {
         engine.discardAllPending()
         clearUndoableDeletion()
         symbolBook = SymbolBook()
+        thoughts = ThoughtBook()
         historyChanged()
     }
 
@@ -462,6 +541,7 @@ final class AppServices: SessionEffects {
         guard let history else { return }
         try history.upsert(plan.changes)
         symbolBook.merge(plan.symbols)
+        thoughts.merge(plan.thoughts)
         clearUndoableDeletion()
         historyChanged()
     }
@@ -488,6 +568,7 @@ final class AppServices: SessionEffects {
         // session keeps going until it's stopped or the screen moves on.
         if engine.stage == .idle { alarm.cancel() }
         pruneSymbols()
+        pruneThoughts()
         refreshWidgets()
     }
 

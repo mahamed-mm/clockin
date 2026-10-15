@@ -52,7 +52,8 @@ enum SharedStore {
 /// Decoding rule: every field added after 1.0 must be Optional (or decoded
 /// with a default), so state written by an older build always loads.
 struct PersistedSessionState: Codable, Equatable, Sendable {
-    static let currentFormat = 4
+    /// Format 5 added a focus session's sound and parked thoughts.
+    static let currentFormat = 5
 
     var active: ActiveSession?
     /// Set after a focus phase completes, until a break starts or the user moves on. (Format 3.)

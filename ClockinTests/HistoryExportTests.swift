@@ -63,7 +63,7 @@ struct HistoryExportTests {
     @Test func aBackupRestoresWithoutASingleChange() throws {
         let sessions = [session("Essay", endedAgo: 600), session("", endedAgo: 7_200, outcome: nil)]
         let backup = try HistoryExport.readBackup(try HistoryExport.backup(sessions, exportedAt: now))
-        #expect(backup.format == 2)
+        #expect(backup.format == HistoryExport.backupFormat)
 
         let existing = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0) })
         let plan = HistoryExport.plan(backup, existing: existing, now: now)
@@ -97,7 +97,7 @@ struct HistoryExportTests {
     }
 
     @Test func aBackupFromANewerBuildSaysSo() {
-        let json = #"{"format":3,"exportedAt":"2027-01-15T08:00:00.000Z","sessions":[]}"#
+        let json = #"{"format":4,"exportedAt":"2027-01-15T08:00:00.000Z","sessions":[]}"#
         #expect(throws: HistoryExport.ImportError.newerFormat) { try HistoryExport.readBackup(Data(json.utf8)) }
         #expect(throws: HistoryExport.ImportError.unreadable) { try HistoryExport.readBackup(Data("hello".utf8)) }
     }

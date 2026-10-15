@@ -40,6 +40,10 @@ struct ActiveSession: Codable, Equatable, Sendable {
     /// Focus only: what plays through it, taken from Settings at start and
     /// changed from the session chip. Nil from older builds, and for none.
     var focusSound: FocusSound? = nil
+    /// Focus only: thoughts parked during it. Nil from older builds, and for none.
+    var thoughts: [ParkedThought]? = nil
+    /// Break only: the focus session it follows, for that session's thoughts.
+    var afterFocusID: UUID? = nil
 
     /// The length planned at start, before any minutes were added.
     var originalPlan: TimeInterval { plannedDuration - (extendedSeconds ?? 0) }

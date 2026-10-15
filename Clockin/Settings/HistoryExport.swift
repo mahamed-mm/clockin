@@ -7,8 +7,9 @@ import UniformTypeIdentifiers
 /// how History survives a lost or replaced phone.
 enum HistoryExport {
     /// Bumped for changes older builds couldn't read. Format 2 added each
-    /// name's symbol; format 1 backups still restore, without symbols.
-    static let backupFormat = 2
+    /// name's symbol, format 3 parked thoughts; older backups still restore,
+    /// without them.
+    static let backupFormat = 3
 
     /// One session in a backup.
     struct Session: Codable, Equatable {
@@ -28,6 +29,10 @@ enum HistoryExport {
         var sessions: [Session]
         /// The symbol picked for each name, by name. Nil before format 2.
         var symbols: [String: String]?
+        /// Parked thoughts kept with each session, by session id. Nil before format 3.
+        var thoughts: [String: [ParkedThought]]?
+        /// Thoughts from cancelled sessions. Nil before format 3.
+        var unfiledThoughts: [ParkedThought]?
     }
 
     enum ImportError: LocalizedError {
@@ -56,12 +61,16 @@ enum HistoryExport {
     // MARK: JSON backup
 
     static func backup(_ sessions: [CompletedFocus], symbols: SymbolBook = SymbolBook(),
-                       exportedAt: Date) throws -> Data {
+                       thoughts: ThoughtBook = ThoughtBook(), exportedAt: Date) throws -> Data {
+        let ids = Set(sessions.map(\.id))
+        let kept = thoughts.bySession.filter { ids.contains($0.key) && !$0.value.isEmpty }
         let backup = Backup(format: backupFormat, exportedAt: exportedAt, sessions: sessions.map {
             Session(id: $0.id, name: $0.name, startedAt: $0.startedAt, completedAt: $0.completedAt,
                     focusSeconds: $0.focusSeconds, plannedSeconds: $0.plannedSeconds, outcome: $0.outcome?.rawValue,
                     timeZone: $0.timeZoneIdentifier)
-        }, symbols: symbols.picks)
+        }, symbols: symbols.picks,
+        thoughts: Dictionary(uniqueKeysWithValues: kept.map { ($0.key.uuidString, $0.value) }),
+        unfiledThoughts: thoughts.unfiled)
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .custom { date, encoder in
@@ -103,6 +112,8 @@ enum HistoryExport {
         var skipped = 0
         /// Symbol picks from the backup for names without one on this phone.
         var symbols: [String: String] = [:]
+        /// The backup's parked thoughts, merged by id with the ones here.
+        var thoughts = ThoughtBook()
 
         var changes: [CompletedFocus] { new + updated }
         var isEmpty: Bool { changes.isEmpty }
@@ -115,6 +126,7 @@ enum HistoryExport {
         var merged = symbols
         merged.merge(backup.symbols ?? [:])
         plan.symbols = merged.picks.filter { symbols.picks[$0.key] == nil }
+        plan.thoughts = thoughts(in: backup)
         var seen = Set<UUID>()
         for session in backup.sessions {
             guard seen.insert(session.id).inserted, let focus = validated(session, now: now) else {
@@ -128,6 +140,24 @@ enum HistoryExport {
             }
         }
         return plan
+    }
+
+    /// A backup's thoughts, cleaned like typed ones; anything unreadable is left out.
+    private static func thoughts(in backup: Backup) -> ThoughtBook {
+        func cleaned(_ thoughts: [ParkedThought]) -> [ParkedThought] {
+            thoughts.compactMap { thought in
+                ParkedThought.clean(thought.text).map {
+                    ParkedThought(id: thought.id, text: $0, parkedAt: thought.parkedAt, done: thought.done)
+                }
+            }
+        }
+        var book = ThoughtBook()
+        for (key, thoughts) in backup.thoughts ?? [:] {
+            guard let id = UUID(uuidString: key), backup.sessions.contains(where: { $0.id == id }) else { continue }
+            book.file(cleaned(thoughts), under: id)
+        }
+        book.unfile(cleaned(backup.unfiledThoughts ?? []))
+        return book
     }
 
     /// The longest one session can plausibly be.

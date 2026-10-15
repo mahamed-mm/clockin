@@ -374,7 +374,8 @@ struct SettingsSheet: View {
         do {
             let sessions = try history.allSessions()
             let data = type == .json
-                ? try HistoryExport.backup(sessions, symbols: services.symbolBook, exportedAt: .now)
+                ? try HistoryExport.backup(sessions, symbols: services.symbolBook, thoughts: services.thoughts,
+                                          exportedAt: .now)
                 : Data(HistoryExport.csv(sessions, symbols: services.symbolBook).utf8)
             exportFile = ExportFile(data: data, contentType: type)
         } catch {

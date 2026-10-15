@@ -22,6 +22,9 @@ struct CompletedFocus: Codable, Equatable, Sendable {
     /// Minutes worked past the bell and added to `focusSeconds`. Nil when
     /// none were kept, and from older builds.
     var keptOvertime: TimeInterval? = nil
+    /// Thoughts parked during it, until they're kept with it. Nil from older
+    /// builds, and for none. Never saved to History's store.
+    var thoughts: [ParkedThought]? = nil
 
     /// Whether it fills a session pill and counts toward the set of four.
     var countsAsFull: Bool {
