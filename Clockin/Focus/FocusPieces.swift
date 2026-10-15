@@ -401,8 +401,9 @@ struct DialFace: View {
     private func statusLabel(_ session: ActiveSession?) -> some View {
         if let breakActivity {
             let guide = BreakGuide(activity: breakActivity)
+            let constrained = services.power.isConstrained
             // Now first: an explicit timeline draws its first date first, even a later one.
-            TimelineView(.explicit([.now] + guide.changes(after: .now))) { context in
+            TimelineView(.explicit([.now] + guide.cues(after: .now))) { context in
                 let text = guide.status(at: context.date) ?? status(session)
                 VStack(spacing: size * 0.02) {
                     Text(text).retroLabel()
@@ -414,6 +415,14 @@ struct DialFace: View {
                     }
                 }
                 .animation(Motion.calm(reduceMotion), value: text)
+                // A soft tap at each breath's turn and as each stretch starts and
+                // ends, felt with the eyes shut. Taps aren't motion, so they stay
+                // with Reduce Motion; not in Low Power Mode, nor for a new style,
+                // whose chip has tapped already.
+                .sensoryFeedback(trigger: BreakCue(style: breakActivity.style, index: guide.cue(at: context.date))) { old, new in
+                    guard !constrained, old.style == new.style, let index = new.index, index != old.index else { return nil }
+                    return .impact(flexibility: .soft, intensity: guide.strength(ofCue: index))
+                }
             }
         } else {
             Text(status(session)).retroLabel()
@@ -819,8 +828,8 @@ private struct IdleKnobGlow: View {
 }
 
 /// Breathing: a soft avocado halo round the dial that swells as you
-/// breathe in and settles as you breathe out, with a soft tap at each
-/// turn. Still with Reduce Motion and Low Power Mode, and no taps then.
+/// breathe in and settles as you breathe out. Still with Reduce Motion and
+/// Low Power Mode. The taps at each turn come with the dial's words.
 private struct BreathHalo: View {
     let size: CGFloat
     let activity: TickBreak
@@ -829,7 +838,7 @@ private struct BreathHalo: View {
 
     var body: some View {
         let constrained = services.power.isConstrained
-        BreathFollower(activity: activity, still: reduceMotion || constrained) { fullness, turn in
+        BreathFollower(activity: activity, still: reduceMotion || constrained) { fullness in
             Circle()
                 .fill(RadialGradient(stops: [
                     .init(color: Retro.avocado.opacity(0), location: 0.78),
@@ -840,13 +849,16 @@ private struct BreathHalo: View {
                 .frame(width: size, height: size)
                 .scaleEffect(1.08 + 0.12 * fullness)
                 .opacity(0.45 + 0.55 * fullness)
-                .sensoryFeedback(trigger: turn) { _, _ in
-                    constrained ? nil : .impact(flexibility: .soft, intensity: 0.5)
-                }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
+}
+
+/// Where a break's taps are: the style, and which of its cues has passed.
+private struct BreakCue: Equatable {
+    let style: BreakStyle
+    let index: Int?
 }
 
 /// The dial's label on one line, shrinking to fit inside the dial at

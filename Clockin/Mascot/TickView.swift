@@ -470,7 +470,7 @@ private struct BreathingAlong: ViewModifier {
 
     func body(content: Content) -> some View {
         if let activity, !paused {
-            BreathFollower(activity: activity) { fullness, _ in
+            BreathFollower(activity: activity) { fullness in
                 content.scaleEffect(1 + 0.04 * fullness, anchor: UnitPoint(x: 0.5, y: 0.92))
             }
         } else {
