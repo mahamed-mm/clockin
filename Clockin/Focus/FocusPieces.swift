@@ -828,8 +828,9 @@ private struct IdleKnobGlow: View {
 }
 
 /// Breathing: a soft avocado halo round the dial that swells as you
-/// breathe in and settles as you breathe out. Still with Reduce Motion and
-/// Low Power Mode. The taps at each turn come with the dial's words.
+/// breathe in and settles as you breathe out, faded while paused. Still
+/// with Reduce Motion and Low Power Mode. The taps at each turn come with
+/// the dial's words.
 private struct BreathHalo: View {
     let size: CGFloat
     let activity: TickBreak
@@ -850,6 +851,9 @@ private struct BreathHalo: View {
                 .scaleEffect(1.08 + 0.12 * fullness)
                 .opacity(0.45 + 0.55 * fullness)
         }
+        // Paused, it fades back with the rest of the dial rather than holding mid-breath.
+        .opacity(activity.isPaused ? 0.4 : 1)
+        .animation(Motion.calm(reduceMotion), value: activity.isPaused)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
