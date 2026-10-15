@@ -352,7 +352,7 @@ final class SessionEngine {
             focusStartedAt: start,
             state: .running(endDate: start.addingTimeInterval(duration)),
             isLongBreak: focus.isLongBreak,
-            breakStyle: breakStyle(),
+            breakStyle: Self.fitted(breakStyle(), length: duration),
             breakStyleFrom: 0,
             afterFocusID: focus.id
         )
@@ -361,13 +361,20 @@ final class SessionEngine {
 
     /// Spends the rest of this break another way, starting now. Nothing
     /// about its time changes, so nothing outside the app hears of it.
+    /// Stretching needs time for a stretch at least.
     func chooseBreakStyle(_ style: BreakStyle) {
         guard var session = active, session.phase == .rest, !session.isFinished(at: now()),
-              session.breakStyle != style else { return }
+              session.breakStyle != style, Self.fitted(style, length: session.remaining(at: now())) == style
+        else { return }
         session.breakStyle = style
         session.breakStyleFrom = session.elapsed(at: now())
         stage = .active(session)
         persist()
+    }
+
+    /// `style`, unless it's stretching with no time for a stretch: then a rest.
+    static func fitted(_ style: BreakStyle, length: TimeInterval) -> BreakStyle {
+        style == .stretch && !StretchRoutine.fits(length) ? .rest : style
     }
 
     /// Puts a thought aside for after this focus session. Nil when there's no

@@ -1377,7 +1377,8 @@ struct LengthChips: View {
 
 /// Rest · Stretch · Breathe under the session chip during a break: how to
 /// spend this one. The setting picks how each break starts; a tap here
-/// changes only this break, from now.
+/// changes only this break, from now. Stretch fades once there's no time
+/// left for a stretch.
 struct BreakStyleChips: View {
     let session: ActiveSession
     @Environment(SessionEngine.self) private var engine
@@ -1387,36 +1388,53 @@ struct BreakStyleChips: View {
 
     var body: some View {
         let current = session.breakStyle ?? .rest
-        GlassEffectContainer(spacing: Space.xs) {
-            let layout = dynamicTypeSize.isAccessibilitySize
-                ? AnyLayout(VStackLayout(spacing: Space.xs)) : AnyLayout(HStackLayout(spacing: Space.xs))
-            layout {
-                ForEach(BreakStyle.allCases) { style in
-                    let selected = style == current
-                    Button {
-                        engine.chooseBreakStyle(style)
-                        taps += 1
-                        ClockinTips.note(ClockinTips.breakStyleChosen)
-                    } label: {
-                        Text(style.title)
-                            .font(.retro(.meta))
-                            .fontWeight(selected ? .bold : .medium)
-                            .foregroundStyle(selected ? Retro.ink : Retro.inkSoft)
-                            .lineLimit(1)
-                            .retroChip(selected: selected, tint: Retro.avocado)
-                            // A 44 pt target round the 36 pt chip.
-                            .padding(.vertical, Space.xxs)
-                            .contentShape(.rect)
+        // Now first: an explicit timeline draws its first date first, even a later one.
+        TimelineView(.explicit([.now] + stretchEnds)) { context in
+            let canStretch = current == .stretch || StretchRoutine.fits(session.remaining(at: context.date))
+            GlassEffectContainer(spacing: Space.xs) {
+                let layout = dynamicTypeSize.isAccessibilitySize
+                    ? AnyLayout(VStackLayout(spacing: Space.xs)) : AnyLayout(HStackLayout(spacing: Space.xs))
+                layout {
+                    ForEach(BreakStyle.allCases) { style in
+                        let selected = style == current
+                        let offered = style != .stretch || canStretch
+                        Button {
+                            engine.chooseBreakStyle(style)
+                            taps += 1
+                            ClockinTips.note(ClockinTips.breakStyleChosen)
+                        } label: {
+                            Text(style.title)
+                                .font(.retro(.meta))
+                                .fontWeight(selected ? .bold : .medium)
+                                // Faded in the words: glass in a container ignores opacity round it.
+                                .foregroundStyle(selected ? Retro.ink : Retro.inkSoft.opacity(offered ? 1 : 0.4))
+                                .lineLimit(1)
+                                .retroChip(selected: selected, tint: Retro.avocado)
+                                // A 44 pt target round the 36 pt chip.
+                                .padding(.vertical, Space.xxs)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!offered)
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                        .accessibilityHint(offered ? "" : Copy.noTimeToStretch)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(selected ? .isSelected : [])
                 }
             }
+            .animation(Motion.calm(reduceMotion), value: canStretch)
         }
         .animation(Motion.snappy(reduceMotion), value: current)
         .sensoryFeedback(.selection, trigger: taps)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Copy.duringThisBreak)
+    }
+
+    /// When a stretch stops fitting in what's left, while the break runs:
+    /// a moment after, so the time left is just under.
+    private var stretchEnds: [Date] {
+        guard let end = session.endDate?.addingTimeInterval(0.05 - StretchRoutine.minimumLength), end > .now
+        else { return [] }
+        return [end]
     }
 }
 

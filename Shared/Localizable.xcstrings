@@ -3693,6 +3693,16 @@
         }
       }
     },
+    "Too little of the break left to stretch" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "For lite igjen av pausen til å strekke"
+          }
+        }
+      }
+    },
     "Touch and hold to rename it, change its symbol, start it again or delete it." : {
       "localizations" : {
         "nb" : {

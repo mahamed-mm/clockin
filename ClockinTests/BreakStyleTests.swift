@@ -81,6 +81,28 @@ struct BreakStyleTests {
         #expect(engine.stage.completedFocus != nil)
     }
 
+    @Test func stretchingNeedsTimeForAStretch() {
+        let engine = makeEngine()
+        onABreak(engine)
+        clock.advance(Preset.classic.shortBreak - StretchRoutine.minimumLength + 1)
+        engine.chooseBreakStyle(.stretch)
+        #expect(engine.active?.breakStyle == .rest)
+        // Breathing fits any time left.
+        engine.chooseBreakStyle(.breathe)
+        #expect(engine.active?.breakStyle == .breathe)
+    }
+
+    @Test func aBreakTooShortToStretchStartsAsARest() {
+        let engine = makeEngine(style: .stretch)
+        engine.plan = { TimerPlan.classic.asTestTimers() }
+        engine.start(name: "Essay")
+        clock.advance(10)
+        engine.reconcile()
+        engine.startBreak()
+        #expect(engine.active?.phase == .rest)
+        #expect(engine.active?.breakStyle == .rest)
+    }
+
     @Test func settingsFallBackToRest() throws {
         func decode(_ json: String) throws -> TimerSettings {
             try JSONDecoder().decode(TimerSettings.self, from: Data(json.utf8))

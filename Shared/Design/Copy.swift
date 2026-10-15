@@ -114,6 +114,9 @@ enum Copy {
     /// The dial's label once the stretches are over and the break goes on as a rest.
     static var stretchesDone: String { String(localized: "Stretches done") }
 
+    /// Why Stretch can't be chosen with this little of the break left.
+    static var noTimeToStretch: String { String(localized: "Too little of the break left to stretch") }
+
     /// The dial for VoiceOver while stretching: "Stretch, 2 of 4, shoulder shrug".
     static func stretchSpoken(index: Int, count: Int, move: StretchMove) -> String {
         let name = move == .eyeRest ? String(localized: "look at something far away") : stretchName(move).localizedLowercase

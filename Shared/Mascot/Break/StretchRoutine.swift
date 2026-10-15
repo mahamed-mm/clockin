@@ -44,6 +44,12 @@ struct StretchRoutine: Equatable, Sendable {
         self.entries = entries
     }
 
+    /// The shortest time a stretch fits in; any less is just a rest.
+    static let minimumLength = ((priority.map(\.duration).min() ?? 0) + leadIn) / share
+
+    /// Whether a style starting with `length` left has a stretch to do.
+    static func fits(_ length: TimeInterval) -> Bool { StretchRoutine(length: length).count > 0 }
+
     var count: Int { entries.count }
 
     /// When the last stretch is over, or 0 when none fit.

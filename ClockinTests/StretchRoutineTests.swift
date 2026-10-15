@@ -14,6 +14,13 @@ struct StretchRoutineTests {
         #expect(StretchRoutine(length: 900).count == 6)
     }
 
+    @Test func theShortestBreakThatFitsAStretch() {
+        let shortest = StretchRoutine.minimumLength
+        #expect(StretchRoutine(length: shortest + 0.01).count == 1)
+        #expect(StretchRoutine(length: shortest - 0.01).count == 0)
+        #expect(StretchRoutine.fits(shortest + 0.01) && !StretchRoutine.fits(shortest - 0.01))
+    }
+
     @Test(arguments: [60.0, 120, 180, 240, 300, 600, 900])
     func neverMoreThanItsShare(_ length: TimeInterval) {
         let routine = StretchRoutine(length: length)
