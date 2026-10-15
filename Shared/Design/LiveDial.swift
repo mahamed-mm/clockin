@@ -163,3 +163,76 @@ struct PauseResumeButton: View {
         .accessibilityLabel(isPaused ? "Resume" : "Pause")
     }
 }
+
+/// A Lock Screen action as a tinted capsule, the same family as the pause
+/// button: Start break, Start focus, "+5 min". In StandBy's night view it
+/// turns to an outline, which the red night tint keeps readable. Runs its
+/// intent in the app.
+struct LiveActionButton<Intent: AppIntent>: View {
+    let intent: Intent
+    let title: String
+    let symbol: String
+    let tint: Color
+    /// What VoiceOver reads, when the title reads badly ("+5 min").
+    var spoken: String? = nil
+    /// Just the symbol, in a circle (the compact island).
+    var iconOnly = false
+    var height: CGFloat = 38
+    @Environment(\.isLuminanceReduced) private var night
+
+    var body: some View {
+        Button(intent: intent) {
+            Group {
+                if iconOnly {
+                    Image(systemName: symbol)
+                        .frame(width: height, height: height)
+                } else {
+                    Label(title, systemImage: symbol)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .padding(.horizontal, 14)
+                        .frame(height: height)
+                }
+            }
+            .font(.system(size: 15, weight: .bold, design: .rounded))
+            .foregroundStyle(night ? tint : .white)
+            .background {
+                Capsule()
+                    .fill(night ? Color.clear : tint)
+                    .strokeBorder(tint, lineWidth: night ? 2 : 0)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(spoken ?? title)
+    }
+}
+
+/// What the Lock Screen offers next: Start break once focus is done, Start
+/// focus with the same name once a break is, and "+5 min" in the last five
+/// minutes of focus. Nothing otherwise.
+struct LiveNextAction: View {
+    let state: FocusActivityAttributes.ContentState
+    let sessionName: String
+    let sessionID: UUID?
+    let done: Bool
+    var iconOnly = false
+    var height: CGFloat = 38
+
+    var body: some View {
+        if done {
+            if state.phase == .focus {
+                LiveActionButton(intent: sessionID.map(StartBreakIntent.init(sessionID:)) ?? StartBreakIntent(),
+                                 title: Copy.startBreakShort, symbol: "cup.and.saucer.fill", tint: Retro.avocado,
+                                 iconOnly: iconOnly, height: height)
+            } else {
+                LiveActionButton(intent: StartFocusIntent(name: sessionName), title: Copy.startFocus,
+                                 symbol: "play.fill", tint: Retro.orange, iconOnly: iconOnly, height: height)
+            }
+        } else if state.phase == .focus, state.canExtend == true {
+            LiveActionButton(intent: ExtendFocusIntent(sessionID: sessionID),
+                             title: Copy.extend(seconds: SessionEngine.extensionStep), symbol: "plus",
+                             tint: Retro.orange, spoken: Copy.extendSpoken(seconds: SessionEngine.extensionStep),
+                             iconOnly: iconOnly, height: height)
+        }
+    }
+}

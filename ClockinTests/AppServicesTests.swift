@@ -92,7 +92,7 @@ struct AppServicesTests {
         #expect(notifier.calls.last == "cancel")
     }
 
-    @Test func breakEndIsAnnouncedAndClearsTheCard() {
+    @Test func breakEndIsAnnouncedAndTheCardOffersStartFocus() {
         let services = makeServices()
         finishFocus(services)
         services.engine.startBreak()
@@ -100,7 +100,7 @@ struct AppServicesTests {
         services.reconcile()
 
         #expect(services.engine.stage == .idle)
-        #expect(liveActivity.calls.last == "endAll")
+        #expect(liveActivity.calls.last == "breakDone")
         #expect(announcer.spoken.last == "Break's over. Ready when you are.")
     }
 

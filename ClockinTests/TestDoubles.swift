@@ -57,12 +57,15 @@ final class SpyLiveActivity: LiveActivityControlling {
     var lastBreakDuration: TimeInterval?
     var lastCompletedToday: Int?
     var lastSymbol: String?
+    var lastCanExtend: Bool?
     var enabled = true
     var flushes = 0
 
-    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String) {
+    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String,
+              canExtend: Bool) {
         calls.append("sync")
         lastSymbol = symbol
+        lastCanExtend = canExtend
         lastBreakDuration = breakDuration
         lastCompletedToday = completedToday
     }
@@ -71,6 +74,7 @@ final class SpyLiveActivity: LiveActivityControlling {
         lastCompletedToday = completedToday
         lastBreakDuration = breakDuration
     }
+    func showBreakDone() { calls.append("breakDone") }
     func endAll() { calls.append("endAll") }
     func areActivitiesEnabled() async -> Bool { enabled }
     func flush() async { flushes += 1 }

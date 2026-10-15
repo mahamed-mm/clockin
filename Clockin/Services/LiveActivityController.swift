@@ -4,12 +4,15 @@ import Foundation
 /// What AppServices needs from the Live Activity, so tests can stand in for it.
 @MainActor
 protocol LiveActivityControlling: AnyObject {
-    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String)
-    /// Ends the session's card on a "focus done" note naming the break it
-    /// earned. With `lingers` it stays on the Lock Screen until the user
-    /// moves on; without, it goes at once, for a completion only noticed
-    /// long after the fact.
+    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String,
+              canExtend: Bool)
+    /// Turns the session's card to a "focus done" note naming the break it
+    /// earned, with Start break. With `lingers` it stays on the Lock Screen,
+    /// still live so its button works, until the user moves on; without, it
+    /// goes at once, for a completion only noticed long after the fact.
     func showFocusDone(completedToday: Int, breakDuration: TimeInterval, lingers: Bool)
+    /// Turns a break's card to "Break's over" with Start focus, still live.
+    func showBreakDone()
     func endAll()
     func areActivitiesEnabled() async -> Bool
     /// Waits until every queued ActivityKit call has run.
@@ -24,9 +27,11 @@ final class LiveActivityController: LiveActivityControlling {
     /// before it, so an end can never overtake the request queued after it.
     private var queue: Task<Void, Never>?
 
-    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String) {
+    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String,
+              canExtend: Bool) {
         let state = FocusActivityAttributes.ContentState(session: session, completedToday: completedToday,
-                                                         breakDuration: breakDuration, symbol: symbol)
+                                                         breakDuration: breakDuration, symbol: symbol,
+                                                         canExtend: canExtend ? true : nil)
         let content = ActivityContent(state: state, staleDate: session.endDate)
         // Capped here too, for a long name saved by a build that didn't cap.
         let attributes = FocusActivityAttributes(sessionName: ActiveSession.cleanName(session.name),
@@ -39,6 +44,10 @@ final class LiveActivityController: LiveActivityControlling {
             await LiveActivities.endRunningAsDone(completedToday: completedToday, breakDuration: breakDuration,
                                                   lingers: lingers)
         }
+    }
+
+    func showBreakDone() {
+        enqueue { await LiveActivities.showBreakDone() }
     }
 
     func endAll() {
@@ -112,7 +121,22 @@ private enum LiveActivities {
         state.breakDuration = breakDuration
         state.pausedRemaining = nil
         state.endDate = min(state.endDate ?? .now, .now)
-        await activity.end(Content(state: state, staleDate: nil), dismissalPolicy: lingers ? .default : .immediate)
+        state.canExtend = nil
+        // Updated rather than ended, so Start break still works from the Lock Screen.
+        if lingers {
+            await activity.update(Content(state: state, staleDate: nil))
+        } else {
+            await activity.end(Content(state: state, staleDate: nil), dismissalPolicy: .immediate)
+        }
+    }
+
+    @concurrent
+    static func showBreakDone() async {
+        guard let activity = running, activity.content.state.phase == .rest else { return }
+        var state = activity.content.state
+        state.pausedRemaining = nil
+        state.endDate = min(state.endDate ?? .now, .now)
+        await activity.update(Content(state: state, staleDate: nil))
     }
 
     @concurrent

@@ -616,6 +616,16 @@
         }
       }
     },
+    "Add Five Minutes" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Legg til fem minutter"
+          }
+        }
+      }
+    },
     "Alarm ringing" : {
       "localizations" : {
         "nb" : {

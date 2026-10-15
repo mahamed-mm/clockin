@@ -62,6 +62,30 @@ extension IntentBridge {
     static var primaryAction: (@MainActor () async -> IntentOutcome)?
     /// Parks a thought in the running focus session.
     static var parkThought: (@MainActor (_ text: String) async -> IntentOutcome)?
+    /// "+5 min" from the Lock Screen, for the session the card shows.
+    static var extendFocus: (@MainActor (_ sessionID: UUID?) async -> Void)?
+}
+
+/// "+5 min" on the Lock Screen card in the last five minutes of focus.
+struct ExtendFocusIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Add Five Minutes"
+    static let isDiscoverable = false
+
+    /// The session the card shows; a tap meant for another does nothing.
+    @Parameter(title: "Session")
+    var sessionID: String?
+
+    init() {}
+
+    init(sessionID: UUID?) {
+        self.sessionID = sessionID?.uuidString
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        await IntentBridge.extendFocus?(sessionID.flatMap(UUID.init(uuidString:)))
+        return .result()
+    }
 }
 
 /// Puts a thought aside for after the running focus session, from Siri or
@@ -104,6 +128,11 @@ struct StartFocusIntent: LiveActivityIntent, AudioPlaybackIntent {
     }
 
     init() {}
+
+    /// The Lock Screen's "Start focus" after a break: the same name again.
+    init(name: String) {
+        self.name = name
+    }
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {

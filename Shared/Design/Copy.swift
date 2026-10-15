@@ -42,6 +42,7 @@ enum Copy {
 
     /// The end alarm's buttons.
     static var startBreakShort: String { String(localized: "Start break") }
+    static var startFocus: String { String(localized: "Start focus") }
     static var ringing: String { String(localized: "Ringing") }
     /// "+5 min"
     static func extend(seconds: TimeInterval) -> String {

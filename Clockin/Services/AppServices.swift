@@ -127,6 +127,7 @@ final class AppServices: SessionEffects {
     @ObservationIgnored let history: HistoryService?
     @ObservationIgnored private let schedulesTimers: Bool
     @ObservationIgnored private var deletionExpiry: Task<Void, Never>?
+    @ObservationIgnored private var extendOffer: Task<Void, Never>?
     @ObservationIgnored private var timeObservers: [NSObjectProtocol] = []
 
     init(container: ModelContainer,
@@ -222,6 +223,7 @@ final class AppServices: SessionEffects {
         IntentBridge.stopFocus = { [weak services] in await services?.intentStop() ?? .nothingRunning }
         IntentBridge.primaryAction = { [weak services] in await services?.intentPrimary() ?? .nothingRunning }
         IntentBridge.parkThought = { [weak services] text in await services?.intentPark(text) ?? .nowhereToPark }
+        IntentBridge.extendFocus = { [weak services] sessionID in await services?.lockScreenExtend(sessionID: sessionID) }
         services.engine.undoWindow = {
             // Reaching Undo takes longer with a screen reader or switches.
             UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning
@@ -312,7 +314,8 @@ final class AppServices: SessionEffects {
             announce("\(Copy.endedEarly). \(Copy.breakLine(seconds: breakLength))")
             saveFinishedToHealth()
         case .breakFinished(let freshness):
-            liveActivity.endAll()
+            // Just over: the card says so, with Start focus. Long after: gone.
+            if freshness != .stale, engine.breakOver != nil { liveActivity.showBreakDone() } else { liveActivity.endAll() }
             clearLateAlert(freshness)
             if freshness == .live { announce("\(Copy.breakOver). \(Copy.readyWhenYouAre)") }
         case .overtimeKept:
@@ -631,8 +634,10 @@ final class AppServices: SessionEffects {
     /// When idle nothing should be on the Lock Screen or in the Dynamic Island,
     /// e.g. a card left by a session that ended while the app wasn't running.
     /// `endAll` lists activities off the main actor, so this is cheap when there are none.
+    /// Ends a card left with nothing to show. "Break's over" keeps its card
+    /// while it lasts, for the Lock Screen's Start focus.
     private func endOrphanedActivities() {
-        if engine.stage == .idle { liveActivity.endAll() }
+        if engine.stage == .idle, engine.breakOver == nil { liveActivity.endAll() }
     }
 
     /// Waits for side effects still in flight: the end alert and Live Activity
@@ -790,6 +795,20 @@ final class AppServices: SessionEffects {
         }
     }
 
+    /// "+5 min" from the Lock Screen card, for the session it shows.
+    func lockScreenExtend(sessionID: UUID?) async {
+        await withoutSounds {
+            engine.reconcile()
+            guard let session = engine.active, sessionID == nil || session.id == sessionID else { return }
+            engine.extend()
+            // Too late or too much: redraw the card, so the button goes.
+            if engine.active?.extendedSeconds == session.extendedSeconds, let active = engine.active {
+                syncLiveActivity(active)
+            }
+            await settle()
+        }
+    }
+
     func intentPark(_ text: String) async -> IntentOutcome {
         await withoutSounds {
             engine.reconcile()
@@ -886,9 +905,28 @@ final class AppServices: SessionEffects {
     }
 
     private func syncLiveActivity(_ session: ActiveSession) {
+        let now = engine.now()
         liveActivity.sync(with: session, completedToday: completedToday,
                           breakDuration: session.nextBreakSeconds ?? plan.shortBreak,
-                          symbol: symbol(for: session.name))
+                          symbol: symbol(for: session.name),
+                          canExtend: session.phase == .focus && engine.canExtend(at: now))
+        scheduleExtendOffer(for: session, now: now)
+    }
+
+    /// "+5 min" shows on the Lock Screen in the last five minutes. A card
+    /// changes only when the app updates it, so the app does, if it's still
+    /// running then: always while a focus sound plays, otherwise only if it
+    /// happens to be.
+    private func scheduleExtendOffer(for session: ActiveSession, now: Date) {
+        extendOffer?.cancel()
+        guard schedulesTimers, session.phase == .focus, let end = session.endDate else { return }
+        let opens = end.addingTimeInterval(-SessionEngine.extensionStep)
+        guard opens > now else { return }
+        extendOffer = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(opens.timeIntervalSince(now) + 0.5))
+            guard !Task.isCancelled, let self, let active = self.engine.active, active.id == session.id else { return }
+            self.syncLiveActivity(active)
+        }
     }
 
     private func refreshWidgets() {
@@ -950,8 +988,10 @@ final class AppServices: SessionEffects {
 /// Does nothing, for previews.
 @MainActor
 private final class SilentEffects: LiveActivityControlling, EndNotifying, WidgetReloading, CompletionFeedback {
-    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String) {}
+    func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String,
+              canExtend: Bool) {}
     func showFocusDone(completedToday: Int, breakDuration: TimeInterval, lingers: Bool) {}
+    func showBreakDone() {}
     func endAll() {}
     func areActivitiesEnabled() async -> Bool { true }
     func flush() async {}

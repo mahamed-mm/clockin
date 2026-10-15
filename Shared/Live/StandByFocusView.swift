@@ -43,10 +43,13 @@ struct StandByFocusView: View {
                     Text(state.phase == .focus
                          ? Copy.breakLine(seconds: state.breakDuration ?? Preset.classic.shortBreak)
                          : Copy.readyWhenYouAre)
-                        .font(.retroFixed(.title, size: 24))
+                        .font(.retroFixed(.title, size: 20))
                         .foregroundStyle(Retro.text(for: state.phase))
-                        .lineLimit(2)
-                        .padding(.vertical, 8)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .padding(.top, 4)
+                    LiveNextAction(state: state, sessionName: sessionName, sessionID: sessionID, done: true, height: 34)
+                        .padding(.top, 6)
                 } else {
                     HStack(alignment: .center, spacing: 12) {
                         FocusCountdown(reading: reading)
@@ -58,10 +61,16 @@ struct StandByFocusView: View {
                     }
                     .padding(.top, 2)
 
-                    Text(detail)
-                        .font(.retroRounded(size: 13))
-                        .foregroundStyle(Retro.inkSoft)
-                        .lineLimit(1)
+                    if state.canExtend == true {
+                        LiveNextAction(state: state, sessionName: sessionName, sessionID: sessionID, done: false,
+                                       height: 28)
+                            .padding(.top, 4)
+                    } else {
+                        Text(detail)
+                            .font(.retroRounded(size: 13))
+                            .foregroundStyle(Retro.inkSoft)
+                            .lineLimit(1)
+                    }
                 }
 
                 SessionPills(completed: state.completedToday ?? 0,

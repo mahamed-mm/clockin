@@ -28,7 +28,10 @@ struct FocusLiveActivity: Widget {
                     .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if !done {
+                    if done {
+                        LiveNextAction(state: state, sessionName: context.attributes.sessionName,
+                                       sessionID: context.attributes.sessionID, done: true, iconOnly: true, height: 44)
+                    } else {
                         PauseResumeButton(isPaused: state.isPaused, sessionID: context.attributes.sessionID, tint: tint)
                     }
                 }
@@ -166,10 +169,17 @@ private struct LockScreenFocusView: View {
                     }
                 }
                 Spacer(minLength: 4)
-                if !done {
+                if done {
+                    // Round, like Pause: the line beside it says what it starts.
+                    LiveNextAction(state: state, sessionName: context.attributes.sessionName,
+                                   sessionID: context.attributes.sessionID, done: true, iconOnly: true, height: 44)
+                } else {
                     VStack(spacing: 8) {
                         PauseResumeButton(isPaused: state.isPaused, sessionID: context.attributes.sessionID, tint: tint)
-                        if state.phase == .focus {
+                        if state.canExtend == true {
+                            LiveNextAction(state: state, sessionName: context.attributes.sessionName,
+                                           sessionID: context.attributes.sessionID, done: false, height: 32)
+                        } else if state.phase == .focus {
                             // Opens the app to the park field. The thought itself never shows here.
                             Link(destination: URL(string: "clockin://park")!) {
                                 Image(systemName: "note.text")

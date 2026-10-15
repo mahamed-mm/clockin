@@ -18,6 +18,9 @@ struct FocusActivityAttributes: ActivityAttributes {
         /// The session name's symbol. In the state rather than the attributes
         /// so a new pick shows at once. Optional for older activities.
         var symbol: String?
+        /// "+5 min" can be added now: set by the app in the last five minutes
+        /// of focus, while it runs. Optional for older activities.
+        var canExtend: Bool?
 
         var isPaused: Bool { pausedRemaining != nil }
 
@@ -33,12 +36,13 @@ struct FocusActivityAttributes: ActivityAttributes {
         }
 
         init(session: ActiveSession, completedToday: Int? = nil, breakDuration: TimeInterval? = nil,
-             symbol: String? = nil) {
+             symbol: String? = nil, canExtend: Bool? = nil) {
             phase = session.phase
             plannedDuration = session.plannedDuration
             self.completedToday = completedToday
             self.breakDuration = breakDuration
             self.symbol = symbol
+            self.canExtend = canExtend
             switch session.state {
             case .running(let end):
                 endDate = end
