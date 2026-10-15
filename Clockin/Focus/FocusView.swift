@@ -327,10 +327,6 @@ struct FocusView: View {
             switch engine.stage {
             case .idle:
                 VStack(spacing: Space.s) {
-                    if let tip = idleTips.currentTip {
-                        TipView(tip)
-                            .tipViewStyle(RetroTipStyle())
-                    }
                     if teachesDial {
                         Text(Copy.dragToSet)
                             .font(.retro(.meta))
@@ -343,6 +339,11 @@ struct FocusView: View {
                         .glassEffectID("session", in: glass)
                         .glassEffectTransition(.matchedGeometry)
                     RecentNames(typed: sessionName) { sessionName = $0 }
+                    // Below the field, so the dial (and Tick on it) keeps its room.
+                    if let tip = idleTips.currentTip {
+                        TipView(tip)
+                            .tipViewStyle(RetroTipStyle())
+                    }
                     if !services.thoughts.unfiled.isEmpty {
                         ParkedList(thoughts: services.thoughts.unfiled, title: Copy.parkedEarlier,
                                    toggle: toggleThought, clear: services.clearUnfiledThoughts)

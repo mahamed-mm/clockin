@@ -53,6 +53,13 @@ A break is rest, a stretch or breathing (Settings › Break › During breaks, o
 - **Break's over:** after a break runs out, `TickDirector` keeps Tick ready (even at night) for the ten minutes "Break's over" shows, and its entrance is a quick reach up and a yawn (`StretchMove.backToWork`), seen only if the change happened on screen.
 - **Live Activity, island, widget, bedside:** unchanged. They can't follow breaths or stretches without push updates (the same limit as the workout), and the bedside clock always rests.
 
+## Waiting, watching and catching
+
+- **Fidgets.** Ready and idle, Tick fidgets on its own beat (`FidgetSchedule` in `Shared/Mascot/TickFidget.swift`): it taps or polishes its crown, checks the dial, stretches, looks round, and from 20:00 yawns. Each Tick's seed sets the order and the 8–20 s gaps between them, never the same kind twice in a row, so it doesn't read as a loop. Frames are drawn only during a fidget, the same as a blink. Never during focus, asleep or hello; dozing after ten minutes still comes from `TickDirector`.
+- **Watching.** While the knob is dragged Tick's eyes follow it round the dial (`TickAttention`, with the face's new `gazeY`), and the brow goes up at 5 and 60. While a name is typed it glances at the field and nods when the name finds its symbol. The face springs there and back, so this only draws while it moves; Reduce Motion and Low Power Mode keep Tick still. (With the keyboard up, today's iPhones shrink the dial below the size where Tick shows, so the glance and nod are mostly unseen there.)
+- **Catching.** A parked thought flies to Tick as a slip of paper (`ParkedSlip`, an Animatable curve), and Tick reaches up, catches it and tucks it away (`TickCatch`, 0.9 s of frames). Mid-combo it just nods so the round isn't broken. With Reduce Motion or Low Power Mode the slip fades where it is and Tick stays still.
+- **Headphones.** In Calm and Off, Tick wears its headphones only while a focus sound plays; the workout always has them.
+
 ## Where Tick can move
 
 | Surface | Tick | Not possible |
@@ -103,6 +110,10 @@ So the workout adds 2–5 points in the simulator.
 
 So stretching and breathing cost no more than resting.
 
+**Focus sounds (same simulator, Rain, 25-minute session):** the loops are decoded into memory once and summed by one `AVAudioSourceNode` with a 0.1 s buffer; the fade is worked out per buffer, so there are no timers. With the app in the background and the sound playing, the app sat at about 0.5% CPU, and sampling it showed only the audio thread at work: no Core Animation commits, no SwiftUI. That took one fix: background audio keeps the app running, and its countdown `TimelineView`s kept drawing (about 30% CPU) until `LiveTimeline` paused them while the scene is in the background. Battery on a real phone over a 50-minute session with the screen off is still to be measured (see below).
+
+**Idle with fidgets:** about 5% averaged over 30 s in the simulator, close to the old fixed crown tap's 6%; between fidgets nothing is drawn.
+
 **Sounds and paper:** the timer's sounds are system sounds (`SystemTimerSounds`): loaded once, no audio session, nothing running between them. The paper grain is a Metal `colorEffect` (`Clockin/Design/PaperGrain.metal`) with no time input, so it's drawn with the page and never on its own; the dial's Bakelite shine is one static stroke on its track. The widget and Live Activity keep plain paper: they're drawn by the system from an archived view, often tinted or clear, where a grain would be flattened or lost.
 
 ## Checking on a phone
@@ -127,3 +138,12 @@ So stretching and breathing cost no more than resting.
 4. **Power Profiler:** each style against Rest, screen on. Aim for under 10% more energy than Rest; if the breathing halo keeps the display at a high refresh rate, move it to a 15-frame timeline.
 
 **For the paper:** the SwiftUI template shows no `PaperBackground` updates during a running countdown, Time Profiler shows no shader work once a screen has appeared, and History scrolls with under 1% hitches.
+
+**For focus sounds** (Rain, a 50-minute session, screen off):
+
+1. **Energy Log or Power Profiler:** the same session with and without a sound. The difference should be the audio hardware alone.
+2. **`top -l N -pid` while locked:** near 0% CPU apart from the audio thread.
+3. **Core Animation:** no commits while the phone is locked.
+4. **By ear:** with the Silent switch on and off, with Music playing (with and without "Mix with other audio"), through a call and Siri, unplugging headphones, and up to the notification chime and the alarm, which should always ring into silence.
+
+**For the catch and fidgets:** Animation Hitches under 1% through a catch, a knob drag and each fidget.
