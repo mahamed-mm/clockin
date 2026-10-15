@@ -82,7 +82,7 @@ private struct RunningSessionChip: View {
                     Spacer(minLength: 4)
                     Group {
                         if let end = session.endDate {
-                            Text(timerInterval: Date.now...end, countsDown: true)
+                            Text(timerInterval: .countdown(to: end, from: .now), countsDown: true)
                         } else {
                             Text(Copy.paused)
                         }

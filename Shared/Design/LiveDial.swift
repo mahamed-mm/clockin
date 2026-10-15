@@ -35,6 +35,15 @@ enum TimerReading: Equatable {
     }
 }
 
+extension ClosedRange<Date> {
+    /// What live timer text counts down over. An end already past (a session
+    /// finished but not yet wrapped up) gives an empty range at `now`, which
+    /// reads 0:00, where `now...end` would trap.
+    static func countdown(to end: Date, from now: Date) -> Self {
+        now...Swift.max(now, end)
+    }
+}
+
 extension SessionPhase {
     var symbol: String { self == .focus ? "timer" : "cup.and.saucer.fill" }
 }

@@ -76,7 +76,7 @@ struct LockScreenView: View {
             .accessibilityLabel(spoken)
         case .running(let name, let symbol, _, let end):
             session(name: name, symbol: symbol) {
-                Text(timerInterval: entry.date...max(entry.date, end), countsDown: true)
+                Text(timerInterval: .countdown(to: end, from: entry.date), countsDown: true)
                     .font(.retro(.title))
                     .monospacedDigit()
             }
@@ -116,7 +116,7 @@ struct LockScreenView: View {
             Label(Copy.focusedToday(seconds: seconds), systemImage: "timer")
         case .running(let name, let symbol, _, let end):
             Label {
-                Text("\(name) · \(Text(timerInterval: entry.date...max(entry.date, end), countsDown: true)) left")
+                Text("\(name) · \(Text(timerInterval: .countdown(to: end, from: entry.date), countsDown: true)) left")
             } icon: {
                 Image(systemName: symbol)
             }
