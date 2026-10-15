@@ -17,6 +17,9 @@ struct ClockinApp: App {
         // Before launch finishes, so the end sound also plays while the app is open.
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
         services = AppServices.shared
+        #if DEBUG
+        DemoData.applyDemoSound(to: services)
+        #endif
     }
 
     var body: some Scene {

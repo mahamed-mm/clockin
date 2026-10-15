@@ -37,6 +37,9 @@ struct ActiveSession: Codable, Equatable, Sendable {
     /// Break only: how far into the break (in the break's own time, so a
     /// pause doesn't count) the current style began.
     var breakStyleFrom: TimeInterval? = nil
+    /// Focus only: what plays through it, taken from Settings at start and
+    /// changed from the session chip. Nil from older builds, and for none.
+    var focusSound: FocusSound? = nil
 
     /// The length planned at start, before any minutes were added.
     var originalPlan: TimeInterval { plannedDuration - (extendedSeconds ?? 0) }

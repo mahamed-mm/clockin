@@ -426,7 +426,7 @@ struct FocusView: View {
         if case .active(let session) = engine.stage, session.phase == .focus {
             // Redraws only when Finish now unlocks.
             let schedule = TickSchedule(wakeDates: engine.controlChanges(after: .now))
-            TimelineView(schedule) { context in
+            LiveTimeline(schedule) { context in
                 let canFinish = engine.canFinishEarly(at: context.date)
                 // Side by side, or stacked when large text won't fit them.
                 let layout = dynamicTypeSize.isAccessibilitySize

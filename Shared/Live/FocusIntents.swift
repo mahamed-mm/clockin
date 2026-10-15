@@ -59,7 +59,9 @@ extension IntentBridge {
 // owns the timer, even from Control Center or the Lock Screen.
 
 /// "Start a focus in Clockin", and the Start action in Shortcuts.
-struct StartFocusIntent: LiveActivityIntent {
+/// Also an `AudioPlaybackIntent`: the focus sound may start with the session
+/// even when it's started from outside the app.
+struct StartFocusIntent: LiveActivityIntent, AudioPlaybackIntent {
     static let title: LocalizedStringResource = "Start Focus"
     static let description = IntentDescription("Starts a focus session. Without a length, it uses the one set on the dial.")
 
@@ -95,7 +97,7 @@ struct PauseFocusIntent: LiveActivityIntent {
     }
 }
 
-struct ResumeFocusIntent: LiveActivityIntent {
+struct ResumeFocusIntent: LiveActivityIntent, AudioPlaybackIntent {
     static let title: LocalizedStringResource = "Resume Focus"
     static let description = IntentDescription("Carries on with a paused session or break.")
 
@@ -124,7 +126,7 @@ struct StopFocusIntent: LiveActivityIntent {
 
 /// The Control Center / Lock Screen / Action button control: does what the
 /// big button in the app would.
-struct FocusButtonIntent: LiveActivityIntent {
+struct FocusButtonIntent: LiveActivityIntent, AudioPlaybackIntent {
     static let title: LocalizedStringResource = "Focus Button"
     static let description = IntentDescription("Starts focus, pauses or resumes it, or starts the break.")
     static let isDiscoverable = false

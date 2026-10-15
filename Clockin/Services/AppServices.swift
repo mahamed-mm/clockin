@@ -65,8 +65,16 @@ final class AppServices: SessionEffects {
     private(set) var today: Date
     /// What the user picked in Settings. Applies from the next session on.
     var settings: TimerSettings {
-        didSet { settingsStore.save(settings) }
+        didSet {
+            settingsStore.save(settings)
+            if settings.focusSoundVolume != oldValue.focusSoundVolume || settings.mixFocusSound != oldValue.mixFocusSound {
+                focusSound.configure(volume: settings.focusSoundVolume, mixes: settings.mixFocusSound)
+            }
+        }
     }
+
+    /// The focus session's sound, following the session.
+    @ObservationIgnored let focusSound: any FocusSoundPlaying
 
     /// The symbol picked for each session name.
     private(set) var symbolBook: SymbolBook {
@@ -133,6 +141,7 @@ final class AppServices: SessionEffects {
          widgets: WidgetReloading,
          haptics: CompletionFeedback,
          sounds: TimerSounds = NoSounds(),
+         focusSound: any FocusSoundPlaying = NoFocusSound(),
          isForeground: @escaping @MainActor () -> Bool = { true },
          announce: @escaping @MainActor (String) -> Void) {
         self.container = container
@@ -146,6 +155,7 @@ final class AppServices: SessionEffects {
         self.widgets = widgets
         self.haptics = haptics
         self.sounds = sounds
+        self.focusSound = focusSound
         self.isForeground = isForeground
         self.announce = announce
         self.calendar = calendar
@@ -164,6 +174,8 @@ final class AppServices: SessionEffects {
         engine.effects = self
         engine.plan = { [weak self] in self?.plan ?? .classic }
         engine.breakStyle = { [weak self] in self?.settings.duringBreaks ?? .rest }
+        engine.focusSound = { [weak self] in self?.settings.focusSound ?? .off }
+        focusSound.configure(volume: settings.focusSoundVolume, mixes: settings.mixFocusSound)
     }
 
     /// The real thing: the App Group store, ActivityKit, notifications, haptics.
@@ -184,6 +196,7 @@ final class AppServices: SessionEffects {
                                    liveActivity: LiveActivityController(), notifications: EndNotifier(),
                                    alarm: EndAlarm(), mindful: MindfulMinutes(), widgets: SystemWidgets(),
                                    haptics: CompletionHaptics(), sounds: SystemTimerSounds(),
+                                   focusSound: FocusSoundPlayer(),
                                    isForeground: { UIApplication.shared.applicationState == .active },
                                    announce: { AccessibilityNotification.Announcement($0).post() })
         IntentBridge.setPaused = { [weak services] paused, sessionID in
@@ -247,6 +260,7 @@ final class AppServices: SessionEffects {
 
     func sessionEngine(_ engine: SessionEngine, didEmit event: SessionEvent) {
         if let sound = TimerSound.for(event) { playSound(sound) }
+        if let fade = FocusSoundFade.for(event) { focusSound.follow(focusSoundCue, fade: fade, chosen: false) }
         switch event {
         case .started, .resumed, .breakStarted, .restored, .extended:
             if let session = engine.active {
@@ -297,6 +311,23 @@ final class AppServices: SessionEffects {
         }
         lastEvent = EventStamp(event: event, serial: lastEvent.serial + 1)
         refreshWidgets()
+    }
+
+    // MARK: Focus sound
+
+    /// What should be playing now: the running focus session's sound, if it has one.
+    var focusSoundCue: FocusSoundCue? {
+        guard let session = engine.active, session.phase == .focus, let end = session.endDate,
+              let sound = session.focusSound, sound != .off else { return nil }
+        return FocusSoundCue(sound: sound, bell: end)
+    }
+
+    /// Picked on the session chip: plays through this session, and is
+    /// remembered for the next one.
+    func chooseFocusSound(_ sound: FocusSound) {
+        engine.setFocusSound(sound)
+        settings.focusSound = sound
+        focusSound.follow(focusSoundCue, fade: sound == .off ? .stopOut : .resumeIn, chosen: true)
     }
 
     // MARK: Sounds
@@ -464,6 +495,7 @@ final class AppServices: SessionEffects {
     /// turned over while the app was suspended.
     func reconcile() {
         engine.reconcile()
+        focusSound.retryIfWaiting()
         endOrphanedActivities()
         // Health writes that waited for the phone to be unlocked.
         if writesHealth { Task { await mindful.flush() } }

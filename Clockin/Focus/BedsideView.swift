@@ -53,7 +53,7 @@ struct BedsideView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
 
-                    TimelineView(TickSchedule(countdownEnd: session.endDate)) { context in
+                    LiveTimeline(TickSchedule(countdownEnd: session.endDate)) { context in
                         let clock = TimeFormat.clock(session.remaining(at: context.date))
                         Text(clock)
                             .font(.retroDisplay(size: height * 0.3))

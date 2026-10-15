@@ -80,6 +80,8 @@ final class SessionEngine {
     @ObservationIgnored var plan: @MainActor () -> TimerPlan = { .classic }
     /// How a break starts out, read when it starts. The app supplies it from Settings.
     @ObservationIgnored var breakStyle: @MainActor () -> BreakStyle = { .rest }
+    /// What plays through a focus session, read when it starts. The app supplies it from Settings.
+    @ObservationIgnored var focusSound: @MainActor () -> FocusSound = { .off }
 
     @ObservationIgnored let now: () -> Date
     @ObservationIgnored let calendar: Calendar
@@ -223,7 +225,8 @@ final class SessionEngine {
             focusStartedAt: startedAt,
             state: .running(endDate: startedAt.addingTimeInterval(plan.focus)),
             nextBreakSeconds: predicted.seconds,
-            breaks: plan.breaks
+            breaks: plan.breaks,
+            focusSound: focusSound() == .off ? nil : focusSound()
         )
         apply(.active(session), event: .started)
         return true
@@ -361,6 +364,16 @@ final class SessionEngine {
               session.breakStyle != style else { return }
         session.breakStyle = style
         session.breakStyleFrom = session.elapsed(at: now())
+        stage = .active(session)
+        persist()
+    }
+
+    /// Plays another sound through this focus session, or none. Nothing
+    /// about its time changes, so nothing outside the app hears of it.
+    func setFocusSound(_ sound: FocusSound) {
+        guard var session = active, session.phase == .focus,
+              (session.focusSound ?? .off) != sound else { return }
+        session.focusSound = sound == .off ? nil : sound
         stage = .active(session)
         persist()
     }

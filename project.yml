@@ -54,6 +54,9 @@ targets:
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
         NSSupportsLiveActivities: true
+        # A focus sound keeps playing on the Lock Screen; only while one plays.
+        UIBackgroundModes:
+          - audio
         NSAlarmKitUsageDescription: Clockin rings when a session or break is over, even on silent.
         NSHealthUpdateUsageDescription: Clockin saves finished focus sessions to Health as Mindful Minutes.
         # Fraunces cuts built by scripts/make-fonts.sh (SIL OFL, Shared/Fonts/OFL.txt).

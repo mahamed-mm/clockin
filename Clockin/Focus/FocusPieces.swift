@@ -26,7 +26,7 @@ struct FocusHeader: View {
                     .accessibilityAddTraits(.isHeader)
                 // The line only changes on its own when a completion stops
                 // being recent; everything else is a stage change.
-                TimelineView(TickSchedule(wakeDates: metaChanges)) { context in
+                LiveTimeline(TickSchedule(wakeDates: metaChanges)) { context in
                     let meta = Text(meta(at: context.date))
                         .font(.retro(.meta))
                         .foregroundStyle(Retro.inkSoft)
@@ -241,7 +241,7 @@ struct DialFace: View {
         let session = activeSession
         // VoiceOver's value changes about once a minute, so it's worked out
         // every ten seconds rather than with the digits.
-        TimelineView(TickSchedule(countdownEnd: session?.endDate, interval: 10)) { context in
+        LiveTimeline(TickSchedule(countdownEnd: session?.endDate, interval: 10)) { context in
             dial(session: session)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(accessibilityLabel)
@@ -286,7 +286,7 @@ struct DialFace: View {
             // Only the arc and the digits follow the clock, and only while
             // the timer runs. The arc moves under half a point a second, so
             // when the phone asks to save power it moves once a minute.
-            TimelineView(TickSchedule(countdownEnd: session?.endDate, interval: constrained ? 60 : 1)) { context in
+            LiveTimeline(TickSchedule(countdownEnd: session?.endDate, interval: constrained ? 60 : 1)) { context in
                 RetroDial(value: arcValue(session: session, now: context.date), tint: tint, glowTint: glowTint,
                           highlight: true)
                     .modifier(PausedTone(active: session?.isPaused == true))
@@ -358,7 +358,7 @@ struct DialFace: View {
                     .transition(.pop(reduceMotion))
                 OvertimeLabel(size: size)
             } else {
-                TimelineView(TickSchedule(countdownEnd: session?.endDate)) { context in
+                LiveTimeline(TickSchedule(countdownEnd: session?.endDate)) { context in
                     let clock = TimeFormat.clock(session?.remaining(at: context.date) ?? idleFocus)
                     Text(clock)
                         .font(.retroDisplay(size: size * 0.18))
@@ -558,7 +558,7 @@ private struct DialTick: View {
             // The schedule only moves the clock on, so Tick itself is never
             // rebuilt when the schedule changes: its springs carry on.
             .background {
-                TimelineView(schedule) { context in
+                LiveTimeline(schedule) { context in
                     Color.clear.onChange(of: context.date, initial: true) { _, date in clock = date }
                 }
                 .id(schedule)
@@ -705,7 +705,7 @@ private struct OvertimeArc: View {
 
     var body: some View {
         let schedule = TickSchedule(wakeDates: engine.overtimeChanges(after: .now))
-        TimelineView(schedule) { context in
+        LiveTimeline(schedule) { context in
             let minutes = overtimeMinutes(engine, at: context.date) ?? 0
             Circle()
                 .trim(from: 0, to: Double(minutes) / 60)
@@ -728,7 +728,7 @@ private struct OvertimeLabel: View {
 
     var body: some View {
         let schedule = TickSchedule(wakeDates: engine.overtimeChanges(after: .now))
-        TimelineView(schedule) { context in
+        LiveTimeline(schedule) { context in
             if let minutes = overtimeMinutes(engine, at: context.date), minutes > 0 {
                 Text(Copy.overtimeShort(minutes: minutes))
                     .font(.retroDisplay(size: size * 0.06))
@@ -751,7 +751,7 @@ struct OvertimeChip: View {
 
     var body: some View {
         let schedule = TickSchedule(wakeDates: engine.overtimeChanges(after: .now))
-        TimelineView(schedule) { context in
+        LiveTimeline(schedule) { context in
             Group {
                 if let minutes = overtimeMinutes(engine, at: context.date), minutes > 0 {
                     Button(action: engine.keepOvertime) {
@@ -1030,7 +1030,7 @@ struct SessionChip: View {
     var body: some View {
         // Redraws only when "+5 min" appears or goes away.
         let schedule = TickSchedule(wakeDates: engine.controlChanges(after: .now))
-        TimelineView(schedule) { context in
+        LiveTimeline(schedule) { context in
             let canExtend = engine.canExtend(at: context.date)
             HStack(spacing: Space.s) {
                 HStack(spacing: Space.s) {

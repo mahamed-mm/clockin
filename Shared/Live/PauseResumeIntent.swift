@@ -14,7 +14,7 @@ enum IntentBridge {
 }
 
 /// Pause/resume button on the Lock Screen and in the Dynamic Island.
-struct PauseResumeIntent: LiveActivityIntent {
+struct PauseResumeIntent: LiveActivityIntent, AudioPlaybackIntent {
     static let title: LocalizedStringResource = "Pause or Resume Focus"
     static let isDiscoverable = false
 

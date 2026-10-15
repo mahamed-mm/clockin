@@ -182,6 +182,12 @@ struct TimerSettings: Codable, Equatable, Sendable {
     var duringBreaks: BreakStyle = .rest
     /// The kitchen timer's clicks: the dial's ratchet, Start, Pause and Resume.
     var timerSounds = true
+    /// What plays through a focus session, unless the session picks another.
+    var focusSound: FocusSound = .off
+    /// The focus sound's own level, 0 to 1, under the phone's volume.
+    var focusSoundVolume = 0.6
+    /// The focus sound plays over other apps' audio rather than stopping it.
+    var mixFocusSound = false
 
     init(preset: Preset = .classic, longBreak: Bool = true, appearance: Appearance = .system,
          bedsideWhenSideways: Bool = true) {
@@ -208,7 +214,7 @@ struct TimerSettings: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case preset, customMinutes, longBreak, appearance, bedsideWhenSideways, weekSummaries, ringAtEnd, saveToHealth
-        case mascotDuringFocus, duringBreaks, timerSounds
+        case mascotDuringFocus, duringBreaks, timerSounds, focusSound, focusSoundVolume, mixFocusSound
     }
 
     init(from decoder: Decoder) throws {
@@ -232,6 +238,11 @@ struct TimerSettings: Codable, Equatable, Sendable {
         let breaks = try? container.decodeIfPresent(String.self, forKey: .duringBreaks)
         duringBreaks = breaks.flatMap(BreakStyle.init(rawValue:)) ?? .rest
         timerSounds = (try? container.decodeIfPresent(Bool.self, forKey: .timerSounds)) ?? true
+        let sound = try? container.decodeIfPresent(String.self, forKey: .focusSound)
+        focusSound = sound.flatMap(FocusSound.init(rawValue:)) ?? .off
+        let volume = try? container.decodeIfPresent(Double.self, forKey: .focusSoundVolume)
+        focusSoundVolume = volume.map { min(1, max(0, $0)) } ?? 0.6
+        mixFocusSound = (try? container.decodeIfPresent(Bool.self, forKey: .mixFocusSound)) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -247,6 +258,9 @@ struct TimerSettings: Codable, Equatable, Sendable {
         try container.encode(mascotDuringFocus.rawValue, forKey: .mascotDuringFocus)
         try container.encode(duringBreaks.rawValue, forKey: .duringBreaks)
         try container.encode(timerSounds, forKey: .timerSounds)
+        try container.encode(focusSound.rawValue, forKey: .focusSound)
+        try container.encode(focusSoundVolume, forKey: .focusSoundVolume)
+        try container.encode(mixFocusSound, forKey: .mixFocusSound)
     }
 
     var plan: TimerPlan {

@@ -24,6 +24,15 @@ enum DemoData {
         for (name, symbol) in DemoHistory.picks { services.setSymbol(symbol, for: name) }
     }
 
+    /// `-DemoSound rain` (or tickTock, brownNoise, fireplace, off): the focus
+    /// sound for sessions started this run, as if picked in Settings.
+    @MainActor
+    static func applyDemoSound(to services: AppServices) {
+        guard let raw = UserDefaults.standard.string(forKey: "DemoSound"),
+              let sound = FocusSound(rawValue: raw) else { return }
+        services.settings.focusSound = sound
+    }
+
     /// Saves a session to open on, before `AppServices` loads the saved state:
     /// - `-DemoFinishing`: a focus session that runs out 3 seconds after launch.
     /// - `-DemoOvertime`: one that ran out four minutes ago, kept going since.

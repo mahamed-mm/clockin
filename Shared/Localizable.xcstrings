@@ -905,6 +905,16 @@
         }
       }
     },
+    "Brown noise" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Brunstøy"
+          }
+        }
+      }
+    },
     "By subject" : {
       "localizations" : {
         "nb" : {
@@ -1426,6 +1436,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Ferdig i går kl. %@"
+          }
+        }
+      }
+    },
+    "Fireplace" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Peis"
           }
         }
       }
@@ -2356,6 +2376,16 @@
         }
       }
     },
+    "Rain" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Regn"
+          }
+        }
+      }
+    },
     "Reach up" : {
       "localizations" : {
         "nb" : {
@@ -3149,6 +3179,16 @@
     },
     "Tick gallery" : {
       "shouldTranslate" : false
+    },
+    "Tick-tock" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tikk-takk"
+          }
+        }
+      }
     },
     "Time for a %lld-minute break." : {
       "localizations" : {
