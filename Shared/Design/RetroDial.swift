@@ -35,9 +35,9 @@ struct RetroDial: View, Animatable {
     var body: some View {
         let showsFace = renderingMode == .fullColor
         ZStack {
-            Canvas { context, size in
-                drawBase(in: &context, Geometry(size: size, dial: self), showsFace: showsFace)
-            }
+            // Drawn again only when a tick lights or goes out, not as the arc moves.
+            DialBase(dial: self, litTicks: Self.litTicks(value: value), showsFace: showsFace)
+                .equatable()
             Canvas { context, size in
                 drawProgress(in: &context, Geometry(size: size, dial: self))
             }
@@ -57,6 +57,12 @@ struct RetroDial: View, Animatable {
             guard to - from > 0.001 else { return nil }
             return (position, from + gap, max(from + gap, to - gap))
         }
+    }
+
+    /// How many of the 60 ticks sit inside an arc of `value`, from 12 o'clock.
+    nonisolated static func litTicks(value: Double) -> Int {
+        let arc = min(max(value, 0), 1)
+        return (0..<60).count { Double($0) / 60 < arc - 0.0001 }
     }
 
     /// Arc radius as a fraction of the dial's half-width; used to place overlays on the arc.
@@ -80,13 +86,33 @@ struct RetroDial: View, Animatable {
         }
     }
 
+    /// Face, unlit ticks and the empty track: all that doesn't move with
+    /// the arc. Equal while the same ticks are lit, so a running timer
+    /// leaves it alone between ticks.
+    private struct DialBase: View, Equatable {
+        var dial: RetroDial
+        let litTicks: Int
+        let showsFace: Bool
+
+        static func == (a: Self, b: Self) -> Bool {
+            a.litTicks == b.litTicks && a.showsFace == b.showsFace && a.dial.showsTicks == b.dial.showsTicks
+                && a.dial.lineWidthRatio == b.dial.lineWidthRatio && a.dial.highlight == b.dial.highlight
+        }
+
+        var body: some View {
+            Canvas { context, size in
+                dial.drawBase(in: &context, Geometry(size: size, dial: dial), litTicks: litTicks, showsFace: showsFace)
+            }
+        }
+    }
+
     /// Face, unlit ticks and the empty track.
-    private func drawBase(in context: inout GraphicsContext, _ g: Geometry, showsFace: Bool) {
+    private func drawBase(in context: inout GraphicsContext, _ g: Geometry, litTicks: Int, showsFace: Bool) {
         if showsFace {
             context.fill(circle(g.center, g.radius), with: .color(Retro.paperDeep))
         }
         if showsTicks {
-            drawTicks(in: &context, g, lit: false)
+            drawTicks(in: &context, g, litTicks: litTicks, lit: false)
         }
         context.stroke(circle(g.center, g.arcRadius), with: .color(Retro.ink.opacity(0.08)),
                        style: StrokeStyle(lineWidth: g.line))
@@ -107,7 +133,7 @@ struct RetroDial: View, Animatable {
     /// Ticks inside the arc, the arc, and the knob at its tip.
     private func drawProgress(in context: inout GraphicsContext, _ g: Geometry) {
         if showsTicks {
-            drawTicks(in: &context, g, lit: true)
+            drawTicks(in: &context, g, litTicks: Self.litTicks(value: value), lit: true)
         }
 
         if setColors {
@@ -144,11 +170,11 @@ struct RetroDial: View, Animatable {
         }
     }
 
-    /// The ticks inside the arc (`lit`) or outside it.
-    private func drawTicks(in context: inout GraphicsContext, _ g: Geometry, lit: Bool) {
+    /// The ticks inside the arc (`lit`), the first `litTicks`, or outside it.
+    private func drawTicks(in context: inout GraphicsContext, _ g: Geometry, litTicks: Int, lit: Bool) {
         for i in 0..<60 {
             let fraction = Double(i) / 60
-            guard (fraction < g.arcValue - 0.0001) == lit else { continue }
+            guard (i < litTicks) == lit else { continue }
             let angle = fraction * 2 * .pi
             let major = i % 5 == 0
             let outer = g.radius * 0.94
