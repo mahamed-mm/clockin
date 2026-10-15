@@ -266,6 +266,7 @@ struct DialFace: View {
             if showsMascot, size >= DialTick.minimumDial {
                 DialTick(stage: stage, celebration: celebration, crown: crown, calm: calmMascot,
                          knobMinutes: draftMinutes)
+                    .equatable()
                     .frame(width: size * 0.3, height: size * 0.3)
                     .position(x: size * 0.9, y: size * 0.88)
             }
@@ -542,9 +543,16 @@ private struct LiveAccessibilityValue: ViewModifier {
 /// on its own a minute past the bell, at night, when dozing off, and for
 /// a set of four's streak after done. A focus session is a workout.
 /// Cancel one and Tick shrugs it off for a moment.
-private struct DialTick: View {
+private struct DialTick: View, Equatable {
     /// Below this the dial has no room to spare in its corner.
     static let minimumDial: CGFloat = 200
+
+    /// Equal while the dial hands it the same; the crown counts by its name,
+    /// as in `TickView`.
+    static func == (a: Self, b: Self) -> Bool {
+        a.stage == b.stage && a.celebration == b.celebration && a.crown?.label == b.crown?.label
+            && a.calm == b.calm && a.knobMinutes == b.knobMinutes
+    }
 
     let stage: SessionStage
     let celebration: Int
