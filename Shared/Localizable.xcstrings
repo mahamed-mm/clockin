@@ -2163,6 +2163,22 @@
         }
       }
     },
+    "Next: session %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Next: session %1$lld of %2$lld"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Neste: økt %1$lld av %2$lld"
+          }
+        }
+      }
+    },
     "No %@ sessions" : {
       "localizations" : {
         "nb" : {

@@ -17,7 +17,8 @@ struct FocusLiveActivity: Widget {
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Label {
-                        Text(state.phase.label)
+                        // "Break's over" once it ran out, not "Break" over 00:00.
+                        Text(done ? state.doneStatus : state.phase.label)
                     } icon: {
                         TickLiveGlyph(pose: TickPose.forLive(phase: state.phase, paused: state.isPaused, done: done),
                                       reading: TimerReading(state: state, done: done), phase: state.phase, crown: false)
@@ -98,7 +99,7 @@ private func endsLine(_ state: FocusActivityAttributes.ContentState, done: Bool)
 
 /// The small label over the name: the phase, "Paused", or how it ended.
 private func cardStatus(_ state: FocusActivityAttributes.ContentState, done: Bool) -> String {
-    if done { return state.phase == .focus ? Copy.focusComplete : Copy.breakOver }
+    if done { return state.doneStatus }
     return state.isPaused ? Copy.paused : state.phase.label
 }
 
@@ -148,9 +149,7 @@ private struct LockScreenFocusView: View {
                             .lineLimit(1)
                     }
                     if done {
-                        Text(state.phase == .focus
-                             ? Copy.breakLine(seconds: state.breakDuration ?? Preset.classic.shortBreak)
-                             : Copy.readyWhenYouAre)
+                        Text(state.doneLine)
                             .font(.retro(.meta))
                             .foregroundStyle(Retro.text(for: state.phase))
                             .lineLimit(2)

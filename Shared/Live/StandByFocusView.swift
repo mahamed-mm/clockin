@@ -40,9 +40,7 @@ struct StandByFocusView: View {
                     .padding(.top, 2)
 
                 if done {
-                    Text(state.phase == .focus
-                         ? Copy.breakLine(seconds: state.breakDuration ?? Preset.classic.shortBreak)
-                         : Copy.readyWhenYouAre)
+                    Text(state.doneLine)
                         .font(.retroFixed(.title, size: 20))
                         .foregroundStyle(Retro.text(for: state.phase))
                         .lineLimit(1)
@@ -88,7 +86,7 @@ struct StandByFocusView: View {
     }
 
     private var status: String {
-        if done { return state.phase == .focus ? Copy.focusComplete : Copy.breakOver }
+        if done { return state.doneStatus }
         return state.isPaused ? Copy.paused : state.phase.label
     }
 

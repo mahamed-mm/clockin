@@ -77,6 +77,21 @@ struct LockScreenActionsTests {
         #expect(live.calls.last == "endAll")
     }
 
+    @Test func aFinishedCardSaysHowItEndedAndWhatsNext() {
+        let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        func state(_ phase: SessionPhase, completed: Int) -> FocusActivityAttributes.ContentState {
+            let session = ActiveSession(id: UUID(), name: "Essay", phase: phase, plannedDuration: 300,
+                                        focusStartedAt: start, state: .running(endDate: start.addingTimeInterval(300)))
+            return .init(session: session, completedToday: completed, breakDuration: 300)
+        }
+        #expect(state(.rest, completed: 2).doneStatus == "Break's over")
+        #expect(state(.rest, completed: 2).doneLine == "Next: session 3 of 4")
+        // After the long break, a new set.
+        #expect(state(.rest, completed: 4).doneLine == "Next: session 1 of 4")
+        #expect(state(.focus, completed: 1).doneStatus == "Focus complete")
+        #expect(state(.focus, completed: 1).doneLine == "Time for a 5-minute break.")
+    }
+
     @Test func aBreakFoundLongAfterLeavesNoCard() {
         let services = makeServices()
         services.engine.start(name: "Essay")

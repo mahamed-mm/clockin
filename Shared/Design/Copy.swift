@@ -21,6 +21,11 @@ enum Copy {
         String(localized: "Next: \(displayName(name)) · session \(position) of \(setSize)")
     }
 
+    /// Under the name on a "Break's over" card: "Next: session 3 of 4".
+    static func nextPosition(_ position: Int, of setSize: Int) -> String {
+        String(localized: "Next: session \(position) of \(setSize)")
+    }
+
     /// Under "Focus complete": "Time for a 5-minute break." Test timers
     /// count in seconds, so they read "Time for a 5-second break."
     static func breakLine(seconds: TimeInterval) -> String {

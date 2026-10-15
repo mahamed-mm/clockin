@@ -29,6 +29,19 @@ struct FocusActivityAttributes: ActivityAttributes {
             phase == .focus ? (symbol ?? SymbolCatalog.unnamed) : SessionPhase.rest.symbol
         }
 
+        /// The label once it ran out: "Focus complete" or "Break's over".
+        var doneStatus: String { phase == .focus ? Copy.focusComplete : Copy.breakOver }
+
+        /// The line under the name once it ran out: the break it earned, or
+        /// which session of the set comes next.
+        var doneLine: String {
+            switch phase {
+            case .focus: Copy.breakLine(seconds: breakDuration ?? Preset.classic.shortBreak)
+            case .rest: Copy.nextPosition(BreakOverMoment.nextPosition(fullToday: completedToday ?? 0),
+                                          of: TimerPlan.sessionsPerSet)
+            }
+        }
+
         /// Interval used by timer text and progress views.
         var timerRange: ClosedRange<Date> {
             let end = endDate ?? .now
