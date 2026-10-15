@@ -2147,6 +2147,16 @@
         }
       }
     },
+    "Next: %@ · new set" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Neste: %@ · nytt sett"
+          }
+        }
+      }
+    },
     "Next: %@ · session %lld of %lld" : {
       "localizations" : {
         "en" : {
@@ -2159,6 +2169,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Neste: %1$@ · økt %2$lld av %3$lld"
+          }
+        }
+      }
+    },
+    "Next: new set" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Neste: nytt sett"
           }
         }
       }

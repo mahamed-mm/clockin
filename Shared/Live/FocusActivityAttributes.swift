@@ -21,6 +21,9 @@ struct FocusActivityAttributes: ActivityAttributes {
         /// "+5 min" can be added now: set by the app in the last five minutes
         /// of focus, while it runs. Optional for older activities.
         var canExtend: Bool?
+        /// The break is the long one after a set, so a new set comes next.
+        /// Optional for older activities.
+        var isLongBreak: Bool?
 
         var isPaused: Bool { pausedRemaining != nil }
 
@@ -37,8 +40,7 @@ struct FocusActivityAttributes: ActivityAttributes {
         var doneLine: String {
             switch phase {
             case .focus: Copy.breakLine(seconds: breakDuration ?? Preset.classic.shortBreak)
-            case .rest: Copy.nextPosition(BreakOverMoment.nextPosition(fullToday: completedToday ?? 0),
-                                          of: TimerPlan.sessionsPerSet)
+            case .rest: BreakOverMoment.nextCardLine(fullToday: completedToday ?? 0, afterLong: isLongBreak == true)
             }
         }
 
@@ -56,6 +58,7 @@ struct FocusActivityAttributes: ActivityAttributes {
             self.breakDuration = breakDuration
             self.symbol = symbol
             self.canExtend = canExtend
+            isLongBreak = session.isLongBreak
             switch session.state {
             case .running(let end):
                 endDate = end

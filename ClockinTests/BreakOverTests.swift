@@ -150,6 +150,15 @@ struct BreakOverTests {
         #expect(Copy.nextSession(name: "", position: 1, setSize: 4) == "Next: Focus session · session 1 of 4")
     }
 
+    @Test func afterTheLongBreakANewSetStarts() {
+        #expect(BreakOverMoment.nextLine(name: "Essay", fullToday: 2, afterLong: false) == "Next: Essay · session 3 of 4")
+        #expect(BreakOverMoment.nextLine(name: "Essay", fullToday: 4, afterLong: true) == "Next: Essay · new set")
+        // Without long breaks, four done is still just session 1 of 4.
+        #expect(BreakOverMoment.nextLine(name: "Essay", fullToday: 4, afterLong: false) == "Next: Essay · session 1 of 4")
+        #expect(BreakOverMoment.nextCardLine(fullToday: 4, afterLong: true) == "Next: new set")
+        #expect(BreakOverMoment.nextCardLine(fullToday: 2, afterLong: false) == "Next: session 3 of 4")
+    }
+
     @Test func anOlderSavedStateHasNoMoment() throws {
         let state = try JSONDecoder().decode(PersistedSessionState.self, from: Data(#"{"format":3}"#.utf8))
         #expect(state.breakOver == nil)

@@ -41,14 +41,16 @@ enum DemoData {
     /// - `-DemoFinishing`: a focus session that runs out 3 seconds after launch.
     /// - `-DemoOvertime`: one that ran out four minutes ago, kept going since.
     /// - `-DemoThoughts` with either: two thoughts parked in it.
-    /// - `-DemoBreakOver`: a break that ran out 30 seconds ago.
+    /// - `-DemoBreakOver`: a break that ran out 30 seconds ago; with
+    ///   `-DemoLongBreak`, the long one after a set.
     /// - `-DemoBreak`: a break halfway through, spent as `-DemoBreakStyle`
     ///   says (rest, stretch or breathe) from launch. Seconds long with `-ShortTimers`.
     @MainActor
     static func prepareFinishingSession(now: Date = .now) {
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("-DemoBreakOver") {
-            let moment = BreakOverMoment(endedAt: now.addingTimeInterval(-30), name: "Thesis outline", wasLong: false)
+            let moment = BreakOverMoment(endedAt: now.addingTimeInterval(-30), name: "Thesis outline",
+                                         wasLong: arguments.contains("-DemoLongBreak"))
             DefaultsSessionStateStore().save(PersistedSessionState(breakOver: moment))
             return
         }

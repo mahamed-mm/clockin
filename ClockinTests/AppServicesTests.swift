@@ -116,6 +116,10 @@ struct AppServicesTests {
         #expect(content.title == "Break's over")
         #expect(content.subtitle == "Next: Essay · session 3 of 4")
         #expect(content.body == "Ready when you are.")
+
+        var long = rest
+        long.isLongBreak = true
+        #expect(EndNotifier.content(for: long, completedToday: 4).subtitle == "Next: Essay · new set")
     }
 
     @Test func lateBreakEndIsNotAnnounced() {

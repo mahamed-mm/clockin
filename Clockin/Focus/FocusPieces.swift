@@ -103,9 +103,8 @@ struct FocusHeader: View {
     private func meta(at now: Date) -> String {
         switch stage {
         case .idle:
-            if engine.breakOver != nil {
-                return Copy.nextSession(name: nextName, position: BreakOverMoment.nextPosition(fullToday: fullToday),
-                                        setSize: TimerPlan.sessionsPerSet)
+            if let moment = engine.breakOver {
+                return BreakOverMoment.nextLine(name: nextName, fullToday: fullToday, afterLong: moment.wasLong)
             }
             return String(localized: "\(TimeFormat.duration(services.plan.focus)) session")
         case .active(let session):

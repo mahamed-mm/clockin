@@ -26,6 +26,14 @@ enum Copy {
         String(localized: "Next: session \(position) of \(setSize)")
     }
 
+    /// Under "Break's over" after the long break: "Next: Thesis outline · new set".
+    static func nextInNewSet(name: String) -> String {
+        String(localized: "Next: \(displayName(name)) · new set")
+    }
+
+    /// Under the name on a "Break's over" card after the long break.
+    static var nextNewSet: String { String(localized: "Next: new set") }
+
     /// Under "Focus complete": "Time for a 5-minute break." Test timers
     /// count in seconds, so they read "Time for a 5-second break."
     static func breakLine(seconds: TimeInterval) -> String {

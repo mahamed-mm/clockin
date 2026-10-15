@@ -30,4 +30,16 @@ struct BreakOverMoment: Codable, Equatable, Sendable {
     static func nextPosition(fullToday: Int) -> Int {
         fullToday % TimerPlan.sessionsPerSet + 1
     }
+
+    /// What comes next, under "Break's over" in the app and its alert:
+    /// "Next: Thesis outline · session 3 of 4", or after the long break "· new set".
+    static func nextLine(name: String, fullToday: Int, afterLong: Bool) -> String {
+        afterLong ? Copy.nextInNewSet(name: name)
+            : Copy.nextSession(name: name, position: nextPosition(fullToday: fullToday), setSize: TimerPlan.sessionsPerSet)
+    }
+
+    /// The same under the name on a card: "Next: session 3 of 4" or "Next: new set".
+    static func nextCardLine(fullToday: Int, afterLong: Bool) -> String {
+        afterLong ? Copy.nextNewSet : Copy.nextPosition(nextPosition(fullToday: fullToday), of: TimerPlan.sessionsPerSet)
+    }
 }

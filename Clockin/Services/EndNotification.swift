@@ -102,9 +102,8 @@ final class EndNotifier: EndNotifying {
             content.body = Copy.breakLine(seconds: session.nextBreakSeconds ?? Preset.classic.shortBreak)
         case .rest:
             content.title = Copy.breakOver
-            content.subtitle = Copy.nextSession(name: session.name,
-                                                position: BreakOverMoment.nextPosition(fullToday: completedToday),
-                                                setSize: TimerPlan.sessionsPerSet)
+            content.subtitle = BreakOverMoment.nextLine(name: session.name, fullToday: completedToday,
+                                                        afterLong: session.isLongBreak == true)
             content.body = Copy.readyWhenYouAre
         }
         content.sound = UNNotificationSound(named: UNNotificationSoundName(ChimeSound.fileName))
