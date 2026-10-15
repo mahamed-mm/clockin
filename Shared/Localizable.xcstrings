@@ -1500,6 +1500,26 @@
         }
       }
     },
+    "Focus sound" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fokuslyd"
+          }
+        }
+      }
+    },
+    "Focus sound: %@" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fokuslyd: %@"
+          }
+        }
+      }
+    },
     "Focused" : {
       "localizations" : {
         "nb" : {
@@ -1817,6 +1837,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Minutter med fokus du har fullført i dag."
+          }
+        }
+      }
+    },
+    "Mix with other audio" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bland med annen lyd"
           }
         }
       }
@@ -2807,12 +2837,12 @@
         }
       }
     },
-    "Silent mode mutes them." : {
+    "Silent mode mutes the timer sounds, not a focus sound. A focus sound pauses music and podcasts unless it mixes with them." : {
       "localizations" : {
         "nb" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Lydløs modus demper dem."
+            "value" : "Stille modus demper timerlydene, ikke en fokuslyd. En fokuslyd setter musikk og podkaster på pause med mindre den blandes med dem."
           }
         }
       }
@@ -3018,6 +3048,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Stoppet tidlig"
+          }
+        }
+      }
+    },
+    "Stopped for this session. Pick a sound to play it again." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Stoppet for denne økten. Velg en lyd for å spille den igjen."
           }
         }
       }
@@ -3369,6 +3409,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Versjon"
+          }
+        }
+      }
+    },
+    "Volume" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Volum"
           }
         }
       }

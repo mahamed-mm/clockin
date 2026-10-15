@@ -89,6 +89,9 @@ struct TickView: View {
     var breakActivity: TickBreak? = nil
     /// Just back from a break: ready comes in with a stretch and a yawn.
     var backToWork = false
+    /// False takes the headphones off: nothing is playing, and the workout
+    /// (which always wears them) isn't on. Nil leaves them to the pose.
+    var listening: Bool? = nil
 
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @Environment(\.tickReduceMotion) private var galleryReduceMotion
@@ -256,6 +259,8 @@ struct TickView: View {
         .animation(still ? Motion.calm(true) : .spring(duration: (pose == .waiting && workout != nil ? 0.3 : 0.45) * Motion.speed,
                                                        bounce: 0.25), value: pose)
         .animation(.spring(duration: 0.22, bounce: 0.45), value: pressing)
+        // Headphones on or off as a focus sound starts or stops.
+        .animation(still ? Motion.calm(true) : .spring(duration: 0.45 * Motion.speed, bounce: 0.2), value: listening)
         .overlay { touchAreas }
         .sensoryFeedback(.impact(weight: .light), trigger: crownTaps)
         .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.7), trigger: pokes)
@@ -375,6 +380,7 @@ struct TickView: View {
         face.blink = max(face.blink, blink)
         var rig = rig ?? TickRig(pose)
         rig.crownPress = pressing ? 1 : 0
+        if listening == false { rig.headphones = 0 }
         return TickFigure(rig: rig, face: face, palette: .standard, motion: motion, progress: ringLeft)
     }
 

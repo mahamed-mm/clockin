@@ -164,10 +164,25 @@ struct SettingsSheet: View {
             }
             .tint(Retro.orange)
             .listRowBackground(rowBackground)
+            Picker(selection: $services.settings.focusSound) {
+                ForEach(FocusSound.allCases) { sound in
+                    Text(sound.title).tag(sound)
+                }
+            } label: {
+                RowLabel("Focus sound", symbol: "headphones")
+            }
+            .pickerStyle(.menu)
+            .tint(Retro.inkSoft)
+            .listRowBackground(rowBackground)
+            Toggle(isOn: $services.settings.mixFocusSound) {
+                RowLabel("Mix with other audio", symbol: "music.note")
+            }
+            .tint(Retro.orange)
+            .listRowBackground(rowBackground)
         } header: {
             Text("Sounds").retroLabel()
         } footer: {
-            Text("Silent mode mutes them.")
+            Text("Silent mode mutes the timer sounds, not a focus sound. A focus sound pauses music and podcasts unless it mixes with them.")
         }
     }
 

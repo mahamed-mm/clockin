@@ -125,10 +125,16 @@ enum MascotFocusStyle: String, CaseIterable, Identifiable, Sendable {
     case workout
     /// In guard, breathing, tired near the end; no punches.
     case calm
-    /// The plain working pose, headphones on.
+    /// The plain working pose.
     case off
 
     var id: Self { self }
+
+    /// The workout always has headphones on; calm and off wear them only
+    /// while a focus sound plays.
+    func wearsHeadphones(soundPlaying: Bool) -> Bool {
+        self == .workout || soundPlaying
+    }
 
     var title: String {
         switch self {

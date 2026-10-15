@@ -280,6 +280,22 @@ enum Copy {
         subject.map { String(localized: "No \($0) sessions") } ?? String(localized: "No other sessions")
     }
 
+    // MARK: Focus sound
+
+    static var focusSound: String { String(localized: "Focus sound") }
+
+    /// "Focus sound: Rain", the session chip's speaker for VoiceOver.
+    static func focusSoundSpoken(_ sound: FocusSound) -> String {
+        String(localized: "Focus sound: \(sound.title)")
+    }
+
+    static var volume: String { String(localized: "Volume") }
+
+    /// Headphones came out, or it was paused from the Lock Screen.
+    static var focusSoundStopped: String {
+        String(localized: "Stopped for this session. Pick a sound to play it again.")
+    }
+
     // MARK: Session pills
 
     /// "2 of 4 today", or "4 of 4 · +2" past the set.

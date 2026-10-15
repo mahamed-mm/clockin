@@ -18,7 +18,7 @@ struct ClockinApp: App {
         UNUserNotificationCenter.current().delegate = NotificationDelegate.shared
         services = AppServices.shared
         #if DEBUG
-        DemoData.applyDemoSound(to: services)
+        DemoData.applyDemoSettings(to: services)
         #endif
     }
 

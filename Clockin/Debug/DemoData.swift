@@ -25,12 +25,16 @@ enum DemoData {
     }
 
     /// `-DemoSound rain` (or tickTock, brownNoise, fireplace, off): the focus
-    /// sound for sessions started this run, as if picked in Settings.
+    /// sound for sessions started this run, and `-DemoMascot calm` (or
+    /// workout, off): Tick during focus. As if picked in Settings.
     @MainActor
-    static func applyDemoSound(to services: AppServices) {
-        guard let raw = UserDefaults.standard.string(forKey: "DemoSound"),
-              let sound = FocusSound(rawValue: raw) else { return }
-        services.settings.focusSound = sound
+    static func applyDemoSettings(to services: AppServices) {
+        if let sound = UserDefaults.standard.string(forKey: "DemoSound").flatMap(FocusSound.init(rawValue:)) {
+            services.settings.focusSound = sound
+        }
+        if let style = UserDefaults.standard.string(forKey: "DemoMascot").flatMap(MascotFocusStyle.init(rawValue:)) {
+            services.settings.mascotDuringFocus = style
+        }
     }
 
     /// Saves a session to open on, before `AppServices` loads the saved state:

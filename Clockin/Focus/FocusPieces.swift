@@ -580,7 +580,9 @@ private struct DialTick: View {
         let dismiss: (() -> Void)? = services.alarmRinging ? { services.stopAlarm() } : nil
         return TickView(pose: shown ?? pose, progress: .fixed(TickPose.ringProgress(for: stage, at: date)),
                         celebration: celebration, crown: crown, onDismiss: dismiss, workout: workout,
-                        breakActivity: breakActivity, backToWork: director(at: date).backToWork(at: date))
+                        breakActivity: breakActivity, backToWork: director(at: date).backToWork(at: date),
+                        listening: services.settings.mascotDuringFocus.wearsHeadphones(
+                            soundPlaying: services.focusSound.state.isPlaying))
             .onChange(of: pose, initial: true) { show(pose) }
     }
 
@@ -1061,15 +1063,107 @@ struct SessionChip: View {
                                                Copy.extend(seconds: SessionEngine.extensionStep)])
                     .transition(.pop(reduceMotion))
                 }
+                if session.phase == .focus {
+                    FocusSoundButton(session: session)
+                }
             }
             .padding(.leading, Space.l)
-            .padding(.trailing, canExtend ? Space.m : Space.l)
-            .padding(.vertical, canExtend ? Space.xxs : Space.s)
+            .padding(.trailing, session.phase == .focus ? Space.xs : canExtend ? Space.m : Space.l)
+            .padding(.vertical, canExtend || session.phase == .focus ? Space.xxs : Space.s)
             .frame(maxWidth: .infinity, minHeight: 50)
             .glassEffect(.regular, in: .capsule)
             .animation(Motion.calm(reduceMotion), value: canExtend)
         }
         .id(schedule)
+    }
+}
+
+/// The session chip's speaker: what plays through this focus session, and
+/// how loud. Picking a sound plays it now and keeps it for next time.
+struct FocusSoundButton: View {
+    let session: ActiveSession
+    @Environment(AppServices.self) private var services
+    @State private var open = false
+
+    var body: some View {
+        let sound = session.focusSound ?? .off
+        let playing = services.focusSound.state.isPlaying
+        Button { open = true } label: {
+            Image(systemName: sound == .off ? "speaker.slash" : playing ? "speaker.wave.2" : "speaker")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(sound == .off ? Retro.inkSoft : Retro.ink)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(Copy.focusSoundSpoken(sound))
+        .accessibilityInputLabels([Copy.focusSound, sound.title])
+        .popover(isPresented: $open) {
+            FocusSoundMenu(selected: sound)
+                .presentationCompactAdaptation(.popover)
+        }
+    }
+}
+
+/// Off and the four sounds, then the volume. A glass popover.
+struct FocusSoundMenu: View {
+    let selected: FocusSound
+    @Environment(AppServices.self) private var services
+    @ScaledMetric(relativeTo: .body) private var iconWidth: CGFloat = 26
+
+    var body: some View {
+        @Bindable var services = services
+        VStack(alignment: .leading, spacing: Space.xxs) {
+            Text(Copy.focusSound)
+                .retroLabel()
+                .accessibilityAddTraits(.isHeader)
+                .padding(.bottom, Space.xxs)
+            ForEach(FocusSound.allCases) { sound in
+                Button { services.chooseFocusSound(sound) } label: {
+                    HStack(spacing: Space.s) {
+                        Image(systemName: sound.symbol)
+                            .frame(width: iconWidth)
+                            .foregroundStyle(Retro.inkSoft)
+                        Text(sound.title)
+                            .font(.retro(.body))
+                            .foregroundStyle(Retro.ink)
+                        Spacer(minLength: Space.s)
+                        Image(systemName: "checkmark")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Retro.orangeText)
+                            .opacity(sound == selected ? 1 : 0)
+                    }
+                    .frame(minHeight: 44)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(sound == selected ? .isSelected : [])
+            }
+            if case .stopped = services.focusSound.state, selected != .off {
+                Text(Copy.focusSoundStopped)
+                    .font(.retro(.meta))
+                    .foregroundStyle(Retro.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: Space.s) {
+                Image(systemName: "speaker.fill")
+                    .accessibilityHidden(true)
+                Slider(value: $services.settings.focusSoundVolume, in: 0...1)
+                    .tint(Retro.orange)
+                    .accessibilityLabel(Copy.volume)
+                Image(systemName: "speaker.wave.3.fill")
+                    .accessibilityHidden(true)
+            }
+            .foregroundStyle(Retro.inkSoft)
+            .padding(.top, Space.xs)
+            .disabled(selected == .off)
+            .opacity(selected == .off ? 0.4 : 1)
+        }
+        .padding(Space.l)
+        .frame(minWidth: 260, idealWidth: 300)
+        // Back from a call or the background: a sound that's waiting starts now.
+        .onAppear(perform: services.focusSound.retryIfWaiting)
     }
 }
 

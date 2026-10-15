@@ -192,6 +192,18 @@ struct FocusSoundWiringTests {
     }
 }
 
+/// Tick wears headphones for the workout, and otherwise only to listen.
+struct TickHeadphonesTests {
+    @Test func headphonesFollowTheSound() {
+        #expect(MascotFocusStyle.workout.wearsHeadphones(soundPlaying: false))
+        #expect(MascotFocusStyle.workout.wearsHeadphones(soundPlaying: true))
+        #expect(!MascotFocusStyle.calm.wearsHeadphones(soundPlaying: false))
+        #expect(MascotFocusStyle.calm.wearsHeadphones(soundPlaying: true))
+        #expect(!MascotFocusStyle.off.wearsHeadphones(soundPlaying: false))
+        #expect(MascotFocusStyle.off.wearsHeadphones(soundPlaying: true))
+    }
+}
+
 @MainActor
 final class SpyFocusSound: FocusSoundPlaying {
     struct Call: Equatable {

@@ -132,6 +132,7 @@ Debug builds accept these launch arguments (Product → Scheme → Edit Scheme �
 | `-DemoData` | Fills an empty store with six weeks of sample sessions and a few symbol picks, and hides the debug menu and the alert hints |
 | `-DemoNow 09:41` | Shows today at 09:41 in the app and the widgets: Tick's hour, the `-DemoData` sessions and a running session's times ("Ends 9:43") move, while timers keep the real clock. Pair it with `xcrun simctl status_bar booted override --time 09:41` |
 | `-DemoSound rain` | Plays that focus sound (`tickTock`, `brownNoise`, `rain`, `fireplace` or `off`) through sessions started this run, as if picked in Settings |
+| `-DemoMascot calm` | Tick during focus (`workout`, `calm` or `off`), as if picked in Settings |
 | `-DemoFinishing` | Starts a 25-minute session that ends 3 seconds after launch |
 | `-DemoOvertime` | A 25-minute session that ended four minutes before launch, for the overtime screen |
 | `-DemoBreak` | A break halfway through (seconds long with `-ShortTimers`); add `-DemoBreakStyle stretch` or `breathe` to spend it that way from launch |
