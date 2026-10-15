@@ -383,6 +383,16 @@
         }
       }
     },
+    "%lld parked" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld parkert"
+          }
+        }
+      }
+    },
     "%lld s" : {
       "localizations" : {
         "nb" : {
@@ -483,6 +493,46 @@
         }
       }
     },
+    "%lld thoughts parked" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld thought parked"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld thoughts parked"
+                }
+              }
+            }
+          }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld tanke parkert"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld tanker parkert"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld×" : {
       "shouldTranslate" : false
     },
@@ -532,6 +582,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Et sett på fire fullført"
+          }
+        }
+      }
+    },
+    "A thought for later" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En tanke til senere"
           }
         }
       }
@@ -2239,6 +2299,36 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Pensel"
+          }
+        }
+      }
+    },
+    "Park" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Parker"
+          }
+        }
+      }
+    },
+    "Park a thought" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Parker en tanke"
+          }
+        }
+      }
+    },
+    "Parked for after this session." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Parkert til etter denne økten."
           }
         }
       }

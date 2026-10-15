@@ -19,6 +19,9 @@ struct FocusView: View {
     /// The last tap or scroll, which the screen waits on before stepping back.
     @State private var lastTouch = Date.now
     @State private var steppedBack = false
+    /// A parked thought on its way to Tick, from and to in global space.
+    @State private var flight: (id: Int, from: CGPoint, to: CGPoint)?
+    @State private var flightProgress = 0.0
     @Namespace private var glass
     /// The visible area and what the pieces around the dial take, measured,
     /// so the dial gets what's left and the page scrolls when nothing is.
@@ -71,8 +74,20 @@ struct FocusView: View {
                 .transition(.opacity)
             } else {
                 standardLayout
+                    .safeAreaInset(edge: .bottom) {
+                        if services.parkFieldOpen, engine.active?.phase == .focus {
+                            ParkField(park: parkFromField) { services.parkFieldOpen = false }
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                    }
+                    .overlay { slipInFlight }
             }
         }
+        .animation(Motion.calm(reduceMotion), value: services.parkFieldOpen)
+        .onChange(of: engine.active?.phase) { _, phase in
+            if phase != .focus { services.parkFieldOpen = false }
+        }
+
         .toolbar(bedsideSession == nil ? .visible : .hidden, for: .tabBar)
         .onChange(of: BedsideController.keepsScreenOn(showing: bedsideSession != nil, session: engine.active),
                   initial: true) { _, keepOn in
@@ -110,6 +125,49 @@ struct FocusView: View {
             if !Task.isCancelled { engine.reconcile() }
         }
         .task(id: stepBackWindow) { await stepBack(during: stepBackWindow) }
+    }
+
+    // MARK: Parking a thought
+
+    /// Parks the line, then, once the keyboard has gone and the dial has
+    /// grown back, sends a slip from where the field was to Tick, who
+    /// catches it. With Reduce Motion or Low Power Mode the slip just fades
+    /// where it is and Tick stays still.
+    private func parkFromField(_ text: String, from field: CGRect) {
+        guard services.parkFromField(text) else { return }
+        touched()
+        let still = reduceMotion || services.power.isConstrained
+        let id = (flight?.id ?? 0) + 1
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.35))
+            let tick = services.tickFrame
+            let from = CGPoint(x: field.minX + 40, y: field.midY)
+            let flies = !still && tick != .zero
+            let to = flies ? CGPoint(x: tick.midX, y: tick.minY + tick.height * 0.3) : from
+            if flies { services.catchThought(at: Date.now.addingTimeInterval(TickCatch.flight)) }
+            flight = (id, from, to)
+            flightProgress = 0
+            withAnimation(flies ? .timingCurve(0.3, 0, 0.4, 1, duration: TickCatch.flight) : .easeOut(duration: 0.4)) {
+                flightProgress = 1
+            } completion: {
+                if flight?.id == id { flight = nil }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var slipInFlight: some View {
+        if let flight {
+            GeometryReader { proxy in
+                let origin = proxy.frame(in: .global).origin
+                ParkedSlip()
+                    .modifier(SlipFlight(from: CGPoint(x: flight.from.x - origin.x, y: flight.from.y - origin.y),
+                                         to: CGPoint(x: flight.to.x - origin.x, y: flight.to.y - origin.y),
+                                         progress: flightProgress))
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+        }
     }
 
     // MARK: Stepping back

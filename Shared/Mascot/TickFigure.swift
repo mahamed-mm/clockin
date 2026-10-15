@@ -117,6 +117,8 @@ struct TickMotion: Equatable, Sendable {
     var alarmFlash: Double = 0
     /// 0...1 of a shrug: hands and shoulders up.
     var shrug: Double = 0
+    /// 0...1 of both hands up over the crown, catching a parked thought.
+    var catchReach: Double = 0
     /// 0...1 of a punch or kick landing: lines burst from where it lands.
     var impact: Double = 0
     /// Where it lands, relative to the body's centre (Tick units).

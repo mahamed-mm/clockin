@@ -325,12 +325,29 @@ final class AppServices: SessionEffects {
 
     // MARK: Parked thoughts
 
+    /// The park field is open on the Focus screen (from the chip, a link or a quick action).
+    var parkFieldOpen = false
+    /// When the last thought parked in the app reaches Tick, for the catch.
+    private(set) var lastCatch: Date?
+    /// Where Tick is on screen, in global space: where a parked thought flies to.
+    @ObservationIgnored var tickFrame: CGRect = .zero
+
     /// Puts a thought aside during focus. False when there's no focus
     /// session running, or nothing but spaces.
     @discardableResult
     func park(_ text: String) -> Bool {
         engine.park(text) != nil
     }
+
+    /// Parked from the field: said aloud for VoiceOver; the screen sends it to Tick.
+    func parkFromField(_ text: String) -> Bool {
+        guard park(text) else { return false }
+        announce(Copy.thoughtParked)
+        return true
+    }
+
+    /// Tick catches a thought arriving at `date`.
+    func catchThought(at date: Date) { lastCatch = date }
 
     /// The thoughts to show after focus: the finished session's, then the
     /// break's session's, kept or still on the session.

@@ -21,6 +21,8 @@ struct TickLoopSchedule: TimelineSchedule {
     let loops: TickLoops
     let since: Date
     let pokedAt: Date?
+    /// A parked thought is on its way: frames through its flight and catch.
+    var caughtAt: Date? = nil
     let paused: Bool
     /// The debug menu's slow motion.
     let speed: Double
@@ -41,8 +43,14 @@ struct TickLoopSchedule: TimelineSchedule {
             let frame = elapsed + loops.frameInterval(at: elapsed)
             // The face swaps behind a blink in the first 0.18 s; a poke lasts 0.6 s.
             let poking = pokedAt.map { date.timeIntervalSince($0) / speed < TickTouch.pokeLength } ?? false
-            let soonest = frame < 0.2 || poking ? frame : loops.nextMovement(from: frame)
+            let catching = caughtAt.map {
+                let t = date.timeIntervalSince($0)
+                return t >= 0 && t < TickCatch.length
+            } ?? false
+            let soonest = frame < 0.2 || poking || catching ? frame : loops.nextMovement(from: frame)
             var upcoming = since.addingTimeInterval(soonest * speed)
+            // Wake for a catch still to come.
+            if let caughtAt, caughtAt > date { upcoming = min(upcoming, caughtAt) }
             if let workout {
                 // The next combo frame, or the next combo's start.
                 let step = date.addingTimeInterval(workout.frameInterval(at: date, pose: loops.pose))
@@ -89,6 +97,8 @@ struct TickView: View {
     var breakActivity: TickBreak? = nil
     /// Just back from a break: ready comes in with a stretch and a yawn.
     var backToWork = false
+    /// When a parked thought reaches Tick: it catches it, or nods mid-combo.
+    var caughtAt: Date? = nil
     /// False takes the headphones off: nothing is playing, and the workout
     /// (which always wears them) isn't on. Nil leaves them to the pose.
     var listening: Bool? = nil
@@ -221,13 +231,15 @@ struct TickView: View {
             } else {
                 // Frames only while something moves (30 a second), none between.
                 let workoutLoops = workoutLoops
-                TimelineView(TickLoopSchedule(loops: loops, since: since, pokedAt: pokedAt, paused: paused,
-                                              speed: Motion.speed, workout: workoutLoops,
+                TimelineView(TickLoopSchedule(loops: loops, since: since, pokedAt: pokedAt, caughtAt: caughtAt,
+                                              paused: paused, speed: Motion.speed, workout: workoutLoops,
                                               breakLoops: breakLoops)) { context in
                     let elapsed = context.date.timeIntervalSince(since) / Motion.speed
                     let frame = workoutFrame(workoutLoops, at: context.date, elapsed: elapsed)
                         ?? breakLoops?.frame(at: context.date) ?? stretchingIn(elapsed: elapsed)
-                    let motion = paused ? TickMotion.still : withPoke(withWorkout(loops.motion(at: elapsed), frame), at: context.date)
+                    let motion = paused ? TickMotion.still
+                        : withCatch(withPoke(withWorkout(loops.motion(at: elapsed), frame), at: context.date),
+                                    at: context.date, workout: workoutLoops)
                     let (face, swapBlink) = face(at: context.date, base: frame?.face)
                     GeometryReader { proxy in
                         let side = min(proxy.size.width, proxy.size.height)
@@ -356,6 +368,13 @@ struct TickView: View {
         motion.sweat = frame.motion.sweat
         motion.blink = max(motion.blink, frame.motion.blink)
         return motion
+    }
+
+    /// A parked thought landing: caught, or a nod mid-combo.
+    private func withCatch(_ motion: TickMotion, at date: Date, workout: WorkoutLoops?) -> TickMotion {
+        guard let caughtAt else { return motion }
+        let midCombo = workout?.move(at: caughtAt) != nil
+        return TickCatch.apply(to: motion, at: date.timeIntervalSince(caughtAt), nod: midCombo)
     }
 
     /// A poke adds a quick squish.

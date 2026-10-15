@@ -51,6 +51,15 @@ struct TickLook {
         // The waving hand swings side to side.
         left.end.x += 5 * motion.wave
         left.bend.x += 2 * motion.wave
+        // Both hands up over the crown, catching.
+        if motion.catchReach > 0 {
+            let k = motion.catchReach
+            func toward(_ a: CGPoint, _ b: CGPoint) -> CGPoint { CGPoint(x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k) }
+            left.end = toward(left.end, CGPoint(x: -12, y: -37))
+            left.bend = toward(left.bend, CGPoint(x: -31, y: -15))
+            right.end = toward(right.end, CGPoint(x: 12, y: -37))
+            right.bend = toward(right.bend, CGPoint(x: 31, y: -15))
+        }
         return [left, right]
     }
 

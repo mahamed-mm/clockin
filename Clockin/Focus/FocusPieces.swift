@@ -581,8 +581,10 @@ private struct DialTick: View {
         return TickView(pose: shown ?? pose, progress: .fixed(TickPose.ringProgress(for: stage, at: date)),
                         celebration: celebration, crown: crown, onDismiss: dismiss, workout: workout,
                         breakActivity: breakActivity, backToWork: director(at: date).backToWork(at: date),
+                        caughtAt: services.lastCatch,
                         listening: services.settings.mascotDuringFocus.wearsHeadphones(
                             soundPlaying: services.focusSound.state.isPlaying))
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { services.tickFrame = $0 }
             .onChange(of: pose, initial: true) { show(pose) }
     }
 
@@ -1043,10 +1045,19 @@ struct SessionChip: View {
                         .foregroundStyle(Retro.tint(for: session.phase))
                         .contentTransition(.symbolEffect(.replace))
                         .accessibilityHidden(true)
-                    Text(session.phase == .focus ? Copy.displayName(session.name) : Copy.breakAfter(session.name))
-                        .retroFont(.headline)
-                        .foregroundStyle(Retro.ink)
-                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(session.phase == .focus ? Copy.displayName(session.name) : Copy.breakAfter(session.name))
+                            .retroFont(.headline)
+                            .foregroundStyle(Retro.ink)
+                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+                        if let parked = session.thoughts?.count, parked > 0, session.phase == .focus {
+                            Text(Copy.parked(parked))
+                                .font(.retro(.meta))
+                                .foregroundStyle(Retro.inkSoft)
+                                .contentTransition(.numericText())
+                                .accessibilityLabel(Copy.parkedSpoken(parked))
+                        }
+                    }
                 }
                 .accessibilityElement(children: .combine)
                 if canExtend {
@@ -1064,7 +1075,19 @@ struct SessionChip: View {
                     .transition(.pop(reduceMotion))
                 }
                 if session.phase == .focus {
-                    FocusSoundButton(session: session)
+                    HStack(spacing: 0) {
+                        Button { services.parkFieldOpen = true } label: {
+                            Image(systemName: "note.text")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(Retro.ink)
+                                .frame(minWidth: 44, minHeight: 44)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel(Copy.parkThought)
+                        .accessibilityInputLabels([Copy.parkThought, String(localized: "Park")])
+                        FocusSoundButton(session: session)
+                    }
                 }
             }
             .padding(.leading, Space.l)

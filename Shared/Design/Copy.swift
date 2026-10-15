@@ -296,6 +296,18 @@ enum Copy {
         String(localized: "Stopped for this session. Pick a sound to play it again.")
     }
 
+    // MARK: Parked thoughts
+
+    static var parkThought: String { String(localized: "Park a thought") }
+    static var parkPlaceholder: String { String(localized: "A thought for later") }
+    static var thoughtParked: String { String(localized: "Parked for after this session.") }
+
+    /// "2 parked", on the session chip. Never a score: just how many are waiting.
+    static func parked(_ count: Int) -> String { String(localized: "\(count) parked") }
+
+    /// "2 thoughts parked", the chip read aloud.
+    static func parkedSpoken(_ count: Int) -> String { String(localized: "\(count) thoughts parked") }
+
     // MARK: Session pills
 
     /// "2 of 4 today", or "4 of 4 · +2" past the set.
