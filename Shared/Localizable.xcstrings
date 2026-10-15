@@ -566,6 +566,16 @@
         }
       }
     },
+    "A day shows its sessions on the ribbon. A subject shows only its sessions." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En dag viser øktene sine på båndet. Et emne viser bare sine økter."
+          }
+        }
+      }
+    },
     "A dimmed landscape clock for the nightstand. Show it during a session, even with orientation lock on." : {
       "localizations" : {
         "nb" : {
@@ -1311,6 +1321,16 @@
         }
       }
     },
+    "During focus, tap the notepad on the session. It waits here for when you're done." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Under fokus trykker du på notatblokken på økten. Den venter her til du er ferdig."
+          }
+        }
+      }
+    },
     "During this break" : {
       "localizations" : {
         "nb" : {
@@ -1745,6 +1765,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Historikken kunne ikke lastes inn"
+          }
+        }
+      }
+    },
+    "Hold a session" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hold på en økt"
           }
         }
       }
@@ -2383,6 +2413,16 @@
         }
       }
     },
+    "Park a stray thought" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Parker en løs tanke"
+          }
+        }
+      }
+    },
     "Park a thought" : {
       "localizations" : {
         "nb" : {
@@ -2543,6 +2583,16 @@
         }
       }
     },
+    "Pick a symbol" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Velg et symbol"
+          }
+        }
+      }
+    },
     "Planned" : {
       "localizations" : {
         "nb" : {
@@ -2698,6 +2748,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Hvil med Tick, strekk deg sammen med den, eller pust i takt med skiven. Du kan endre det på pauseskjermen for den pausen. Hver fjerde hele økt i løpet av dagen gir en pause på %@."
+          }
+        }
+      }
+    },
+    "Rest, stretch with Tick, or breathe along." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hvil, tøy ut med Tick eller pust i takt."
           }
         }
       }
@@ -3089,6 +3149,16 @@
     "Speed" : {
       "shouldTranslate" : false
     },
+    "Spend the break your way" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bruk pausen slik du vil"
+          }
+        }
+      }
+    },
     "Spread across the day this week; %@ was your longest day." : {
       "localizations" : {
         "nb" : {
@@ -3344,6 +3414,36 @@
         }
       }
     },
+    "Tap a day or a subject" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trykk på en dag eller et emne"
+          }
+        }
+      }
+    },
+    "Tap it to start, and again to pause." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trykk for å starte, og igjen for å sette på pause."
+          }
+        }
+      }
+    },
+    "Tap the icon by the name to choose one. It shows wherever that name does." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Trykk på ikonet ved navnet for å velge et. Det vises overalt der navnet gjør det."
+          }
+        }
+      }
+    },
     "Test timers" : {
       "shouldTranslate" : false
     },
@@ -3439,6 +3539,16 @@
     },
     "Tick gallery" : {
       "shouldTranslate" : false
+    },
+    "Tick's crown is a button" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ticks krone er en knapp"
+          }
+        }
+      }
     },
     "Tick-tock" : {
       "localizations" : {
@@ -3559,6 +3669,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "I dag: %@ fokus"
+          }
+        }
+      }
+    },
+    "Touch and hold to rename it, change its symbol, start it again or delete it." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hold inne for å gi den nytt navn, bytte symbol, starte den igjen eller slette den."
           }
         }
       }

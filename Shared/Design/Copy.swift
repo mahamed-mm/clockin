@@ -320,6 +320,29 @@ enum Copy {
     /// "2 thoughts parked", the chip read aloud.
     static func parkedSpoken(_ count: Int) -> String { String(localized: "\(count) thoughts parked") }
 
+    // MARK: Tips
+
+    static var tipCrownTitle: String { String(localized: "Tick's crown is a button") }
+    static var tipCrownMessage: String { String(localized: "Tap it to start, and again to pause.") }
+    static var tipSymbolTitle: String { String(localized: "Pick a symbol") }
+    static var tipSymbolMessage: String {
+        String(localized: "Tap the icon by the name to choose one. It shows wherever that name does.")
+    }
+    static var tipHistoryTapTitle: String { String(localized: "Tap a day or a subject") }
+    static var tipHistoryTapMessage: String {
+        String(localized: "A day shows its sessions on the ribbon. A subject shows only its sessions.")
+    }
+    static var tipHistoryMenuTitle: String { String(localized: "Hold a session") }
+    static var tipHistoryMenuMessage: String {
+        String(localized: "Touch and hold to rename it, change its symbol, start it again or delete it.")
+    }
+    static var tipBreakChipsTitle: String { String(localized: "Spend the break your way") }
+    static var tipBreakChipsMessage: String { String(localized: "Rest, stretch with Tick, or breathe along.") }
+    static var tipParkTitle: String { String(localized: "Park a stray thought") }
+    static var tipParkMessage: String {
+        String(localized: "During focus, tap the notepad on the session. It waits here for when you're done.")
+    }
+
     // MARK: Session pills
 
     /// "2 of 4 today", or "4 of 4 · +2" past the set.

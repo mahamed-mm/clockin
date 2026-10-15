@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import TipKit
 
 struct FocusView: View {
     @Environment(SessionEngine.self) private var engine
@@ -16,6 +17,13 @@ struct FocusView: View {
     @Environment(\.accessibilitySwitchControlEnabled) private var switchControl
     @FocusState private var nameFocused: Bool
     @State private var pickingSymbol = false
+    /// The idle screen's hints, one at a time.
+    @State private var idleTips = TipGroup(.ordered) {
+        CrownTip()
+        SymbolTip()
+    }
+    private let breakTip = BreakChipsTip()
+    private let parkTip = ParkTip()
     /// When the typed name last got a new symbol, for Tick's nod.
     @State private var symbolNodAt: Date?
     /// The last tap or scroll, which the screen waits on before stepping back.
@@ -319,6 +327,10 @@ struct FocusView: View {
             switch engine.stage {
             case .idle:
                 VStack(spacing: Space.s) {
+                    if let tip = idleTips.currentTip {
+                        TipView(tip)
+                            .tipViewStyle(RetroTipStyle())
+                    }
                     if teachesDial {
                         Text(Copy.dragToSet)
                             .font(.retro(.meta))
@@ -346,6 +358,8 @@ struct FocusView: View {
                     if session.phase == .rest {
                         BreakStyleChips(session: session)
                             .transition(.opacity)
+                        TipView(breakTip)
+                            .tipViewStyle(RetroTipStyle())
                         thoughtsAfterFocus
                     }
                 }
@@ -354,6 +368,8 @@ struct FocusView: View {
                     CompletionSummary(focus: focus, day: services.today)
                     OvertimeChip(focus: focus)
                     thoughtsAfterFocus
+                    TipView(parkTip)
+                        .tipViewStyle(RetroTipStyle())
                     if welcomes {
                         WelcomeLine()
                             .padding(.top, Space.xs)
@@ -494,7 +510,10 @@ struct FocusView: View {
     /// Tick's crown is the start button: it does what the big button does.
     private var tickCrown: (label: String, action: () -> Void) {
         let (label, _, action) = primaryAction
-        return (label, action)
+        return (label, {
+            ClockinTips.note(ClockinTips.crownTapped)
+            action()
+        })
     }
 
     private var primaryAction: (String, String, () -> Void) {
@@ -567,7 +586,9 @@ struct FocusView: View {
 
     private func start() {
         nameFocused = false
-        engine.start(name: sessionName)
+        if engine.start(name: sessionName), !ActiveSession.cleanName(sessionName).isEmpty {
+            ClockinTips.note(ClockinTips.namedSessionStarted)
+        }
     }
 }
 

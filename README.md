@@ -138,7 +138,8 @@ Debug builds accept these launch arguments (Product → Scheme → Edit Scheme �
 | `-DemoThoughts` | With `-DemoFinishing` or `-DemoOvertime`: two thoughts parked in that session |
 | `-DemoBreak` | A break halfway through (seconds long with `-ShortTimers`); add `-DemoBreakStyle stretch` or `breathe` to spend it that way from launch |
 | `-DemoBreakOver` | A break that ran out 30 seconds before launch, for the "Break's over" screen |
-| `-ResetOnboarding` | Shows the first-launch hints again (also in the debug menu) |
+| `-DemoTip ParkTip` | Shows that tip whatever its rules (`CrownTip`, `SymbolTip`, `HistoryTapTip`, `HistoryMenuTip`, `BreakChipsTip`, `ParkTip`), for screenshots |
+| `-ResetOnboarding` | Shows the first-launch hints and every tip again (also in the debug menu, from the next launch) |
 
 Run the tests:
 

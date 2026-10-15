@@ -1384,6 +1384,7 @@ struct BreakStyleChips: View {
                     Button {
                         engine.chooseBreakStyle(style)
                         taps += 1
+                        ClockinTips.note(ClockinTips.breakStyleChosen)
                     } label: {
                         Text(style.title)
                             .font(.retro(.meta))

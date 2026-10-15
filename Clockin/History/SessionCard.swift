@@ -141,5 +141,7 @@ struct SessionPeek: View {
         .padding(Space.l)
         .frame(width: 300)
         .background(Retro.paper)
+        // The row's menu was found: History's hint about it isn't needed.
+        .onAppear { ClockinTips.note(ClockinTips.rowMenuOpened) }
     }
 }

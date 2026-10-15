@@ -274,6 +274,7 @@ final class AppServices: SessionEffects {
         if let sound = TimerSound.for(event) { playSound(sound) }
         if let fade = FocusSoundFade.for(event) { focusSound.follow(focusSoundCue, fade: fade, chosen: false) }
         keepThoughts(after: event)
+        noteForTips(event)
         switch event {
         case .started, .resumed, .breakStarted, .restored, .extended:
             if let session = engine.active {
@@ -327,6 +328,19 @@ final class AppServices: SessionEffects {
         refreshWidgets()
     }
 
+    // MARK: Tips
+
+    /// What the hints wait on: no tip during focus or before a first finish.
+    private func noteForTips(_ event: SessionEvent) {
+        ClockinTips.focusRunning = engine.active?.phase == .focus
+        switch event {
+        case .started: ClockinTips.note(ClockinTips.sessionStarted)
+        case .breakStarted: ClockinTips.note(ClockinTips.breakStarted)
+        case .focusCompleted, .finishedEarly: ClockinTips.hasFinished = true
+        default: break
+        }
+    }
+
     // MARK: Parked thoughts
 
     /// The park field is open on the Focus screen (from the chip, a link or a quick action).
@@ -340,7 +354,9 @@ final class AppServices: SessionEffects {
     /// session running, or nothing but spaces.
     @discardableResult
     func park(_ text: String) -> Bool {
-        engine.park(text) != nil
+        guard engine.park(text) != nil else { return false }
+        ClockinTips.note(ClockinTips.thoughtParked)
+        return true
     }
 
     /// Parked from the field: said aloud for VoiceOver; the screen sends it to Tick.
@@ -510,6 +526,7 @@ final class AppServices: SessionEffects {
         let before = symbolBook
         symbolBook.pick(symbol, for: name)
         if symbolBook != before { historyChanged() }
+        ClockinTips.note(ClockinTips.symbolPicked)
     }
 
     /// Forgets symbols for names no session has any more: not saved, not
@@ -590,6 +607,8 @@ final class AppServices: SessionEffects {
         if engine.stage == .idle { alarm.cancel() }
         pruneSymbols()
         pruneThoughts()
+        ClockinTips.focusRunning = engine.active?.phase == .focus
+        ClockinTips.hasFinished = !((try? history?.distinctNames()) ?? []).isEmpty
         refreshWidgets()
     }
 

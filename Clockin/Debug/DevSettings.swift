@@ -36,6 +36,7 @@ struct DevMenu: View {
                 Label("Tick gallery", systemImage: "face.smiling")
             }
             Button {
+                UserDefaults.standard.set(true, forKey: ClockinTips.resetKey)
                 Onboarding.reset()
             } label: {
                 Label("Show first-launch hints again", systemImage: "hand.point.up.left")

@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import TipKit
 
 /// Today's total up top, then one week at a time: the week strip and that
 /// week's sessions by day. Paging back reaches every session ever saved.
@@ -93,6 +94,7 @@ struct HistoryView: View {
                 }
                 .scrollContentBackground(.hidden)
             }
+            .onAppear { ClockinTips.note(ClockinTips.historyOpened) }
             .sheet(item: $opened) { card in
                 let summary = card.summary
                 SessionCard(summary: summary, now: services.today, calendar: services.calendar,
@@ -284,6 +286,11 @@ private struct HistoryWeek: View {
     @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
+    /// History's hints, one at a time.
+    @State private var tips = TipGroup(.ordered) {
+        HistoryTapTip()
+        HistoryMenuTip()
+    }
     /// The session whose card is open, and how.
     @Binding var opened: OpenedCard?
     let zoom: Namespace.ID
@@ -345,6 +352,10 @@ private struct HistoryWeek: View {
                         .padding(.top, Space.xs)
                         .id(week.start)
                         .transition(.opacity)
+                }
+                if let tip = tips.currentTip {
+                    TipView(tip)
+                        .tipViewStyle(RetroTipStyle())
                 }
             }
             .listRowBackground(Color.clear)
@@ -435,6 +446,7 @@ private struct HistoryWeek: View {
     private static func sectionID(_ day: Date) -> String { "day-\(day.timeIntervalSinceReferenceDate)" }
 
     private func select(_ day: Date) {
+        ClockinTips.note(ClockinTips.dayOrSubjectTapped)
         pickedDay = day
         guard let group = days(in: subjectTotals).first(where: { calendar.isDate($0.day, inSameDayAs: day) })
         else { return }
@@ -515,6 +527,7 @@ private struct HistoryWeek: View {
 
     /// A "By subject" row tapped: only its sessions, or all of them again.
     private func pick(_ choice: SubjectFilter) {
+        ClockinTips.note(ClockinTips.dayOrSubjectTapped)
         withAnimation(Motion.calm(reduceMotion)) { filter = filter?.id == choice.id ? nil : choice }
     }
 
