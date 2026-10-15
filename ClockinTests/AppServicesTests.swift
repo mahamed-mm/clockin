@@ -163,6 +163,22 @@ struct AppServicesTests {
         #expect(liveActivity.calls == ["sync"])
     }
 
+    @Test func aBreakThatRanOutWhileClosedOpensOnBreaksOver() {
+        // The app restores before its first frame, so the screen never shows
+        // the break's 00:00 timer: restore alone must settle it.
+        let services = makeServices()
+        finishFocus(services)
+        services.engine.startBreak()
+        clock.advance(Preset.classic.shortBreak + 2 * 60)
+        liveActivity.calls = []
+
+        let relaunched = makeServices()
+        relaunched.restore()
+        #expect(relaunched.engine.stage == .idle)
+        #expect(relaunched.engine.breakOver != nil)
+        #expect(liveActivity.calls == ["breakDone"])
+    }
+
     @Test func staleCompletionOpensQuietly() {
         let services = makeServices()
         services.engine.start(name: "Essay")

@@ -20,7 +20,11 @@ struct ClockinApp: App {
         ClockinTips.configure()
         #if DEBUG
         DemoData.applyDemoSettings(to: services)
+        DemoData.seedIfRequested(into: services)
         #endif
+        // Before the first frame, so a phase that ran out while the app was
+        // closed opens on how it ended rather than on its 00:00 timer.
+        services.restore()
     }
 
     var body: some Scene {
@@ -31,13 +35,7 @@ struct ClockinApp: App {
                 .environment(services)
                 .environment(services.engine)
                 .modelContainer(services.container)
-                .task {
-                    #if DEBUG
-                    DemoData.seedIfRequested(into: services)
-                    #endif
-                    services.restore()
-                    await services.refreshAlertStatus()
-                }
+                .task { await services.refreshAlertStatus() }
         }
         .onChange(of: scenePhase) { _, phase in
             // The icon's quick actions match what's going on when it's next touched.
