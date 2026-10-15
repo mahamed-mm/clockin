@@ -601,6 +601,7 @@ private struct DialTick: View {
                         caughtAt: services.lastCatch, attention: attention, noddedAt: nodAt,
                         listening: services.settings.mascotDuringFocus.wearsHeadphones(
                             soundPlaying: services.focusSound.state.isPlaying))
+            .equatable()
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { services.tickFrame = $0 }
             .onChange(of: pose, initial: true) { show(pose) }
     }

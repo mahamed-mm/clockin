@@ -110,7 +110,7 @@ private extension SessionStage {
 /// in the background, the phone is saving power, or Reduce Motion is on
 /// (then states cross-fade). Its crown works the timer, a tap on its body
 /// makes it giggle, and while ringing any tap stops the alarm.
-struct TickView: View {
+struct TickView: View, Equatable {
     let pose: TickPose
     var progress: TickProgress = .sheet
     /// Increments when a focus session completes, for the "ding" hop.
@@ -165,6 +165,20 @@ struct TickView: View {
     @State private var gearingUp = false
     /// Moved on when a break's stretches are done, so Tick goes back to resting.
     @State private var breakRefresh = 0
+
+    /// Equal while Tick would draw the same, so a parent that changes for
+    /// something else leaves it alone. The crown and the alarm's stop are new
+    /// closures on every pass, so they count by being there and by the
+    /// crown's name: what the crown does follows the stage, and its name
+    /// with it, and both only reach the engine and services, which a closure
+    /// from an earlier pass reaches just the same.
+    static func == (a: Self, b: Self) -> Bool {
+        a.pose == b.pose && a.progress == b.progress && a.celebration == b.celebration
+            && a.crown?.label == b.crown?.label
+            && (a.onDismiss == nil) == (b.onDismiss == nil) && a.workout == b.workout
+            && a.breakActivity == b.breakActivity && a.backToWork == b.backToWork && a.caughtAt == b.caughtAt
+            && a.attention == b.attention && a.noddedAt == b.noddedAt && a.listening == b.listening
+    }
 
     private var reduceMotion: Bool { systemReduceMotion || galleryReduceMotion }
     private var still: Bool { reduceMotion || services.power.isConstrained }
