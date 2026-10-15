@@ -75,7 +75,9 @@ struct ParkedSlip: View {
     }
 }
 
-/// Moves along a curve from `from` to `to` as `progress` goes 0 to 1.
+/// Moves along a curve from `from` to `to` as `progress` goes 0 to 1:
+/// placed once at `from`, then moved by translation, so the flight lays
+/// nothing out again.
 struct SlipFlight: ViewModifier, Animatable {
     var from: CGPoint
     var to: CGPoint
@@ -95,7 +97,8 @@ struct SlipFlight: ViewModifier, Animatable {
         content
             .scaleEffect(1 - 0.45 * t)
             .rotationEffect(.degrees(-25 * t))
-            .position(x: x, y: y)
+            .position(from)
+            .offset(x: x - from.x, y: y - from.y)
             .opacity(t > 0.92 ? (1 - t) / 0.08 : 1)
     }
 }
