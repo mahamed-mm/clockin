@@ -453,7 +453,8 @@ struct FocusView: View {
 
     private var controls: some View {
         let idle = engine.stage == .idle
-        let undoable = idle && engine.undoableCancel != nil
+        let undo = idle ? engine.undoable.map(undoCopy) : nil
+        let undoable = undo != nil
         return VStack(spacing: Space.s) {
             primaryButton
             ZStack {
@@ -468,16 +469,26 @@ struct FocusView: View {
                         .allowsHitTesting(idle && !undoable)
                         .accessibilityHidden(!idle || undoable)
                 }
-                // Takes Cancel's place for a few seconds, right under the finger,
-                // arriving like the undo bar in History.
-                if undoable {
-                    UndoBar(message: String(localized: "Session cancelled"),
-                            hint: String(localized: "Brings the session back"), undo: engine.undoCancel)
+                // Takes the button's place for a few seconds, right under the
+                // finger, arriving like the undo bar in History.
+                if let undo {
+                    UndoBar(message: undo.message, hint: undo.hint, undo: engine.undo)
                         .transition(.bar(reduceMotion))
                 }
             }
             .animation(Motion.calm(reduceMotion), value: undoable)
             .opacity(chromeOpacity)
+        }
+    }
+
+    private func undoCopy(_ undoable: SessionEngine.Undoable) -> (message: String, hint: String) {
+        switch undoable {
+        case .cancel:
+            (String(localized: "Session cancelled"), String(localized: "Brings the session back"))
+        case .skip:
+            (String(localized: "Break skipped"), String(localized: "Brings the break back"))
+        case .dismiss:
+            (String(localized: "No break this time"), String(localized: "Brings the break offer back"))
         }
     }
 

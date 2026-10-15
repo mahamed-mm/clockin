@@ -337,7 +337,7 @@ struct SessionEngineTests {
         #expect(engine.undoableCancel == before)
 
         clock.advance(4)
-        engine.undoCancel()
+        engine.undo()
         #expect(engine.active == before)
         #expect(effects.events.last == .restored)
         #expect(engine.undoableCancel == nil)
@@ -349,7 +349,7 @@ struct SessionEngineTests {
         engine.start(name: "Essay")
         engine.cancel()
         clock.advance(SessionEngine.standardUndoWindow + 1)
-        engine.undoCancel()
+        engine.undo()
         #expect(engine.stage == .idle)
     }
 
@@ -359,7 +359,7 @@ struct SessionEngineTests {
         engine.cancel()
         engine.start(name: "Other")
         #expect(engine.undoableCancel == nil)
-        engine.undoCancel()
+        engine.undo()
         #expect(engine.active?.name == "Other")
     }
 
@@ -369,7 +369,7 @@ struct SessionEngineTests {
         clock.advance(Preset.classic.focus - 2)
         engine.cancel()
         clock.advance(4)
-        engine.undoCancel()
+        engine.undo()
         #expect(engine.stage.completedFocus?.name == "Essay")
         #expect(log.recorded.count == 1)
         // Straight to complete, without a card for a finished session first.
@@ -382,8 +382,82 @@ struct SessionEngineTests {
         engine.start(name: "Essay")
         engine.cancel()
         clock.advance(20)
-        engine.undoCancel()
+        engine.undo()
         #expect(engine.active?.name == "Essay")
+    }
+
+    // MARK: Undo skip
+
+    @Test func skippedBreakCanBeUndone() throws {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        clock.advance(Preset.classic.focus)
+        engine.reconcile()
+        engine.startBreak()
+        clock.advance(60)
+        engine.pause()
+        let before = try #require(engine.active)
+        engine.skipBreak()
+        #expect(engine.undoable == .skip(before))
+        #expect(engine.undoableCancel == nil)
+
+        clock.advance(4)
+        engine.undo()
+        #expect(engine.active == before)
+        #expect(effects.events.last == .restored)
+        #expect(engine.undoable == nil)
+        #expect(store.state.active == before)
+        #expect(log.recorded.count == 1)
+    }
+
+    @Test func skippingABreakKeepsTheSessionWhenUndoRunsOut() {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        clock.advance(Preset.classic.focus)
+        engine.reconcile()
+        engine.startBreak()
+        engine.skipBreak()
+        clock.advance(SessionEngine.standardUndoWindow + 1)
+        engine.undo()
+        #expect(engine.stage == .idle)
+        #expect(log.recorded.map(\.name) == ["Essay"])
+    }
+
+    @Test func undoingABreakThatRanOutMeanwhileEndsIt() {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        clock.advance(Preset.classic.focus)
+        engine.reconcile()
+        engine.startBreak()
+        clock.advance(Preset.classic.shortBreak - 2)
+        engine.skipBreak()
+        clock.advance(4)
+        engine.undo()
+        #expect(engine.stage == .idle)
+        #expect(engine.breakOver != nil)
+        // Straight to over, without a card for a finished break first.
+        #expect(effects.events.suffix(2) == [.breakSkipped, .breakFinished(.live)])
+    }
+
+    @Test func doneForNowCanBeUndoneAndStillOffersOvertime() throws {
+        let engine = makeEngine()
+        engine.start(name: "Essay")
+        clock.advance(Preset.classic.focus)
+        engine.reconcile()
+        let focus = try #require(engine.stage.completedFocus)
+        clock.advance(120)
+        engine.skipBreak()
+        #expect(engine.undoable == .dismiss(focus))
+
+        clock.advance(3)
+        engine.undo()
+        #expect(engine.stage.completedFocus == focus)
+        #expect(effects.events.last == .restored)
+        #expect(store.state.completedFocus == focus)
+        #expect(log.recorded.count == 1)
+
+        engine.keepOvertime()
+        #expect(engine.stage.completedFocus?.focusSeconds == Preset.classic.focus + 120)
     }
 
     @Test func completionWhileClosedIsRecordedOnRelaunch() throws {

@@ -288,9 +288,14 @@ final class AppServices: SessionEffects {
             liveActivity.endAll()
             cancelEndAlert()
             announce(String(localized: "Session cancelled. Undo is available for a few seconds."))
-        case .breakSkipped, .completionDismissed:
+        case .breakSkipped:
             liveActivity.endAll()
             cancelEndAlert()
+            announce(String(localized: "Break skipped. Undo is available for a few seconds."))
+        case .completionDismissed:
+            liveActivity.endAll()
+            cancelEndAlert()
+            announce(String(localized: "No break this time. Undo is available for a few seconds."))
         case .focusCompleted(let freshness):
             // Found long after the fact, it opens quietly: no ding, no sunburst,
             // and no "done" card left behind on the Lock Screen.

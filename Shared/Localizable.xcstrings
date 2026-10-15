@@ -889,6 +889,26 @@
         }
       }
     },
+    "Break skipped" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pausen er hoppet over"
+          }
+        }
+      }
+    },
+    "Break skipped. Undo is available for a few seconds." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Pausen er hoppet over. Du kan angre i noen sekunder."
+          }
+        }
+      }
+    },
     "Break started: %@." : {
       "localizations" : {
         "nb" : {
@@ -971,6 +991,26 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Koffert"
+          }
+        }
+      }
+    },
+    "Brings the break back" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Henter pausen tilbake"
+          }
+        }
+      }
+    },
+    "Brings the break offer back" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Henter tilbudet om pause tilbake"
           }
         }
       }
@@ -2139,6 +2179,26 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Ingen økter med %@ denne uken."
+          }
+        }
+      }
+    },
+    "No break this time" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingen pause denne gangen"
+          }
+        }
+      }
+    },
+    "No break this time. Undo is available for a few seconds." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingen pause denne gangen. Du kan angre i noen sekunder."
           }
         }
       }

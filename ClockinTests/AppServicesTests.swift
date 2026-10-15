@@ -248,9 +248,38 @@ struct AppServicesTests {
         services.engine.cancel()
         #expect(announcer.spoken.last?.contains("Undo") == true)
 
-        services.engine.undoCancel()
+        services.engine.undo()
         #expect(liveActivity.calls == ["sync", "endAll", "sync"])
         #expect(notifier.calls == ["schedule", "cancel", "schedule"])
+    }
+
+    @Test func undoingASkipBringsTheBreaksCardAndAlertBack() {
+        let services = makeServices()
+        finishFocus(services)
+        services.engine.startBreak()
+        liveActivity.calls = []
+        notifier.calls = []
+        services.engine.skipBreak()
+        #expect(announcer.spoken.last?.contains("Undo") == true)
+
+        services.engine.undo()
+        #expect(services.engine.active?.phase == .rest)
+        #expect(liveActivity.calls == ["endAll", "sync"])
+        #expect(notifier.calls == ["cancel", "schedule"])
+    }
+
+    @Test func undoingDoneForNowLeavesTheLockScreenAlone() {
+        let services = makeServices()
+        finishFocus(services)
+        services.engine.skipBreak()
+        #expect(announcer.spoken.last?.contains("Undo") == true)
+        liveActivity.calls = []
+        notifier.calls = []
+
+        services.engine.undo()
+        #expect(services.engine.stage.completedFocus?.name == "Essay")
+        #expect(liveActivity.calls.isEmpty)
+        #expect(notifier.calls.isEmpty)
     }
 
     @Test func alertStatusFollowsPermissions() async {
@@ -312,7 +341,7 @@ struct AppServicesTests {
         #expect(alarm.calls == ["schedule", "cancel", "schedule"])
         services.engine.cancel()
         #expect(alarm.calls.last == "cancel")
-        services.engine.undoCancel()
+        services.engine.undo()
         #expect(alarm.calls.last == "schedule")
     }
 

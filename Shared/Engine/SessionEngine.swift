@@ -56,7 +56,7 @@ protocol SessionEffects: AnyObject {
 @MainActor
 @Observable
 final class SessionEngine {
-    /// How long Cancel can be undone, normally.
+    /// How long Cancel, Skip break and Done for now can be undone, normally.
     static let standardUndoWindow: TimeInterval = 6
     /// "+5 min": offered in the last this-many seconds, and added each time.
     nonisolated static let extensionStep: TimeInterval = 5 * 60
@@ -68,11 +68,26 @@ final class SessionEngine {
     /// long, so it can be added to the session.
     static let maxOvertime: TimeInterval = 60 * 60
 
+    /// What was put away moments ago and can still be brought back.
+    enum Undoable: Equatable, Sendable {
+        /// A focus phase, cancelled.
+        case cancel(ActiveSession)
+        /// A break, skipped.
+        case skip(ActiveSession)
+        /// A finished session, put away without a break.
+        case dismiss(CompletedFocus)
+    }
+
     private(set) var stage: SessionStage = .idle
-    /// The focus phase cancelled moments ago, so it can be brought back.
-    /// Cleared by any other transition and when the undo window closes.
-    private(set) var undoableCancel: ActiveSession?
-    /// How long Cancel can be undone, asked at each cancel. The app gives
+    /// What can be brought back right now. Cleared by any other transition
+    /// and when the undo window closes.
+    private(set) var undoable: Undoable?
+    /// The focus phase cancelled moments ago, while it can be brought back.
+    var undoableCancel: ActiveSession? {
+        if case .cancel(let session) = undoable { return session }
+        return nil
+    }
+    /// How long an undo stays on offer, asked each time. The app gives
     /// assistive technologies longer, since reaching Undo takes them longer.
     @ObservationIgnored var undoWindow: @MainActor () -> TimeInterval = { SessionEngine.standardUndoWindow }
     /// The lengths for the next session, read when it starts. The app
@@ -267,25 +282,29 @@ final class SessionEngine {
         guard let session = active, session.phase == .focus else { return }
         let window = undoWindow()
         // Undoable before anyone hears of it, so they can see what was cancelled.
-        apply(.idle, event: .cancelled, undoable: session)
-        undoDeadline = now().addingTimeInterval(window)
-        scheduleUndoExpiry(after: window)
+        apply(.idle, event: .cancelled, undoable: .cancel(session))
+        openUndoWindow(window)
     }
 
-    /// Brings back the focus phase just cancelled, exactly as it was: a
-    /// running timer kept running in the meantime, a paused one stayed paused.
-    func undoCancel() {
-        guard case .idle = stage, let session = undoableCancel, let undoDeadline,
-              now() <= undoDeadline else { return }
-        guard !session.isFinished(at: now()) else {
-            // It ran out while cancelled: complete it, without first putting
-            // a card for a finished session back on the Lock Screen.
-            clearUndo()
-            stage = .active(session)
-            reconcile()
-            return
+    /// Brings back what was just cancelled, skipped or put away, exactly as
+    /// it was: a running timer kept running in the meantime, a paused one
+    /// stayed paused, and a finished session still offers its break.
+    func undo() {
+        guard case .idle = stage, let undoable, let undoDeadline, now() <= undoDeadline else { return }
+        switch undoable {
+        case .cancel(let session), .skip(let session):
+            guard !session.isFinished(at: now()) else {
+                // It ran out in the meantime: end it as it would have, without
+                // first putting a card for a finished phase back on the Lock Screen.
+                clearUndo()
+                stage = .active(session)
+                reconcile()
+                return
+            }
+            apply(.active(session), event: .restored)
+        case .dismiss(let focus):
+            apply(.focusComplete(focus), event: .restored)
         }
-        apply(.active(session), event: .restored)
     }
 
     /// Adds five minutes to the focus phase, running or paused.
@@ -409,16 +428,20 @@ final class SessionEngine {
         persist()
     }
 
-    /// Ends a break early, or dismisses the "focus complete" state.
+    /// Ends a break early, or dismisses the "focus complete" state. Either
+    /// can be undone until the undo window closes. The finished session is
+    /// already saved, so neither touches History.
     func skipBreak() {
+        let window = undoWindow()
         switch stage {
         case .active(let session) where session.phase == .rest:
-            apply(.idle, event: .breakSkipped)
-        case .focusComplete:
-            apply(.idle, event: .completionDismissed)
+            apply(.idle, event: .breakSkipped, undoable: .skip(session))
+        case .focusComplete(let focus):
+            apply(.idle, event: .completionDismissed, undoable: .dismiss(focus))
         default:
-            break
+            return
         }
+        openUndoWindow(window)
     }
 
     /// Checks whether the current phase has run out. Call on launch, when
@@ -503,9 +526,9 @@ final class SessionEngine {
     }
 
     private func apply(_ newStage: SessionStage, event: SessionEvent, breakOver: BreakOverMoment? = nil,
-                       undoable: ActiveSession? = nil) {
+                       undoable: Undoable? = nil) {
         clearUndo()
-        undoableCancel = undoable
+        self.undoable = undoable
         self.breakOver = breakOver
         stage = newStage
         persist()
@@ -569,6 +592,11 @@ final class SessionEngine {
         }
     }
 
+    private func openUndoWindow(_ window: TimeInterval) {
+        undoDeadline = now().addingTimeInterval(window)
+        scheduleUndoExpiry(after: window)
+    }
+
     private func scheduleUndoExpiry(after window: TimeInterval) {
         undoExpiry?.cancel()
         guard schedulesCompletion else { return }
@@ -582,7 +610,7 @@ final class SessionEngine {
     private func clearUndo() {
         undoExpiry?.cancel()
         undoExpiry = nil
-        undoableCancel = nil
+        undoable = nil
         undoDeadline = nil
     }
 }

@@ -78,7 +78,7 @@ struct ThoughtStoreTests {
         services.engine.cancel()
         #expect(services.thoughts.unfiled.map(\.text) == ["Buy milk"])
 
-        services.engine.undoCancel()
+        services.engine.undo()
         #expect(services.thoughts.unfiled.isEmpty)
         #expect(services.engine.active?.thoughts?.count == 1)
 
