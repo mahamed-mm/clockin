@@ -3401,6 +3401,16 @@
     "Stretches" : {
       "shouldTranslate" : false
     },
+    "Stretches done" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ferdig med strekkene"
+          }
+        }
+      }
+    },
     "Style" : {
       "shouldTranslate" : false
     },

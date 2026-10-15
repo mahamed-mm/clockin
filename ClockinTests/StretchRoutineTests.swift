@@ -131,9 +131,11 @@ struct StretchRoutineTests {
         #expect(guide.status(at: start.addingTimeInterval(entries[1].end + 1)) == "Reach up")
         #expect(guide.spoken(at: start.addingTimeInterval(entries[1].start + 2)) == "Stretch, 2 of 6, shoulder shrug")
         #expect(guide.spoken(at: start.addingTimeInterval(entries[5].start + 2)) == "Stretch, 6 of 6, look at something far away")
-        // Done: the usual label and nothing extra to hear.
+        // Done: it says so for the rest of the break, without the dots.
         let after = start.addingTimeInterval(guide.routine.end + 1)
-        #expect(guide.status(at: after) == nil && guide.step(at: after) == nil && guide.spoken(at: after) == nil)
+        #expect(guide.status(at: after) == "Stretches done" && guide.spoken(at: after) == "Stretches done")
+        #expect(guide.step(at: after) == nil)
+        #expect(guide.status(at: start.addingTimeInterval(299)) == "Stretches done")
         #expect(guide.changes(after: start).count == entries.count)
     }
 }

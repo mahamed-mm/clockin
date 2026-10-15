@@ -15,15 +15,14 @@ struct BreakGuide: Equatable, Sendable {
         routine = StretchRoutine(length: activity.styleLength)
     }
 
-    /// The dial's label at `date`, or nil for the usual one (a rest, paused,
-    /// or the stretches done).
+    /// The dial's label at `date`, or nil for the usual one (a rest, or paused).
     func status(at date: Date) -> String? {
         guard !activity.isPaused else { return nil }
         let t = activity.styleElapsed(at: date)
         switch activity.style {
         case .rest: return nil
         case .breathe: return cycle.phase(at: t).breathingIn ? Copy.breatheIn : Copy.breatheOut
-        case .stretch: return move(at: t).map(Copy.stretchName)
+        case .stretch: return move(at: t).map(Copy.stretchName) ?? done
         }
     }
 
@@ -40,7 +39,7 @@ struct BreakGuide: Equatable, Sendable {
         case .rest: return nil
         case .breathe: return Copy.breatheSpoken(inhale: Int(cycle.inhale), exhale: Int(cycle.exhale))
         case .stretch:
-            guard let move = move(at: t), let index = routine.index(at: t) else { return nil }
+            guard let move = move(at: t), let index = routine.index(at: t) else { return done }
             return Copy.stretchSpoken(index: index, count: routine.count, move: move)
         }
     }
@@ -95,6 +94,9 @@ struct BreakGuide: Equatable, Sendable {
 
     /// Each stretch's start and end, in the style's time.
     private var stretchCues: [TimeInterval] { routine.entries.flatMap { [$0.start, $0.end] } }
+
+    /// Said once the stretches are over, for the rest of the break.
+    private var done: String? { routine.count > 0 ? Copy.stretchesDone : nil }
 
     /// The stretch under way, or coming next while standing between.
     private func move(at t: TimeInterval) -> StretchMove? {
