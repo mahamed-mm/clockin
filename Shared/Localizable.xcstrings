@@ -1005,6 +1005,16 @@
         }
       }
     },
+    "Clear filter" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fjern filteret"
+          }
+        }
+      }
+    },
     "Clockin" : {
       "localizations" : {
         "nb" : {
@@ -1933,6 +1943,46 @@
         }
       }
     },
+    "No %@ sessions" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingen økter med %@"
+          }
+        }
+      }
+    },
+    "No %@ sessions this week." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingen økter med %@ denne uken."
+          }
+        }
+      }
+    },
+    "No other sessions" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingen andre økter"
+          }
+        }
+      }
+    },
+    "No other sessions this week." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingen andre økter denne uken."
+          }
+        }
+      }
+    },
     "No sessions" : {
       "localizations" : {
         "nb" : {
@@ -2646,6 +2696,56 @@
     },
     "Show the envelope" : {
       "shouldTranslate" : false
+    },
+    "Showing only %@" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bare %@ vises"
+          }
+        }
+      }
+    },
+    "Showing only the other sessions" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bare de andre øktene vises"
+          }
+        }
+      }
+    },
+    "Shows every session" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Viser alle øktene"
+          }
+        }
+      }
+    },
+    "Shows only %@ sessions" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Viser bare økter med %@"
+          }
+        }
+      }
+    },
+    "Shows only the other sessions" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Viser bare de andre øktene"
+          }
+        }
+      }
     },
     "Shows the session, to rename or delete it" : {
       "localizations" : {

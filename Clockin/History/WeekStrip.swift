@@ -15,6 +15,10 @@ struct WeekStrip: View {
     var select: ((Date) -> Void)?
     /// Shared with the month, so a day picked there morphs into its column.
     var morph: Namespace.ID?
+    /// Days, as start of day, without the subject History is showing; their
+    /// pills dim, and `dimmedValue` says why.
+    var dimmed: Set<Date> = []
+    var dimmedValue = ""
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
@@ -24,14 +28,17 @@ struct WeekStrip: View {
                 let isToday = calendar.isDate(entry.day, inSameDayAs: today)
                 let isFuture = entry.day > today && !isToday
                 let isSelected = selected.map { calendar.isDate(entry.day, inSameDayAs: $0) } ?? false
+                let isDimmed = !isFuture && dimmed.contains(calendar.startOfDay(for: entry.day))
                 Button { select?(entry.day) } label: {
-                    column(entry, index: index, isToday: isToday, isFuture: isFuture, isSelected: isSelected)
+                    column(entry, index: index, isToday: isToday, isFuture: isFuture, isSelected: isSelected,
+                           isDimmed: isDimmed)
                 }
                 .buttonStyle(.plain)
                 .disabled(select == nil || isFuture)
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Self.accessibilityText(entry, today: today, calendar: calendar))
+                .accessibilityValue(isDimmed ? dimmedValue : "")
                 .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
                 .accessibilityHint(isFuture ? "" : String(localized: "Shows this day"))
             }
@@ -40,7 +47,7 @@ struct WeekStrip: View {
     }
 
     private func column(_ entry: DayTotal, index: Int, isToday: Bool, isFuture: Bool,
-                        isSelected: Bool) -> some View {
+                        isSelected: Bool, isDimmed: Bool) -> some View {
         VStack(spacing: Space.xs) {
             Text(entry.day.formatted(.dateTime.weekday(.narrow)))
                 .font(.retro(.label))
@@ -48,9 +55,10 @@ struct WeekStrip: View {
                 .foregroundStyle(isToday || isSelected ? Retro.ink : Retro.inkSoft)
             SessionPills(completed: appeared ? entry.sessions : 0,
                          pillWidth: 24, pillHeight: 7, axis: .vertical)
-                .opacity(isFuture ? 0.4 : 1)
+                .opacity(isFuture || isDimmed ? 0.4 : 1)
                 .animation(Motion.wind(reduceMotion).delay(Motion.stagger(index, reduceMotion)),
                            value: appeared)
+                .animation(Motion.calm(reduceMotion), value: isDimmed)
             Circle()
                 .fill(Retro.orange)
                 .frame(width: 5, height: 5)

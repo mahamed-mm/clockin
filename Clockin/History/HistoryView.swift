@@ -23,6 +23,9 @@ struct HistoryView: View {
     @State private var opened: OpenedCard?
     /// The card zooms out of its row.
     @Namespace private var zoom
+    /// The subject picked in "By subject". Kept when paging and in the month,
+    /// so a subject can be followed back through the weeks.
+    @State private var subjectFilter: SubjectFilter?
 
     private static var newestFirst: FetchDescriptor<FocusRecord> { firstRecord(order: .reverse) }
     private static var oldestFirst: FetchDescriptor<FocusRecord> { firstRecord(order: .forward) }
@@ -62,7 +65,8 @@ struct HistoryView: View {
                             HistoryWeek(week: week, today: services.today, calendar: services.calendar,
                                         canGoBack: canGoBack, canGoForward: canGoForward, page: page,
                                         scroll: scroll, pickedDay: $pickedDay, morph: reduceMotion ? nil : morph,
-                                        modePicker: AnyView(modePicker), opened: $opened, zoom: zoom)
+                                        modePicker: AnyView(modePicker), opened: $opened, zoom: zoom,
+                                        filter: $subjectFilter)
                         case .month:
                             HistoryMonth(month: month, today: services.today, calendar: services.calendar,
                                          canGoBack: canGoBackMonth, canGoForward: canGoForwardMonth,
@@ -282,11 +286,13 @@ private struct HistoryWeek: View {
     /// The session whose card is open, and how.
     @Binding var opened: OpenedCard?
     let zoom: Namespace.ID
+    /// Only this subject's sessions, when one is picked.
+    @Binding var filter: SubjectFilter?
     @Environment(\.showFocus) private var showFocus
 
     init(week: DateInterval, today: Date, calendar: Calendar, canGoBack: Bool, canGoForward: Bool,
          page: @escaping (Int) -> Void, scroll: ScrollViewProxy, pickedDay: Binding<Date?>, morph: Namespace.ID?,
-         modePicker: AnyView, opened: Binding<OpenedCard?>, zoom: Namespace.ID) {
+         modePicker: AnyView, opened: Binding<OpenedCard?>, zoom: Namespace.ID, filter: Binding<SubjectFilter?>) {
         self.week = week
         self.today = today
         self.calendar = calendar
@@ -299,10 +305,13 @@ private struct HistoryWeek: View {
         self.modePicker = modePicker
         _opened = opened
         self.zoom = zoom
+        _filter = filter
         _records = Query(filter: FocusRecord.completed(in: week), sort: \.completedAt, order: .reverse)
     }
 
     var body: some View {
+        let subjects = subjectTotals
+        let shownDays = days(in: subjects)
         Section {
             VStack(spacing: Space.s) {
                 modePicker
@@ -310,12 +319,16 @@ private struct HistoryWeek: View {
                              next: String(localized: "Next week"), canGoBack: canGoBack, canGoForward: canGoForward,
                              page: page)
                 WeekStrip(totals: totals, today: today, calendar: calendar, selected: selectedDay,
-                          select: select, morph: morph)
+                          select: select, morph: morph,
+                          dimmed: filter.map { $0.daysWithout(weekSessions, in: subjects, days: totals.map(\.day),
+                                                              calendar: calendar) } ?? [],
+                          dimmedValue: Copy.noSessions(filter.flatMap(subjectName)))
                     // A new week fills in afresh.
                     .id(week.start)
                 if let selectedDay {
                     DayRibbon(title: dayTitle(selectedDay), sessions: ribbon(on: selectedDay), day: selectedDay,
-                              calendar: calendar, open: open)
+                              calendar: calendar, open: open,
+                              highlights: filter.map { filter in { filter.matches($0, in: subjects) } })
                         .padding(.top, Space.xxs)
                         // Each day draws in afresh.
                         .id(selectedDay)
@@ -326,9 +339,8 @@ private struct HistoryWeek: View {
                         .id(week.start)
                         .transition(.opacity)
                 }
-                let subjects = subjectTotals
                 if !subjects.top.isEmpty {
-                    WeekSubjects(totals: subjects)
+                    WeekSubjects(totals: subjects, filter: filter, pick: pick)
                         .padding(.top, Space.xs)
                         .id(week.start)
                         .transition(.opacity)
@@ -341,7 +353,22 @@ private struct HistoryWeek: View {
         }
         .listRowSeparator(.hidden)
 
-        if records.isEmpty && !week.includes(today) {
+        if let filter {
+            Section {
+                filterChip(filter)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .transition(.opacity)
+                if shownDays.isEmpty {
+                    Text(Copy.noSessionsThisWeek(subjectName(filter)))
+                        .font(.retro(.body))
+                        .foregroundStyle(Retro.inkSoft)
+                        .frame(maxWidth: .infinity)
+                        .listRowBackground(Color.clear)
+                }
+            }
+            .listRowSeparator(.hidden)
+        } else if records.isEmpty && !week.includes(today) {
             Section {
                 Text("No sessions this week.")
                     .font(.retro(.body))
@@ -351,7 +378,7 @@ private struct HistoryWeek: View {
             }
         }
 
-        ForEach(Array(days.enumerated()), id: \.element.day) { dayIndex, group in
+        ForEach(Array(shownDays.enumerated()), id: \.element.day) { dayIndex, group in
             Section {
                 ForEach(Array(group.records.enumerated()), id: \.element.id) { rowIndex, record in
                     // A real button, so Full Keyboard Access and Switch Control reach it too.
@@ -408,7 +435,8 @@ private struct HistoryWeek: View {
 
     private func select(_ day: Date) {
         pickedDay = day
-        guard let group = days.first(where: { calendar.isDate($0.day, inSameDayAs: day) }) else { return }
+        guard let group = days(in: subjectTotals).first(where: { calendar.isDate($0.day, inSameDayAs: day) })
+        else { return }
         withAnimation(Motion.calm(reduceMotion)) { scroll.scrollTo(Self.sectionID(group.day), anchor: .top) }
     }
 
@@ -470,13 +498,57 @@ private struct HistoryWeek: View {
 
     /// The week's minutes by name, saved or waiting.
     private var subjectTotals: SubjectTotals {
+        SubjectTotals(weekSessions)
+    }
+
+    /// The week's sessions by name, saved or waiting, each once.
+    private var weekSessions: [SubjectTotals.Session] {
         let savedIDs = Set(records.map(\.id))
         let waiting = engine.pendingRecords.filter { week.includes($0.completedAt) && !savedIDs.contains($0.id) }
-        return SubjectTotals(records.map {
+        return records.map {
             SubjectTotals.Session(name: $0.name, completedAt: $0.completedAt, seconds: $0.focusSeconds)
         } + waiting.map {
             SubjectTotals.Session(name: $0.name, completedAt: $0.completedAt, seconds: $0.focusSeconds)
-        })
+        }
+    }
+
+    /// A "By subject" row tapped: only its sessions, or all of them again.
+    private func pick(_ choice: SubjectFilter) {
+        withAnimation(Motion.calm(reduceMotion)) { filter = filter?.id == choice.id ? nil : choice }
+    }
+
+    /// The subject's name for the copy; nil for "Other".
+    private func subjectName(_ filter: SubjectFilter) -> String? {
+        filter == .other ? nil : filter.title
+    }
+
+    /// "Chemistry ×" above the list: shows every session again.
+    private func filterChip(_ filter: SubjectFilter) -> some View {
+        Button {
+            withAnimation(Motion.calm(reduceMotion)) { self.filter = nil }
+        } label: {
+            HStack(spacing: Space.xs) {
+                if case .subject(_, let name) = filter {
+                    Image(systemName: services.symbol(for: name))
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Retro.inkSoft)
+                }
+                Text(filter.title)
+                    .font(.retro(.meta))
+                    .foregroundStyle(Retro.ink)
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Retro.inkSoft)
+            }
+            .retroChip(selected: true)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Copy.showingOnly(subjectName(filter)))
+        .accessibilityHint(Copy.showsEverySession)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityInputLabels([filter.title, Copy.clearFilter])
     }
 
     /// The week's focus, saved or still waiting to be saved, each once.
@@ -491,8 +563,10 @@ private struct HistoryWeek: View {
         return WeekFacts(sessions: sessions, calendar: calendar)
     }
 
-    private var days: [(day: Date, records: [FocusRecord])] {
-        let grouped = Dictionary(grouping: records) { calendar.startOfDay(for: $0.completedAt) }
+    /// The sessions listed, by day: all of them, or the picked subject's.
+    private func days(in subjects: SubjectTotals) -> [(day: Date, records: [FocusRecord])] {
+        let shown = filter.map { filter in records.filter { filter.matches($0.name, in: subjects) } } ?? records
+        let grouped = Dictionary(grouping: shown) { calendar.startOfDay(for: $0.completedAt) }
         return grouped.keys.sorted(by: >).map { ($0, grouped[$0] ?? []) }
     }
 

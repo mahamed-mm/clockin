@@ -248,6 +248,36 @@ enum Copy {
     /// "Break until 14:30"
     static func breakUntil(_ date: Date) -> String { String(localized: "Break until \(TimeFormat.time(date))") }
 
+    // MARK: History's subject filter (`subject` nil is "Other")
+
+    /// "Shows only Chemistry sessions": a "By subject" row's hint.
+    static func showsOnly(_ subject: String?) -> String {
+        subject.map { String(localized: "Shows only \($0) sessions") }
+            ?? String(localized: "Shows only the other sessions")
+    }
+
+    /// The hint once a row is picked, and on the chip that clears it.
+    static var showsEverySession: String { String(localized: "Shows every session") }
+
+    /// "Showing only Chemistry": the chip above the list, read aloud.
+    static func showingOnly(_ subject: String?) -> String {
+        subject.map { String(localized: "Showing only \($0)") }
+            ?? String(localized: "Showing only the other sessions")
+    }
+
+    static var clearFilter: String { String(localized: "Clear filter") }
+
+    /// "No Chemistry sessions this week."
+    static func noSessionsThisWeek(_ subject: String?) -> String {
+        subject.map { String(localized: "No \($0) sessions this week.") }
+            ?? String(localized: "No other sessions this week.")
+    }
+
+    /// "No Chemistry sessions": a dimmed day in the week strip, read aloud.
+    static func noSessions(_ subject: String?) -> String {
+        subject.map { String(localized: "No \($0) sessions") } ?? String(localized: "No other sessions")
+    }
+
     // MARK: Session pills
 
     /// "2 of 4 today", or "4 of 4 · +2" past the set.

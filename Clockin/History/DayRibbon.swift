@@ -84,6 +84,9 @@ struct DayRibbon: View {
     let calendar: Calendar
     /// Opens the session's card.
     let open: (UUID) -> Void
+    /// While History shows one subject: true for its sessions' names. The
+    /// other blocks dim.
+    var highlights: ((String) -> Bool)?
     @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
@@ -141,6 +144,8 @@ struct DayRibbon: View {
                     .opacity(appeared ? 1 : 0)
                     .animation((reduceMotion ? Motion.calm(true) : Motion.wind(false))
                         .delay(Motion.stagger(index, reduceMotion)), value: appeared)
+                    .opacity(highlights?(block.name) == false ? (contrast == .increased ? 0.45 : 0.3) : 1)
+                    .animation(Motion.calm(reduceMotion), value: highlights?(block.name) == false)
                     .offset(x: block.x)
                     .accessibilityElement()
                     .accessibilityLabel(Copy.ribbonBlock(name: Copy.displayName(block.name),
