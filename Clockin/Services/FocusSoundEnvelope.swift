@@ -31,7 +31,7 @@ enum FocusSoundFade: Equatable, Sendable {
         case .cancelled, .finishedEarly: .stopOut
         // The bell came after a second of silence; breaks are silent.
         case .focusCompleted, .breakStarted, .breakSkipped, .completionDismissed, .breakFinished: .now
-        case .historySaved, .overtimeKept: nil
+        case .historySaved, .overtimeKept, .breakOverEnded: nil
         }
     }
 

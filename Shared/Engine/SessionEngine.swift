@@ -24,6 +24,9 @@ enum SessionEvent: Equatable, Sendable {
     case finishedEarly
     /// Minutes worked past the bell were added to the finished session.
     case overtimeKept
+    /// "Break's over" went away with no session started: its time ran out,
+    /// or a length was chosen.
+    case breakOverEnded
 }
 
 /// How soon after a phase ended the engine noticed, which sets how loudly
@@ -426,6 +429,7 @@ final class SessionEngine {
         guard breakOver != nil else { return }
         breakOver = nil
         persist()
+        effects?.sessionEngine(self, didEmit: .breakOverEnded)
     }
 
     /// Ends a break early, or dismisses the "focus complete" state. Either

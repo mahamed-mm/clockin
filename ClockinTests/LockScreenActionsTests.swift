@@ -77,6 +77,33 @@ struct LockScreenActionsTests {
         #expect(live.calls.last == "endAll")
     }
 
+    @Test func theCardGoesWhenTheMomentDoes() {
+        let services = makeServices()
+        services.engine.start(name: "Essay")
+        clock.advance(Preset.classic.focus)
+        services.reconcile()
+        services.engine.startBreak()
+        clock.advance(Preset.classic.shortBreak)
+        services.reconcile()
+        #expect(live.calls.last == "breakDone")
+
+        // Ten minutes on, with the app open: the screen's own timer reconciles.
+        clock.advance(BreakOverMoment.window + 1)
+        services.engine.reconcile()
+        #expect(live.calls.last == "endAll")
+
+        // Choosing a length puts it away too.
+        services.engine.start(name: "Essay")
+        clock.advance(Preset.classic.focus)
+        services.reconcile()
+        services.engine.startBreak()
+        clock.advance(Preset.classic.shortBreak)
+        services.reconcile()
+        #expect(live.calls.last == "breakDone")
+        services.engine.dismissBreakOver()
+        #expect(live.calls.last == "endAll")
+    }
+
     @Test func aFinishedCardSaysHowItEndedAndWhatsNext() {
         let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
         func state(_ phase: SessionPhase, completed: Int, long: Bool = false) -> FocusActivityAttributes.ContentState {

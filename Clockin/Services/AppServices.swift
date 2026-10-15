@@ -324,6 +324,9 @@ final class AppServices: SessionEffects {
             if freshness != .stale, engine.breakOver != nil { liveActivity.showBreakDone() } else { liveActivity.endAll() }
             clearLateAlert(freshness)
             if freshness == .live { announce("\(Copy.breakOver). \(Copy.readyWhenYouAre)") }
+        case .breakOverEnded:
+            // Back to plain waiting: the Lock Screen's "Break's over" goes too.
+            liveActivity.endAll()
         case .overtimeKept:
             saveFinishedToHealth()
         case .historySaved:
@@ -1067,7 +1070,7 @@ struct EventStamp: Equatable {
         case .breakStarted: .impact(flexibility: .soft, intensity: 0.7)
         case .breakSkipped: .impact(weight: .light)
         case .breakFinished(let freshness): freshness == .stale ? nil : .success
-        case .focusCompleted, .completionDismissed, .restored, .historySaved, nil: nil
+        case .focusCompleted, .completionDismissed, .restored, .historySaved, .breakOverEnded, nil: nil
         }
     }
 }

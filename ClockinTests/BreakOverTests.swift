@@ -64,6 +64,7 @@ struct BreakOverTests {
         engine.dismissBreakOver()
         #expect(engine.breakOver == nil)
         #expect(store.state.breakOver == nil)
+        #expect(effects.events.last == .breakOverEnded)
 
         onABreak(engine)
         breakRunsOut(engine)
@@ -84,6 +85,11 @@ struct BreakOverTests {
         clock.advance(61)
         engine.reconcile()
         #expect(engine.breakOver == nil)
+        #expect(effects.events.last == .breakOverEnded)
+        // Only once.
+        engine.reconcile()
+        engine.dismissBreakOver()
+        #expect(effects.events.filter { $0 == .breakOverEnded }.count == 1)
     }
 
     @Test func itEndsAtMidnight() throws {
