@@ -328,6 +328,31 @@ final class AppServices: SessionEffects {
         refreshWidgets()
     }
 
+    // MARK: Quick actions
+
+    /// Refreshes the Home Screen icon's quick actions for what's going on now.
+    func refreshQuickActions() {
+        let recent = (try? history?.recentNames(limit: 2)) ?? []
+        let actions = QuickAction.available(focusing: engine.active?.phase == .focus, recentNames: recent)
+        UIApplication.shared.shortcutItems = actions.map { $0.shortcutItem(symbol: symbol(for:)) }
+    }
+
+    /// Does what a quick action asks. Starting from the icon is in the app,
+    /// on screen: it winds up as usual.
+    func perform(_ action: QuickAction) {
+        engine.reconcile()
+        switch action {
+        case .start(let name):
+            if !engine.hasActiveSession { engine.start(name: name) }
+        case .pause:
+            engine.pause()
+        case .park:
+            parkFieldOpen = engine.active?.phase == .focus
+        case .history:
+            break
+        }
+    }
+
     // MARK: Tips
 
     /// What the hints wait on: no tip during focus or before a first finish.

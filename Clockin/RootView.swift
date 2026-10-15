@@ -33,12 +33,24 @@ struct RootView: View {
         }
         .tabViewStyle(.sidebarAdaptable)
         .tint(Retro.orangeText)
+        .onReceive(NotificationCenter.default.publisher(for: QuickActionInbox.arrived)) { _ in takeQuickAction() }
+        .onAppear(perform: takeQuickAction)
         .onOpenURL { url in
             guard url.scheme == "clockin" else { return }
             tab = url.host() == "history" ? .history : .focus
             // Straight to the field, while there's a focus session to park in.
             if url.host() == "park", engine.active?.phase == .focus { services.parkFieldOpen = true }
         }
+    }
+}
+
+extension RootView {
+    /// A quick action from the Home Screen icon: to its tab, then done.
+    private func takeQuickAction() {
+        guard let action = QuickActionInbox.pending else { return }
+        QuickActionInbox.pending = nil
+        tab = action == .history ? .history : .focus
+        services.perform(action)
     }
 }
 

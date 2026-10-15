@@ -40,6 +40,8 @@ struct ClockinApp: App {
                 }
         }
         .onChange(of: scenePhase) { _, phase in
+            // The icon's quick actions match what's going on when it's next touched.
+            if phase == .background { services.refreshQuickActions() }
             guard phase == .active else { return }
             services.reconcile()
             Task { await services.refreshAlertStatus() }

@@ -43,6 +43,8 @@ enum Copy {
     /// The end alarm's buttons.
     static var startBreakShort: String { String(localized: "Start break") }
     static var startFocus: String { String(localized: "Start focus") }
+    /// "Start Chemistry", a quick action on the Home Screen icon.
+    static func startNamed(_ name: String) -> String { String(localized: "Start \(name)") }
     static var ringing: String { String(localized: "Ringing") }
     /// "+5 min"
     static func extend(seconds: TimeInterval) -> String {

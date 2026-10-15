@@ -63,6 +63,13 @@ final class HistoryService {
         try save()
     }
 
+    /// The last few session names, newest first, each once.
+    func recentNames(limit: Int) throws -> [String] {
+        var descriptor = FetchDescriptor<FocusRecord>(sortBy: [SortDescriptor(\.completedAt, order: .reverse)])
+        descriptor.fetchLimit = 30
+        return Self.recentNames(try context.fetch(descriptor).map(\.name), excluding: "", limit: limit)
+    }
+
     /// Every saved session, oldest first, for export.
     func allSessions() throws -> [CompletedFocus] {
         try context.fetch(FetchDescriptor<FocusRecord>(sortBy: [SortDescriptor(\.completedAt)])).map(\.completedFocus)

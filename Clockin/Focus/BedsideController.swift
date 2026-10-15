@@ -91,10 +91,18 @@ final class BedsideController {
     }
 }
 
-/// Reports `OrientationLock` to the system.
+/// Reports `OrientationLock` to the system, and hands the scene a delegate
+/// for Home Screen quick actions.
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
         MainActor.assumeIsolated { OrientationLock.mask }
+    }
+
+    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession,
+                     options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        let configuration = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
+        configuration.delegateClass = QuickActionSceneDelegate.self
+        return configuration
     }
 }
