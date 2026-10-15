@@ -48,6 +48,9 @@ struct TickLook {
         // Reaching up onto the crown's edge.
         right.end.x -= 5 * motion.crownTap
         right.end.y -= 6 * motion.crownTap
+        // Rubbing it.
+        right.end.x += 1.5 * motion.polish
+        right.end.y += 0.8 * abs(motion.polish)
         // The waving hand swings side to side.
         left.end.x += 5 * motion.wave
         left.bend.x += 2 * motion.wave

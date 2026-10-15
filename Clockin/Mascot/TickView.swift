@@ -148,7 +148,8 @@ struct TickView: View {
         // Working out, or paused worn out, Tick breathes hard instead of in calm spells.
         let breathesHard = workoutLoops.map { !$0.isCalm && (pose == .working || (pose == .waiting && $0.pausedMoving)) } ?? false
         return TickLoops(pose: pose, seed: seed, entering: entering, breathes: !breathesHard && !breathing,
-                         gearsUp: gearingUp, mug: activeBreak == nil, backToWork: backToWork && pose == .ready)
+                         gearsUp: gearingUp, mug: activeBreak == nil, backToWork: backToWork && pose == .ready,
+                         yawns: TickPose.hour(at: .now, calendar: .autoupdatingCurrent) >= 20)
     }
 
     /// The break, while Tick is leading it rather than resting with the mug.
@@ -416,6 +417,13 @@ struct TickView: View {
         var face = face
         // The loop's blink, or eyes the frame itself closes (a stretch, a yawn).
         face.blink = max(face.blink, blink)
+        // A fidget's glance, and a yawn's open mouth and heavy eyes.
+        face.gazeX += motion.lookX
+        face.gazeY += motion.lookY
+        if motion.yawn > 0.35 {
+            face.mouth = .oh
+            face.blink = max(face.blink, 0.65 * motion.yawn)
+        }
         var rig = rig ?? TickRig(pose)
         rig.crownPress = pressing ? 1 : 0
         if listening == false { rig.headphones = 0 }

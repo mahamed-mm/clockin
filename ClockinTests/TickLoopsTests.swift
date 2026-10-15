@@ -56,7 +56,8 @@ struct TickLoopsTests {
             let loops = TickLoops(pose: pose, seed: 5)
             return (0..<400).contains { value(loops.motion(at: Double($0) * 0.05)) != 0 }
         }
-        #expect(ever(.ready) { $0.crownTap })
+        // Ready fidgets: the crown, the dial, a stretch or a look round.
+        #expect(ever(.ready) { abs($0.crownTap) + abs($0.lookX) + $0.catchReach })
         #expect(ever(.waiting) { $0.footTap } && ever(.waiting) { $0.browLift })
         #expect(ever(.ringing) { $0.lean } && ever(.ringing) { $0.alarmFlash })
         #expect(ever(.done) { $0.hop })

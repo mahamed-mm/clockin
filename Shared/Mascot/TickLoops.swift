@@ -19,6 +19,11 @@ struct TickLoops {
     var mug = true
     /// Ready after a break ran out: its entry is a stretch and a yawn.
     var backToWork = false
+    /// Late in the day: a yawn is among ready's fidgets.
+    var yawns = false
+
+    /// Ready's fidgets, on this Tick's own uneven beat.
+    var fidgets: FidgetSchedule { FidgetSchedule(seed: seed, yawns: yawns) }
 
     /// How long the state's entry lasts.
     var entryLength: TimeInterval {
@@ -44,8 +49,8 @@ struct TickLoops {
 
         switch pose {
         case .ready:
-            // Taps the crown about every 8 s.
-            motion.crownTap = pulse(t, every: 8, offset: 3, length: 0.5)
+            // A fidget now and then: the crown, the dial, a stretch, a look round.
+            if t >= entryLength, let (fidget, into) = fidgets.current(at: t) { fidget.apply(into, to: &motion) }
         case .working:
             break // Blinks and breathing only: calm, never distracting.
         case .waiting:
@@ -145,7 +150,7 @@ struct TickLoops {
         var windows = [blinkWindow(from: t)]
         if pose != .ringing, breathes { windows.append(breathWindow(from: t)) }
         switch pose {
-        case .ready: windows.append(window(from: t, every: 8, offset: 3, length: 0.5))
+        case .ready: windows.append(fidgets.window(from: t))
         case .waiting:
             windows.append(window(from: t, every: 1.2, offset: 0, length: 0.35))
             windows.append(window(from: t, every: 4.5, offset: 1.5, length: 0.7))

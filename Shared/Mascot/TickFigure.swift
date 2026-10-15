@@ -119,6 +119,13 @@ struct TickMotion: Equatable, Sendable {
     var shrug: Double = 0
     /// 0...1 of both hands up over the crown, catching a parked thought.
     var catchReach: Double = 0
+    /// -1...1 of the hand on the crown rubbing it (a fidget).
+    var polish: Double = 0
+    /// Extra gaze, in Tick units, added to the face's: a glance.
+    var lookX: Double = 0
+    var lookY: Double = 0
+    /// 0...1 of a yawn: mouth open, eyes heavy.
+    var yawn: Double = 0
     /// 0...1 of a punch or kick landing: lines burst from where it lands.
     var impact: Double = 0
     /// Where it lands, relative to the body's centre (Tick units).
