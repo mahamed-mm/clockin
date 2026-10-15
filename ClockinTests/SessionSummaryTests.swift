@@ -60,6 +60,22 @@ struct SessionSummaryTests {
         #expect(!older.hasPrefix("Today") && !older.hasPrefix("Yesterday"))
     }
 
+    @Test func overlineBreaksBetweenTheDayAndTheTimes() {
+        let card = summary(endingAgo: 86_400)
+        let parts = card.overlineParts(now: now, calendar: calendar)
+        #expect(parts.count == 2)
+        #expect(parts[0] == "Yesterday")
+        #expect(parts[1] == TimeFormat.range(card.startedAt, card.completedAt))
+        #expect(!parts[1].contains("·"))
+        #expect(parts.joined(separator: CardOverline.separator) == card.overline(now: now, calendar: calendar))
+    }
+
+    @Test func aRangeStacksOnlyAfterItsArrow() {
+        #expect(CardOverline.stacked("13:15 → 13:40") == ["13:15 →", "13:40"])
+        #expect(CardOverline.stacked("1:15 PM → 1:40 PM") == ["1:15 PM →", "1:40 PM"])
+        #expect(CardOverline.stacked("Yesterday") == ["Yesterday"])
+    }
+
     @Test func spokenOverlineHasNoArrow() {
         let spoken = summary(endingAgo: 60).spokenOverline(now: now, calendar: calendar)
         #expect(!spoken.contains("→"))

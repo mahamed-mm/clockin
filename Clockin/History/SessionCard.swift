@@ -39,7 +39,7 @@ struct SessionCard: View {
 
     var body: some View {
         CardSheet(symbol: symbol, tint: Retro.orangeText, badgeTint: Retro.ink,
-                  overline: summary.overline(now: now, calendar: calendar),
+                  overline: summary.overlineParts(now: now, calendar: calendar),
                   spokenOverline: summary.spokenOverline(now: now, calendar: calendar)) {
             Group {
                 if renaming {
@@ -122,11 +122,7 @@ struct SessionPeek: View {
                 .foregroundStyle(Retro.ink)
                 .frame(width: 44, height: 44)
                 .background(Retro.ink.opacity(0.14), in: .circle)
-            Text(summary.overline(now: now, calendar: calendar))
-                .font(.retro(.label))
-                .textCase(.uppercase)
-                .tracking(2.2)
-                .foregroundStyle(Retro.orangeText)
+            CardOverline(parts: summary.overlineParts(now: now, calendar: calendar))
             Text(summary.title)
                 .retroFont(.headline)
                 .foregroundStyle(Retro.ink)

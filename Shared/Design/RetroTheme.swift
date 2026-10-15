@@ -228,8 +228,10 @@ enum TimeFormat {
 
     /// "14:05 → 14:30"
     static func range(_ start: Date, _ end: Date) -> String {
-        "\(time(start)) → \(time(end))"
+        time(start) + rangeArrow + time(end)
     }
+
+    static let rangeArrow = " → "
 
     /// "Finished at 14:30", "Finished yesterday at 14:30", "Finished 8 Oct at 14:30"
     static func finished(_ date: Date, now: Date, calendar: Calendar = .autoupdatingCurrent) -> String {

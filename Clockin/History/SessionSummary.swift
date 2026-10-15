@@ -43,7 +43,12 @@ struct SessionSummary: Identifiable, Equatable {
 
     /// "Today · 14:05 → 14:30"
     func overline(now: Date, calendar: Calendar = .autoupdatingCurrent) -> String {
-        "\(day(now: now, calendar: calendar)) · \(TimeFormat.range(startedAt, completedAt))"
+        overlineParts(now: now, calendar: calendar).joined(separator: CardOverline.separator)
+    }
+
+    /// The day, then the times: the card's overline breaks between them.
+    func overlineParts(now: Date, calendar: Calendar = .autoupdatingCurrent) -> [String] {
+        [day(now: now, calendar: calendar), TimeFormat.range(startedAt, completedAt)]
     }
 
     /// "Today, 14:05 to 14:30": the arrow reads badly aloud.

@@ -9,7 +9,8 @@ struct CardSheet<Title: View, Rows: View, Actions: View>: View {
     var tint: Color = Retro.orangeText
     /// The badge's colour, when it differs from the overline's.
     var badgeTint: Color?
-    var overline: String
+    /// The overline, in parts it may break between ("Yesterday", "13:15 → 13:40").
+    var overline: [String]
     /// What VoiceOver reads for the overline, when the printed one reads badly.
     var spokenOverline: String?
     @ViewBuilder var title: Title
@@ -60,13 +61,7 @@ struct CardSheet<Title: View, Rows: View, Actions: View>: View {
                     .accessibilityHidden(true)
                     .padding(.bottom, Space.xxs)
             }
-            Text(overline)
-                .font(.retro(.label))
-                .textCase(.uppercase)
-                .tracking(2.2)
-                .foregroundStyle(tint)
-                .multilineTextAlignment(.center)
-                .accessibilityLabel(spokenOverline ?? overline)
+            CardOverline(parts: overline, tint: tint, spoken: spokenOverline)
             title
                 .multilineTextAlignment(.center)
         }
@@ -75,6 +70,52 @@ struct CardSheet<Title: View, Rows: View, Actions: View>: View {
         .padding(.horizontal, 44)
         .padding(.top, Space.xs)
         .accessibilityElement(children: .contain)
+    }
+}
+
+/// A card's overline in spaced capitals. Its parts share one line when they
+/// fit, otherwise each gets a line of its own, so "13:40" is never left
+/// alone. At accessibility sizes a time range that still doesn't fit
+/// stacks after its arrow, and a word too long for the card shrinks.
+struct CardOverline: View {
+    static let separator = " · "
+    let parts: [String]
+    var tint: Color = Retro.orangeText
+    var spoken: String?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            line(parts.joined(separator: Self.separator))
+            lines(parts)
+            if dynamicTypeSize.isAccessibilitySize {
+                lines(parts.flatMap(Self.stacked), shrinking: true)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spoken ?? parts.joined(separator: Self.separator))
+    }
+
+    private func lines(_ texts: [String], shrinking: Bool = false) -> some View {
+        VStack(spacing: Space.xxs) {
+            ForEach(Array(texts.enumerated()), id: \.offset) { _, text in line(text, shrinking: shrinking) }
+        }
+    }
+
+    private func line(_ text: String, shrinking: Bool = false) -> some View {
+        Text(text)
+            .font(.retro(.label))
+            .textCase(.uppercase)
+            .tracking(2.2)
+            .foregroundStyle(tint)
+            .lineLimit(1)
+            .minimumScaleFactor(shrinking ? 0.5 : 1)
+    }
+
+    /// "13:15 → 13:40" as "13:15 →" over "13:40"; anything else as it is.
+    static func stacked(_ part: String) -> [String] {
+        guard let arrow = part.range(of: TimeFormat.rangeArrow) else { return [part] }
+        return [String(part[..<arrow.lowerBound]) + " →", String(part[arrow.upperBound...])]
     }
 }
 
