@@ -576,7 +576,7 @@ private struct DialTick: View {
             // rebuilt when the schedule changes: its springs carry on.
             .background {
                 LiveTimeline(schedule) { context in
-                    Color.clear.onChange(of: context.date, initial: true) { _, date in clock = date }
+                    Color.clear.onChange(of: context.date, initial: true) { _, date in advance(to: date) }
                 }
                 .id(schedule)
             }
@@ -674,6 +674,15 @@ private struct DialTick: View {
     private var ringStep: TimeInterval {
         guard case .active(let session) = stage else { return 60 }
         return max(1, session.plannedDuration * 0.5 / 170)
+    }
+
+    /// Moves the clock on to `date` once Tick's state can have changed by
+    /// then. The timeline also hands on the current time whenever it's
+    /// redrawn, and moving the clock for that would redraw Tick, and so the
+    /// timeline, again.
+    private func advance(to date: Date) {
+        guard wakeDates(after: clock).contains(where: { $0 <= date }) else { return }
+        clock = date
     }
 
     /// A minute past the bell, night starting or ending while idle, and the
