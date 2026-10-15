@@ -240,25 +240,25 @@ struct DialFace: View {
 
     var body: some View {
         let session = activeSession
-        // VoiceOver's value changes about once a minute, so it's worked out
-        // every ten seconds rather than with the digits.
-        LiveTimeline(TickSchedule(countdownEnd: session?.endDate, interval: 10)) { context in
-            dial(session: session)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(accessibilityLabel)
-                .accessibilityValue(accessibilityValue(session: session, at: context.date))
-                .accessibilityAddTraits(session.map { $0.isPaused ? [] : .updatesFrequently } ?? [])
-                .accessibilityActions {
-                    if let session {
-                        Button(session.isPaused ? String(localized: "Resume") : String(localized: "Pause")) {
-                            services.engine.togglePause()
-                        }
+        dial(session: session)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityLabel)
+            // VoiceOver's value changes about once a minute, so it's worked out
+            // every ten seconds rather than with the digits, without the dial.
+            .modifier(LiveAccessibilityValue(schedule: TickSchedule(countdownEnd: session?.endDate, interval: 10)) {
+                accessibilityValue(session: session, at: $0)
+            })
+            .accessibilityAddTraits(session.map { $0.isPaused ? [] : .updatesFrequently } ?? [])
+            .accessibilityActions {
+                if let session {
+                    Button(session.isPaused ? String(localized: "Resume") : String(localized: "Pause")) {
+                        services.engine.togglePause()
                     }
                 }
-                .modifier(AdjustableLength(enabled: setsLength))
-                // Bedside prints the countdown beside the dial; read it there, once.
-                .accessibilityHidden(!showsCountdown)
-        }
+            }
+            .modifier(AdjustableLength(enabled: setsLength))
+            // Bedside prints the countdown beside the dial; read it there, once.
+            .accessibilityHidden(!showsCountdown)
         // Tick leans on the rim in the square's empty corner, so the layout
         // around the dial is untouched. Too cramped on small dials. Its own
         // element, beside the dial's, so its crown can be used with VoiceOver.
@@ -518,6 +518,19 @@ struct DialFace: View {
         case .focusComplete:
             let minutes = services.engine.overtime(at: date).map { Int($0 / 60) } ?? 0
             return minutes > 0 ? Copy.overtimeSpoken(minutes: minutes) : ""
+        }
+    }
+}
+
+/// An accessibility value that follows the clock on its own schedule. Only
+/// the value is worked out again on each tick; the view it's on isn't.
+private struct LiveAccessibilityValue: ViewModifier {
+    let schedule: TickSchedule
+    let value: (Date) -> String
+
+    func body(content: Content) -> some View {
+        LiveTimeline(schedule) { context in
+            content.accessibilityValue(value(context.date))
         }
     }
 }
