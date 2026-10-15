@@ -37,7 +37,7 @@ enum Freshness: Equatable, Sendable {
     case stale
 
     /// An ending stays `recent` for `recentWindow`: the length of the break
-    /// that follows a focus phase, or of the break itself.
+    /// that follows a focus phase, or, for a break, as long as "Break's over" shows.
     static func of(endedAt: Date, now: Date, recentWindow: TimeInterval, calendar: Calendar) -> Freshness {
         let age = now.timeIntervalSince(endedAt)
         if age < 3 { return .live }
@@ -465,7 +465,7 @@ final class SessionEngine {
             record(focus)
             apply(.focusComplete(focus), event: .focusCompleted(freshness(of: focus, at: now())))
         case .rest:
-            let freshness = Freshness.of(endedAt: endedAt, now: now(), recentWindow: session.plannedDuration,
+            let freshness = Freshness.of(endedAt: endedAt, now: now(), recentWindow: BreakOverMoment.window,
                                          calendar: calendar)
             let moment = BreakOverMoment(endedAt: endedAt, name: session.name, wasLong: session.isLongBreak == true)
             apply(.idle, event: .breakFinished(freshness),

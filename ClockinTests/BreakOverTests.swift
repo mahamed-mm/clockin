@@ -123,6 +123,24 @@ struct BreakOverTests {
         #expect(makeEngine().breakOver == nil)
     }
 
+    @Test func anEndingIsRecentForAsLongAsTheMomentShows() {
+        // A 5-minute break found at minute 7: the screen says Break's over,
+        // so the haptic and the Lock Screen card do too.
+        let engine = makeEngine()
+        onABreak(engine)
+        clock.advance(Preset.classic.shortBreak + 7 * 60)
+        engine.reconcile()
+        #expect(engine.breakOver != nil)
+        #expect(effects.events.last == .breakFinished(.recent))
+
+        // Past the moment: quiet, however long the break was.
+        onABreak(engine)
+        clock.advance(Preset.classic.shortBreak + BreakOverMoment.window + 1)
+        engine.reconcile()
+        #expect(engine.breakOver == nil)
+        #expect(effects.events.last == .breakFinished(.stale))
+    }
+
     @Test func theNextSessionIsCounted() {
         #expect(BreakOverMoment.nextPosition(fullToday: 2) == 3)
         // After the long break, a new set.
