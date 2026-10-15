@@ -16,7 +16,7 @@ enum Copy {
     /// Under "Break's over".
     static var readyWhenYouAre: String { String(localized: "Ready when you are.") }
 
-    /// Under "Break's over" in the app: "Next: Thesis outline · session 3 of 4".
+    /// Under "Break's over" in the app and its alert: "Next: Thesis outline · session 3 of 4".
     static func nextSession(name: String, position: Int, setSize: Int) -> String {
         String(localized: "Next: \(displayName(name)) · session \(position) of \(setSize)")
     }

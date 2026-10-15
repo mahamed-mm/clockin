@@ -87,7 +87,13 @@ final class SpyNotifier: EndNotifying {
 
     var flushes = 0
 
-    func schedule(for session: ActiveSession) { calls.append("schedule") }
+    /// The count the last schedule was given.
+    var completedToday: Int?
+
+    func schedule(for session: ActiveSession, completedToday: Int) {
+        calls.append("schedule")
+        self.completedToday = completedToday
+    }
     func cancel() { calls.append("cancel") }
     func authorizationStatus() async -> UNAuthorizationStatus { status }
     func flush() async { flushes += 1 }

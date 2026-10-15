@@ -3,7 +3,9 @@ import UserNotifications
 /// What AppServices needs from the end-of-phase alert, so tests can stand in for it.
 @MainActor
 protocol EndNotifying: AnyObject {
-    func schedule(for session: ActiveSession)
+    /// `completedToday` (full focus sessions so far) lets a break's alert say
+    /// which session comes next; nothing is saved during a break, so it holds.
+    func schedule(for session: ActiveSession, completedToday: Int)
     func cancel()
     func authorizationStatus() async -> UNAuthorizationStatus
     /// Waits until a schedule still in flight has reached the system.
@@ -26,10 +28,10 @@ final class EndNotifier: EndNotifying {
     /// at launch, then schedules the alert for the phase's end. Once permission
     /// is known, the request goes out in the caller's turn, which matters when
     /// a Lock Screen intent resumes the session and the app may be suspended next.
-    func schedule(for session: ActiveSession) {
+    func schedule(for session: ActiveSession, completedToday: Int) {
         cancel()
         guard let end = session.endDate, end.timeIntervalSinceNow > 1 else { return }
-        let content = Self.content(for: session)
+        let content = Self.content(for: session, completedToday: completedToday)
         if isAuthorized {
             add(content, endingAt: end)
             return
@@ -91,7 +93,7 @@ final class EndNotifier: EndNotifying {
         }
     }
 
-    private static func content(for session: ActiveSession) -> UNMutableNotificationContent {
+    static func content(for session: ActiveSession, completedToday: Int) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         switch session.phase {
         case .focus:
@@ -100,6 +102,9 @@ final class EndNotifier: EndNotifying {
             content.body = Copy.breakLine(seconds: session.nextBreakSeconds ?? Preset.classic.shortBreak)
         case .rest:
             content.title = Copy.breakOver
+            content.subtitle = Copy.nextSession(name: session.name,
+                                                position: BreakOverMoment.nextPosition(fullToday: completedToday),
+                                                setSize: TimerPlan.sessionsPerSet)
             content.body = Copy.readyWhenYouAre
         }
         content.sound = UNNotificationSound(named: UNNotificationSoundName(ChimeSound.fileName))

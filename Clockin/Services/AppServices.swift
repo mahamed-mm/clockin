@@ -738,7 +738,7 @@ final class AppServices: SessionEffects {
             alarm.schedule(for: session)
         } else {
             alarm.cancel()
-            notifications.schedule(for: session)
+            notifications.schedule(for: session, completedToday: completedToday)
         }
     }
 
@@ -1044,7 +1044,7 @@ private final class SilentEffects: LiveActivityControlling, EndNotifying, Widget
     func endAll() {}
     func areActivitiesEnabled() async -> Bool { true }
     func flush() async {}
-    func schedule(for session: ActiveSession) {}
+    func schedule(for session: ActiveSession, completedToday: Int) {}
     func cancel() {}
     func authorizationStatus() async -> UNAuthorizationStatus { .authorized }
     func reload(with snapshot: WidgetSnapshot) {}

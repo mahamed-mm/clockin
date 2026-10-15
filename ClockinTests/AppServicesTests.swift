@@ -104,6 +104,20 @@ struct AppServicesTests {
         #expect(announcer.spoken.last == "Break's over. Ready when you are.")
     }
 
+    @Test func aBreaksAlertSaysWhichSessionIsNext() {
+        let services = makeServices()
+        finishFocus(services)
+        services.engine.startBreak()
+        #expect(notifier.completedToday == 1)
+
+        let rest = ActiveSession(id: UUID(), name: "Essay", phase: .rest, plannedDuration: 300,
+                                 focusStartedAt: clock.now, state: .running(endDate: clock.now.addingTimeInterval(300)))
+        let content = EndNotifier.content(for: rest, completedToday: 2)
+        #expect(content.title == "Break's over")
+        #expect(content.subtitle == "Next: Essay · session 3 of 4")
+        #expect(content.body == "Ready when you are.")
+    }
+
     @Test func lateBreakEndIsNotAnnounced() {
         let services = makeServices()
         finishFocus(services)
