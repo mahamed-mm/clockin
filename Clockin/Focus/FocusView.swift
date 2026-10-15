@@ -269,6 +269,7 @@ struct FocusView: View {
                     .opacity(chromeOpacity)
                 DialFace(stage: engine.stage, size: side, celebration: services.celebrations, teaches: teachesDial,
                          crown: tickCrown)
+                    .equatable()
                     .frame(maxWidth: .infinity)
                 sessionSlot
                     // Its natural height, whatever room the dial leaves: text
@@ -312,6 +313,7 @@ struct FocusView: View {
             DialFace(stage: engine.stage,
                      size: max(0, min(proxy.size.width, proxy.size.height)),
                      celebration: services.celebrations, teaches: teachesDial, crown: tickCrown)
+                .equatable()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minHeight: 160)

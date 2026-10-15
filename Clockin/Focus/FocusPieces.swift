@@ -214,7 +214,7 @@ struct TodaySessionPills: View {
 /// face, like a kitchen timer: set it, and it unwinds from there as time
 /// passes; it rewinds to the set length on cancel and closes into a full
 /// ring on completion.
-struct DialFace: View {
+struct DialFace: View, Equatable {
     let stage: SessionStage
     let size: CGFloat
     /// Increments when a focus session completes.
@@ -237,6 +237,15 @@ struct DialFace: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The length under the finger while the knob is dragged; saved on release.
     @State private var draftMinutes: Int?
+
+    /// Equal while the screen hands it the same, so a tap or a letter typed
+    /// elsewhere leaves the dial alone; the crown counts by its name, as in
+    /// `TickView`.
+    static func == (a: Self, b: Self) -> Bool {
+        a.stage == b.stage && a.size == b.size && a.celebration == b.celebration
+            && a.showsCountdown == b.showsCountdown && a.showsPills == b.showsPills && a.teaches == b.teaches
+            && a.showsMascot == b.showsMascot && a.calmMascot == b.calmMascot && a.crown?.label == b.crown?.label
+    }
 
     var body: some View {
         let session = activeSession
