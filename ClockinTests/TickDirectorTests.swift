@@ -121,6 +121,26 @@ struct TickDirectorTests {
         // Stopped early with 10 of 25 minutes done: 60% was left.
         #expect(abs(TickPose.ringProgress(for: finished(.endedEarly, focused: 600), at: now) - 0.6) < 0.001)
     }
+
+    @Test func aLiveRingKeepsItsOwnTime() {
+        let running = SessionStage.active(session(.focus))
+        let live = TickProgress.live(running, step: 4)
+        for later in [0.0, 1, 4.4, 300] {
+            let date = now.addingTimeInterval(later)
+            #expect(live.ringLeft(for: .working, at: date) == TickPose.ringProgress(for: running, at: date))
+        }
+        // It steps on until the session ends...
+        #expect(live.schedule == TickSchedule(countdownEnd: now.addingTimeInterval(600), interval: 4))
+        // ...and holds still while paused, or with no session.
+        let paused = SessionStage.active(session(.focus, paused: true))
+        #expect(TickProgress.live(paused, step: 4).schedule.countdownEnd == nil)
+        #expect(TickProgress.live(.idle, step: 60).schedule.countdownEnd == nil)
+        // A set or sheet ring never moves on its own.
+        #expect(TickProgress.fixed(0.3).ringLeft(for: .working, at: now) == 0.3)
+        #expect(TickProgress.sheet.ringLeft(for: .working, at: now) == TickPose.working.sheetProgress)
+        #expect(TickProgress.fixed(0.3).schedule == TickSchedule())
+        #expect(TickProgress.sheet.schedule == TickSchedule())
+    }
 }
 
 /// Tick hears the alarm.

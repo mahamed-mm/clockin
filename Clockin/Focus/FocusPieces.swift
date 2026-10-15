@@ -569,8 +569,8 @@ private struct DialTick: View {
     @State private var clock = Date.now
 
     var body: some View {
-        let schedule = TickSchedule(countdownEnd: stage.runningEnd, interval: ringStep,
-                                    wakeDates: wakeDates(after: .now))
+        // Only when Tick's state can change: the ring follows the timer inside TickView.
+        let schedule = TickSchedule(wakeDates: wakeDates(after: .now))
         tick(at: clock)
             // The schedule only moves the clock on, so Tick itself is never
             // rebuilt when the schedule changes: its springs carry on.
@@ -595,7 +595,7 @@ private struct DialTick: View {
     private func tick(at date: Date) -> some View {
         let pose = director(at: date).pose(at: date)
         let dismiss: (() -> Void)? = services.alarmRinging ? { services.stopAlarm() } : nil
-        return TickView(pose: shown ?? pose, progress: .fixed(TickPose.ringProgress(for: stage, at: date)),
+        return TickView(pose: shown ?? pose, progress: .live(stage, step: ringStep),
                         celebration: celebration, crown: crown, onDismiss: dismiss, workout: workout,
                         breakActivity: breakActivity, backToWork: director(at: date).backToWork(at: date),
                         caughtAt: services.lastCatch, attention: attention, noddedAt: nodAt,
@@ -706,14 +706,6 @@ private struct StageKey: Equatable {
         case .active(let session): (kind, id, phase) = (1, session.id, session.phase)
         case .focusComplete(let focus): (kind, id, phase) = (2, focus.id, nil)
         }
-    }
-}
-
-private extension SessionStage {
-    /// The end of a running phase, for the ring's steps.
-    var runningEnd: Date? {
-        if case .active(let session) = self { return session.endDate }
-        return nil
     }
 }
 

@@ -77,6 +77,31 @@ enum TickProgress: Equatable {
     /// The character sheet's own, for the state.
     case sheet
     case fixed(Double)
+    /// A session's time left, moving on every `step` seconds while it runs.
+    case live(SessionStage, step: TimeInterval)
+
+    /// The ring's time left at `date`, for Tick in `pose`.
+    func ringLeft(for pose: TickPose, at date: Date) -> Double {
+        switch self {
+        case .sheet: pose.sheetProgress
+        case .fixed(let value): value
+        case .live(let stage, _): TickPose.ringProgress(for: stage, at: date)
+        }
+    }
+
+    /// When the ring moves on its own: each step of a running session, else never.
+    var schedule: TickSchedule {
+        guard case .live(let stage, let step) = self else { return TickSchedule() }
+        return TickSchedule(countdownEnd: stage.runningEnd, interval: step)
+    }
+}
+
+private extension SessionStage {
+    /// The end of a running phase, for the ring's steps.
+    var runningEnd: Date? {
+        if case .active(let session) = self { return session.endDate }
+        return nil
+    }
 }
 
 /// Tick in the app, alive: a change of state springs every part of the
@@ -233,10 +258,14 @@ struct TickView: View {
                             ?? breakLoops?.stillFrame(at: context.date)
                     let key = (frame.map { "\($0.face.eyes)\($0.face.mouth)" } ?? "")
                         + (breakLoops?.stillKey(at: context.date) ?? "")
-                    figure(motion: .still, face: face(at: context.date, base: frame?.face).0, rig: frame?.rig)
-                        .id(key)
-                        .transition(.opacity)
-                        .animation(Motion.calm(true), value: key)
+                    // The ring follows the timer between Tick's own changes.
+                    LiveTimeline(progress.schedule) { ring in
+                        figure(motion: .still, face: face(at: context.date, base: frame?.face).0, rig: frame?.rig,
+                               ring: progress.ringLeft(for: pose, at: max(context.date, ring.date)))
+                    }
+                    .id(key)
+                    .transition(.opacity)
+                    .animation(Motion.calm(true), value: key)
                 }
                 .id(pose)
                 .transition(.opacity)
@@ -259,13 +288,18 @@ struct TickView: View {
                         let side = min(proxy.size.width, proxy.size.height)
                         // Drawn once into a layer, so moving it costs no redraw. The
                         // layer has room round the square for jumps and sparkles.
-                        figure(motion: motion.drawn, face: face, blink: max(swapBlink, motion.blink), rig: frame?.rig)
-                            .equatable()
-                            .frame(width: side, height: side)
-                            .padding(side * Self.overflow)
-                            .drawingGroup()
-                            .padding(-side * Self.overflow)
-                            .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                        // Between movements only the ring's timeline wakes, and
+                        // redraws Tick alone, not the view around it.
+                        LiveTimeline(progress.schedule) { ring in
+                            figure(motion: motion.drawn, face: face, blink: max(swapBlink, motion.blink), rig: frame?.rig,
+                                   ring: progress.ringLeft(for: pose, at: max(context.date, ring.date)))
+                                .equatable()
+                                .frame(width: side, height: side)
+                                .padding(side * Self.overflow)
+                                .drawingGroup()
+                                .padding(-side * Self.overflow)
+                        }
+                        .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
                     }
                     // Breathing, squash and the alarm's shake move the whole drawn layer, about the feet.
                     .scaleEffect(x: (1 + motion.breathDepth * motion.breath - motion.shrink) * (1 + 0.12 * motion.squash),
@@ -413,7 +447,8 @@ struct TickView: View {
     /// Where Tick stands, in the figure's square.
     private static let feet = UnitPoint(x: 0.5, y: 0.92)
 
-    private func figure(motion: TickMotion, face: TickFace, blink: Double = 0, rig: TickRig? = nil) -> TickFigure {
+    private func figure(motion: TickMotion, face: TickFace, blink: Double = 0, rig: TickRig? = nil,
+                        ring: Double) -> TickFigure {
         var face = face
         // The loop's blink, or eyes the frame itself closes (a stretch, a yawn).
         face.blink = max(face.blink, blink)
@@ -427,14 +462,7 @@ struct TickView: View {
         var rig = rig ?? TickRig(pose)
         rig.crownPress = pressing ? 1 : 0
         if listening == false { rig.headphones = 0 }
-        return TickFigure(rig: rig, face: face, palette: .standard, motion: motion, progress: ringLeft)
-    }
-
-    private var ringLeft: Double {
-        switch progress {
-        case .sheet: pose.sheetProgress
-        case .fixed(let value): value
-        }
+        return TickFigure(rig: rig, face: face, palette: .standard, motion: motion, progress: ring)
     }
 
     /// The face for now: the new state's numbers (they spring), with the
