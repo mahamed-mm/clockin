@@ -17,18 +17,26 @@ struct PlanStrip: View {
 
     enum ChipState: Equatable { case done, inField, toDo }
 
-    /// Pure, for the tests: how a slot shows.
-    static func state(of slot: SetPlan.Slot, typed: String) -> ChipState {
+    /// Pure, for the tests: how a slot shows. Of several slots with the
+    /// name in the field, only the first still to do is in it: the one a
+    /// session with that name ticks.
+    static func state(of slot: SetPlan.Slot, in plan: SetPlan, typed: String) -> ChipState {
         if slot.isDone { return .done }
+        return plan.firstToDo(named: typed)?.id == slot.id ? .inField : .toDo
+    }
+
+    /// Whether a tap on the slot puts it in the field: not when it's done,
+    /// or when its name is there already (a later "Thesis" after the first).
+    static func canPick(_ slot: SetPlan.Slot, typed: String) -> Bool {
         let key = SymbolBook.key(for: typed)
-        return !key.isEmpty && SymbolBook.key(for: slot.name) == key ? .inField : .toDo
+        return !slot.isDone && (key.isEmpty || SymbolBook.key(for: slot.name) != key)
     }
 
     /// The strip read aloud as one line: "Today's plan: Chemistry, done;
     /// Thesis outline, up next; Linear algebra".
     static func spoken(_ plan: SetPlan, typed: String) -> String {
         let parts = plan.slots.map { slot in
-            switch state(of: slot, typed: typed) {
+            switch state(of: slot, in: plan, typed: typed) {
             case .done: "\(Copy.displayName(slot.name)), \(Copy.planDone.lowercased())"
             case .inField: "\(Copy.displayName(slot.name)), \(Copy.planInField.lowercased())"
             case .toDo: Copy.displayName(slot.name)
@@ -62,17 +70,18 @@ struct PlanStrip: View {
     }
 
     private func chip(_ slot: SetPlan.Slot) -> some View {
-        let state = Self.state(of: slot, typed: typed)
+        let state = Self.state(of: slot, in: plan, typed: typed)
+        let pickable = Self.canPick(slot, typed: typed)
         return Button { pick(slot) } label: {
             PlanLabel(name: slot.name, symbol: services.symbol(for: slot.name), done: state == .done,
                       nameFrame: { report(slot.id, $0) })
                 .retroChip(selected: state == .inField)
         }
         .buttonStyle(.plain)
-        .disabled(state != .toDo)
+        .disabled(!pickable)
         .accessibilityLabel(Copy.displayName(slot.name))
         .accessibilityValue(state == .done ? Copy.planDone : state == .inField ? Copy.planInField : "")
-        .accessibilityHint(state == .toDo ? Copy.putsInField : "")
+        .accessibilityHint(pickable ? Copy.putsInField : "")
     }
 }
 

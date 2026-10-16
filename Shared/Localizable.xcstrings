@@ -4083,6 +4083,16 @@
     "Test timers" : {
       "shouldTranslate" : false
     },
+    "That's a full set. Remove one to add another." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Det er et fullt sett. Fjern ett for å legge til et nytt."
+          }
+        }
+      }
+    },
     "That's the whole app." : {
       "localizations" : {
         "nb" : {

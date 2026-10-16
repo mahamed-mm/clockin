@@ -37,12 +37,22 @@ struct SetPlan: Codable, Equatable, Sendable {
         calendar.isDate(day, inSameDayAs: other)
     }
 
-    /// Whether `name` can be added: there's room, it isn't blank, and it
-    /// isn't already planned and still to do.
+    /// Whether `name` can be added: there's room and it isn't blank. The
+    /// same name can fill several slots ("Thesis, Thesis, Chemistry").
     func canAdd(_ name: String) -> Bool {
+        !SymbolBook.key(for: name).isEmpty && slots.count < Self.capacity
+    }
+
+    /// The first slot still to do with this name: the one a session with
+    /// it ticks, and the one the strip shows as in the field.
+    func firstToDo(named name: String) -> Slot? {
+        firstToDoIndex(named: name).map { slots[$0] }
+    }
+
+    private func firstToDoIndex(named name: String) -> Int? {
         let key = SymbolBook.key(for: name)
-        guard !key.isEmpty, slots.count < Self.capacity else { return false }
-        return !slots.contains { !$0.isDone && SymbolBook.key(for: $0.name) == key }
+        guard !key.isEmpty else { return nil }
+        return slots.firstIndex { !$0.isDone && SymbolBook.key(for: $0.name) == key }
     }
 
     /// Adds a name at the end. False when it can't be added.
@@ -71,11 +81,8 @@ struct SetPlan: Codable, Equatable, Sendable {
     /// Returns whether a slot was ticked.
     @discardableResult
     mutating func finish(name: String, session: UUID) -> Bool {
-        guard !slots.contains(where: { $0.doneBy == session }) else { return false }
-        let key = SymbolBook.key(for: name)
-        guard !key.isEmpty,
-              let index = slots.firstIndex(where: { !$0.isDone && SymbolBook.key(for: $0.name) == key })
-        else { return false }
+        guard !slots.contains(where: { $0.doneBy == session }),
+              let index = firstToDoIndex(named: name) else { return false }
         slots[index].doneBy = session
         return true
     }

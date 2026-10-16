@@ -432,6 +432,8 @@ enum Copy {
     static var planOverline: String { String(localized: "Today") }
     static var planHint: String { String(localized: "Up to four, in the order you'll do them.") }
     static var addAName: String { String(localized: "Add a name") }
+    /// In place of the add row once four are planned.
+    static var planFull: String { String(localized: "That's a full set. Remove one to add another.") }
     static var clearPlan: String { String(localized: "Clear plan") }
     static var editPlan: String { String(localized: "Edit plan") }
     static var todaysPlan: String { String(localized: "Today's plan") }

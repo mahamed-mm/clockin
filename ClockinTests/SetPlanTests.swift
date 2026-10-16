@@ -20,16 +20,14 @@ struct SetPlanTests {
         #expect(plan.slots.map(\.name) == ["Chemistry", "Thesis", "Spanish", "Piano"])
     }
 
-    @Test func blanksAndNamesStillToDoAreNotTakenTwice() {
-        var plan = plan(["Chemistry"])
-        let blank = plan.add("   ")
+    @Test func theSameNameCanBePlannedMoreThanOnce() {
+        var plan = plan(["Thesis", " thesis ", "Chemistry", "Thesis"])
+        #expect(plan.slots.map(\.name) == ["Thesis", "thesis", "Chemistry", "Thesis"])
+        let fifth = plan.add("Thesis")
+        #expect(!fifth, "Still one set at most")
+        var other = self.plan(["Chemistry"])
+        let blank = other.add("   ")
         #expect(!blank)
-        let again = plan.add(" chemistry ")
-        #expect(!again)
-        // Once it's done, the same subject can be planned again.
-        plan.finish(name: "Chemistry", session: UUID())
-        let afterDone = plan.add("Chemistry")
-        #expect(afterDone)
     }
 
     @Test func namesAreCleanedLikeASessionsName() {
@@ -99,6 +97,56 @@ struct SetPlanTests {
         #expect(plan.slots.map(\.name) == ["B", "A", "C", "D"])
         plan.remove(id: plan.slots[1].id)
         #expect(plan.slots.map(\.name) == ["B", "C", "D"])
+    }
+
+    @Test func repeatedNamesAreTickedInOrder() {
+        var plan = plan(["Thesis", "Thesis", "Chemistry", "Thesis"])
+        for _ in 0..<3 { plan.finish(name: "THESIS", session: UUID()) }
+        #expect(plan.slots.map(\.isDone) == [true, true, false, true])
+        #expect(plan.next?.name == "Chemistry")
+        let fourth = plan.finish(name: "Thesis", session: UUID())
+        #expect(!fourth, "Every Thesis is done")
+    }
+
+    @Test func aRepeatMovedToTheFrontIsTickedFirst() {
+        var plan = plan(["Thesis", "Chemistry", "Thesis"])
+        let moved = plan.slots[2].id
+        plan.move(fromOffsets: [2], toOffset: 0)
+        plan.finish(name: "Thesis", session: UUID())
+        #expect(plan.slots.first { $0.isDone }?.id == moved)
+        #expect(plan.firstToDo(named: "Thesis")?.id == plan.slots[1].id)
+    }
+
+    @Test func removingOneOfTwoLeavesTheOther() {
+        var plan = plan(["Thesis", "Chemistry", "Thesis"])
+        let session = UUID()
+        plan.finish(name: "Thesis", session: session)
+        let kept = plan.slots[0]
+        plan.remove(id: plan.slots[2].id)
+        #expect(plan.slots.map(\.id) == [kept.id, plan.slots[1].id])
+        #expect(plan.slots[0].doneBy == session)
+        #expect(plan.next?.name == "Chemistry")
+    }
+
+    @Test func renamingRenamesEveryRepeatAndKeepsWhatsDone() {
+        var plan = plan(["thesis", "Chemistry", "Thesis"])
+        let session = UUID()
+        plan.finish(name: "Thesis", session: session)
+        plan.rename(key: "thesis", to: "Thesis outline")
+        #expect(plan.slots.map(\.name) == ["Thesis outline", "Chemistry", "Thesis outline"])
+        #expect(plan.slots.map(\.doneBy) == [session, nil, nil])
+    }
+
+    @Test func deletingOneRepeatsSessionReopensOnlyItsSlot() {
+        var plan = plan(["Thesis", "Thesis", "Thesis"])
+        let first = UUID(), second = UUID()
+        plan.finish(name: "Thesis", session: first)
+        plan.finish(name: "Thesis", session: second)
+        plan.reopen(sessions: [first])
+        #expect(plan.slots.map(\.isDone) == [false, true, false])
+        let third = UUID()
+        plan.finish(name: "Thesis", session: third)
+        #expect(plan.slots[0].doneBy == third, "The earliest open one")
     }
 
     @Test func renamingASubjectRenamesItsSlots() {
@@ -221,6 +269,19 @@ struct SetPlanServicesTests {
         #expect(services.plannedSet == nil)
     }
 
+    @Test func aRepeatHandsOverToItsNextSlot() {
+        let services = makeServices()
+        planToday(services, ["Thesis", "Thesis", "Chemistry"])
+        services.engine.start(name: "Thesis")
+        clock.advance(Preset.classic.focus)
+        services.reconcile()
+        let slots = services.todaysSet?.slots ?? []
+        #expect(slots.map(\.isDone) == [true, false, false])
+        #expect(field.name == "Thesis")
+        #expect(services.planHandoff == slots[1].id, "Moves in from the second Thesis")
+        #expect(services.nextName(after: "Thesis") == "Thesis")
+    }
+
     @Test func aSessionFinishingBeforeMidnightTicksThatDaysPlan() {
         // Started at 23:30 in Oslo, done at 23:55, found at 00:10.
         clock.now = osloCalendar.date(bySettingHour: 23, minute: 30, second: 0, of: clock.now)!
@@ -277,13 +338,14 @@ struct SetPlanServicesTests {
 struct PlanStripTests {
     let day = osloCalendar.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
 
-    @Test func recentNamesLeaveOutWhatsStillPlanned() {
+    @Test func recentNamesStayWhileThereIsRoom() {
         var plan = SetPlan(day: day)
         plan.add("Chemistry")
         plan.add("Thesis")
         plan.finish(name: "Thesis", session: UUID())
         let recent = ["chemistry", "Thesis", "Spanish", "Piano", "Emails", "Journal", "Reading", "Algebra"]
-        #expect(plan.suggestions(from: recent) == ["Thesis", "Spanish", "Piano", "Emails", "Journal", "Reading"])
+        #expect(plan.suggestions(from: recent) == ["chemistry", "Thesis", "Spanish", "Piano", "Emails", "Journal"],
+                "Planned names too: a subject can fill several slots")
         plan.add("Spanish")
         plan.add("Piano")
         #expect(plan.suggestions(from: recent).isEmpty, "A full plan offers nothing")
@@ -296,10 +358,23 @@ struct PlanStripTests {
         plan.add("Spanish")
         plan.finish(name: "Chemistry", session: UUID())
         let slots = plan.slots
-        #expect(PlanStrip.state(of: slots[0], typed: "Chemistry") == .done)
-        #expect(PlanStrip.state(of: slots[1], typed: " thesis OUTLINE") == .inField)
-        #expect(PlanStrip.state(of: slots[2], typed: "Thesis outline") == .toDo)
-        #expect(PlanStrip.state(of: slots[2], typed: "") == .toDo)
+        #expect(PlanStrip.state(of: slots[0], in: plan, typed: "Chemistry") == .done)
+        #expect(PlanStrip.state(of: slots[1], in: plan, typed: " thesis OUTLINE") == .inField)
+        #expect(PlanStrip.state(of: slots[2], in: plan, typed: "Thesis outline") == .toDo)
+        #expect(PlanStrip.state(of: slots[2], in: plan, typed: "") == .toDo)
+    }
+
+    @Test func onlyTheFirstOpenRepeatIsInTheField() {
+        var plan = SetPlan(day: day)
+        for name in ["Thesis", "Chemistry", "Thesis", "Thesis"] { plan.add(name) }
+        plan.finish(name: "Thesis", session: UUID())
+        let states = plan.slots.map { PlanStrip.state(of: $0, in: plan, typed: "thesis") }
+        #expect(states == [.done, .toDo, .inField, .toDo])
+        // A later Thesis has nothing to put in the field; Chemistry does.
+        #expect(plan.slots.map { PlanStrip.canPick($0, typed: "Thesis") } == [false, true, false, false])
+        #expect(plan.slots.map { PlanStrip.canPick($0, typed: "") } == [false, true, true, true])
+        #expect(PlanStrip.spoken(plan, typed: "Thesis")
+                == "Today's plan: Thesis, done; Chemistry; Thesis, up next; Thesis")
     }
 
     @Test func theStripReadsAsOneLine() {
@@ -358,6 +433,18 @@ struct PlanNextTests {
         plan(services, ["Chemistry", "Piano"])
         #expect(live.lastNext?.name == "Chemistry")
         #expect(notifier.nextName == "Chemistry")
+    }
+
+    @Test func aRepeatIsNextAfterItsFirst() {
+        let services = makeServices()
+        plan(services, ["Thesis", "Thesis"])
+        services.engine.start(name: "Thesis")
+        clock.advance(Preset.classic.focus)
+        services.reconcile()
+        services.engine.startBreak()
+        #expect(live.lastNext?.name == "Thesis")
+        #expect(notifier.nextName == "Thesis")
+        #expect(services.widgetSnapshot().next?.name == "Thesis")
     }
 
     @Test func focusNeverCarriesANextName() {

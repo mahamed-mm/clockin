@@ -2,8 +2,8 @@ import SwiftData
 import SwiftUI
 
 extension SetPlan {
-    /// Recent names to add with a tap: newest first, leaving out what's
-    /// already planned and still to do, and none once the plan is full.
+    /// Recent names to add with a tap: newest first, planned ones too (a
+    /// subject can fill several slots), and none once the plan is full.
     func suggestions(from recent: [String], limit: Int = 6) -> [String] {
         guard slots.count < Self.capacity else { return [] }
         return Array(recent.filter(canAdd).prefix(limit))
@@ -66,6 +66,13 @@ struct PlanSheet: View {
             }
             if draft.slots.count < SetPlan.capacity {
                 addRow
+            } else {
+                // Said, rather than the field just going away.
+                Text(Copy.planFull)
+                    .font(.retro(.body))
+                    .foregroundStyle(Retro.inkSoft)
+                    .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                    .padding(.horizontal, Space.m)
             }
         } actions: {
             CardAction(title: Copy.planDone) { dismiss() }
@@ -188,7 +195,7 @@ struct PlanSheet: View {
                 ScrollView(.horizontal) {
                     HStack(spacing: Space.xs) {
                         ForEach(suggestions, id: \.self) { name in
-                            Button { draft.add(name) } label: {
+                            Button { add(name) } label: {
                                 HStack(spacing: Space.xxs) {
                                     Image(systemName: services.symbol(for: name))
                                         .font(.caption.weight(.semibold))
@@ -217,8 +224,19 @@ struct PlanSheet: View {
     }
 
     private func addTyped() {
-        if draft.add(typed) { typed = "" }
+        if add(typed) { typed = "" }
         // Keep typing: the next name goes straight in.
         fieldFocused = draft.slots.count < SetPlan.capacity
+    }
+
+    /// Adds a name. The one that fills the set takes the field away, so
+    /// VoiceOver hears why.
+    @discardableResult
+    private func add(_ name: String) -> Bool {
+        guard draft.add(name) else { return false }
+        if draft.slots.count == SetPlan.capacity {
+            AccessibilityNotification.Announcement(Copy.planFull).post()
+        }
+        return true
     }
 }
