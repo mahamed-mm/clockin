@@ -19,6 +19,8 @@ struct WeekStrip: View {
     /// pills dim, and `dimmedValue` says why.
     var dimmed: Set<Date> = []
     var dimmedValue = ""
+    /// Drawn filled at once, with no arrival: for a still picture (the postcard).
+    var still = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
 
@@ -29,12 +31,20 @@ struct WeekStrip: View {
                 let isFuture = entry.day > today && !isToday
                 let isSelected = selected.map { calendar.isDate(entry.day, inSameDayAs: $0) } ?? false
                 let isDimmed = !isFuture && dimmed.contains(calendar.startOfDay(for: entry.day))
-                Button { select?(entry.day) } label: {
-                    column(entry, index: index, isToday: isToday, isFuture: isFuture, isSelected: isSelected,
-                           isDimmed: isDimmed)
+                Group {
+                    if let select {
+                        Button { select(entry.day) } label: {
+                            column(entry, index: index, isToday: isToday, isFuture: isFuture, isSelected: isSelected,
+                                   isDimmed: isDimmed)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isFuture)
+                    } else {
+                        // Nothing to pick (the postcard): no button, which would draw as disabled.
+                        column(entry, index: index, isToday: isToday, isFuture: isFuture, isSelected: isSelected,
+                               isDimmed: isDimmed)
+                    }
                 }
-                .buttonStyle(.plain)
-                .disabled(select == nil || isFuture)
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Self.accessibilityText(entry, today: today, calendar: calendar))
@@ -53,7 +63,7 @@ struct WeekStrip: View {
                 .font(.retro(.label))
                 .fontWeight(isSelected ? .heavy : nil)
                 .foregroundStyle(isToday || isSelected ? Retro.ink : Retro.inkSoft)
-            SessionPills(completed: appeared ? entry.sessions : 0,
+            SessionPills(completed: appeared || still ? entry.sessions : 0,
                          pillWidth: 24, pillHeight: 7, axis: .vertical)
                 .opacity(isFuture || isDimmed ? 0.4 : 1)
                 .animation(Motion.wind(reduceMotion).delay(Motion.stagger(index, reduceMotion)),

@@ -753,6 +753,32 @@
         }
       }
     },
+    "A week of focus" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En uke med fokus"
+          }
+        }
+      }
+    },
+    "A week of focus, %@: %@ over %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "A week of focus, %1$@: %2$@ over %3$@."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En uke med fokus, %1$@: %2$@ fordelt på %3$@."
+          }
+        }
+      }
+    },
     "About" : {
       "localizations" : {
         "nb" : {
@@ -1358,6 +1384,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Clockin"
+          }
+        }
+      }
+    },
+    "Clockin week %lld" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Clockin uke %lld"
           }
         }
       }
@@ -2274,6 +2310,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Måned"
+          }
+        }
+      }
+    },
+    "Most of it on %@." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mest på %@."
           }
         }
       }
@@ -3502,6 +3548,16 @@
         }
       }
     },
+    "Share this week" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Del denne uka"
+          }
+        }
+      }
+    },
     "Short" : {
       "localizations" : {
         "nb" : {
@@ -3544,6 +3600,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Vis i uka"
+          }
+        }
+      }
+    },
+    "Show names" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vis navn"
           }
         }
       }

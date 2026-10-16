@@ -408,6 +408,20 @@ enum Copy {
     /// A By subject row's hint.
     static func opensSubject(_ name: String) -> String { String(localized: "Opens \(displayName(name))'s page") }
 
+    // MARK: The week's postcard
+
+    static var aWeekOfFocus: String { String(localized: "A week of focus") }
+    /// The postcard's description: "A week of focus, 12–18 October 2026: 9 h 35 min over 21 sessions."
+    static func postcardSummary(dates: String, seconds: TimeInterval, sessions count: Int) -> String {
+        String(localized: "A week of focus, \(dates): \(TimeFormat.spokenDuration(seconds)) over \(sessions(count)).")
+    }
+    /// "Most of it on Chemistry, Thesis outline and Spanish vocab."
+    static func postcardSubjects(_ names: String) -> String { String(localized: "Most of it on \(names).") }
+    /// The shared file's name.
+    static func postcardFileName(week: Int) -> String { String(localized: "Clockin week \(week)") + ".png" }
+    static var shareThisWeek: String { String(localized: "Share this week") }
+    static var showNames: String { String(localized: "Show names") }
+
     // MARK: Today's plan
 
     static var planTheSet: String { String(localized: "Plan the set") }
