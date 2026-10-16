@@ -145,3 +145,13 @@ struct LockScreenActionsTests {
         #expect(card.phaseLabel == "Break")
     }
 }
+
+/// The Smart Stack's one button.
+struct SmallFocusActionTests {
+    @Test func oneButtonForWhatComesNext() {
+        #expect(SmallFocusView.action(phase: .focus, done: false) == .pauseResume)
+        #expect(SmallFocusView.action(phase: .rest, done: false) == .pauseResume)
+        #expect(SmallFocusView.action(phase: .focus, done: true) == .startBreak)
+        #expect(SmallFocusView.action(phase: .rest, done: true) == .startFocus)
+    }
+}

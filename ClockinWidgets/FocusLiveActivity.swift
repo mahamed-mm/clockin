@@ -82,6 +82,8 @@ struct FocusLiveActivity: Widget {
             .keylineTint(tint)
             .widgetURL(URL(string: "clockin://focus"))
         }
+        // The Apple Watch Smart Stack (and CarPlay) get a small layout too.
+        .supplementalActivityFamilies([.small])
     }
 }
 
@@ -109,11 +111,16 @@ private struct LockScreenFocusView: View {
     let context: ActivityViewContext<FocusActivityAttributes>
     /// True when the phone is charging on its side in StandBy.
     @Environment(\.isActivityFullscreen) private var isFullscreen
+    /// Small on the Apple Watch Smart Stack and in CarPlay.
+    @Environment(\.activityFamily) private var family
 
     var body: some View {
         if isFullscreen {
             StandByFocusView(sessionName: context.attributes.sessionName, sessionID: context.attributes.sessionID,
                              state: context.state, done: isDone(context))
+        } else if family == .small {
+            SmallFocusView(state: context.state, sessionName: context.attributes.sessionName,
+                           sessionID: context.attributes.sessionID, done: isDone(context))
         } else {
             card
         }
@@ -227,6 +234,14 @@ private struct ProgressBar: View {
         .progressViewStyle(.linear)
         .tint(reading == .done ? Retro.mustard : tint)
     }
+}
+
+#Preview("Smart Stack", as: .content, using: FocusActivityAttributes(sessionName: "Organic chemistry")) {
+    FocusLiveActivity()
+} contentStates: {
+    FocusActivityAttributes.ContentState(session: ActiveSession(
+        id: UUID(), name: "Organic chemistry", phase: .focus, plannedDuration: 1500,
+        focusStartedAt: .now, state: .running(endDate: .now.addingTimeInterval(900))))
 }
 
 #Preview("Lock Screen", as: .content, using: FocusActivityAttributes(sessionName: "Organic chemistry")) {
