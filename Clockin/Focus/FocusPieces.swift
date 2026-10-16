@@ -1542,11 +1542,14 @@ struct CompletionSummary: View {
         let stacked = dynamicTypeSize.isAccessibilitySize
         let layout = stacked ? AnyLayout(VStackLayout(spacing: Space.s)) : AnyLayout(HStackLayout(spacing: 0))
         layout {
+            // The two numbers take what they need; the name gets the rest.
             stat(TimeFormat.duration(focus.focusSeconds), "Focused", index: 0)
+                .fixedSize(horizontal: !stacked, vertical: false)
             if !stacked { divider }
-            stat(Copy.displayName(focus.name), "Session", symbol: services.symbol(for: focus.name), index: 1)
+            nameStat(Copy.displayName(focus.name), symbol: services.symbol(for: focus.name), stacked: stacked)
             if !stacked { divider }
             stat(TimeFormat.duration(total), "Today", index: 2)
+                .fixedSize(horizontal: !stacked, vertical: false)
         }
         .padding(.vertical, Space.xs)
         .accessibilityElement(children: .ignore)
@@ -1560,28 +1563,55 @@ struct CompletionSummary: View {
         Rectangle().fill(Retro.ink.opacity(0.12)).frame(width: 1, height: 34)
     }
 
-    private func stat(_ value: String, _ caption: LocalizedStringKey, symbol: String? = nil,
-                      index: Int) -> some View {
+    private func stat(_ value: String, _ caption: LocalizedStringKey, index: Int) -> some View {
         VStack(spacing: Space.xxs) {
-            HStack(spacing: Space.xxs) {
-                if let symbol {
-                    Image(systemName: symbol)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Retro.inkSoft)
-                }
-                Text(value)
-                    .retroFont(.headline)
-                    .foregroundStyle(Retro.ink)
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
-                    .minimumScaleFactor(0.7)
-                    .multilineTextAlignment(.center)
-            }
+            Text(value)
+                .retroFont(.headline)
+                .foregroundStyle(Retro.ink)
+                .lineLimit(dynamicTypeSize.isAccessibilitySize ? 3 : 1)
+                .minimumScaleFactor(0.7)
+                .multilineTextAlignment(.center)
             Text(caption).retroLabel()
         }
-        // Clear of the dividers, so a long name shrinks before it touches them.
+        // Clear of the dividers.
+        .padding(.horizontal, Space.xs)
+        .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil)
+        .transition(.rise(reduceMotion, delay: Motion.stagger(index, after: Motion.afterCelebration, reduceMotion)))
+    }
+
+    /// The session's name after its symbol: on one line when it fits, else
+    /// on two, a little smaller, but never cut short.
+    private func nameStat(_ name: String, symbol: String, stacked: Bool) -> some View {
+        VStack(spacing: Space.xxs) {
+            if stacked {
+                nameLine(name, symbol: symbol, lines: 3)
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    nameLine(name, symbol: symbol, lines: 1)
+                    nameLine(name, symbol: symbol, lines: 2)
+                        .minimumScaleFactor(0.85)
+                }
+            }
+            Text("Session").retroLabel()
+        }
         .padding(.horizontal, Space.xs)
         .frame(maxWidth: .infinity)
-        .transition(.rise(reduceMotion, delay: Motion.stagger(index, after: Motion.afterCelebration, reduceMotion)))
+        .layoutPriority(1)
+        .transition(.rise(reduceMotion, delay: Motion.stagger(1, after: Motion.afterCelebration, reduceMotion)))
+    }
+
+    private func nameLine(_ name: String, symbol: String, lines: Int) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: Space.xxs) {
+            Image(systemName: symbol)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Retro.inkSoft)
+            Text(name)
+                .retroFont(.headline)
+                .foregroundStyle(Retro.ink)
+                .lineLimit(lines)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: lines == 1, vertical: lines > 1)
+        }
     }
 
 }
