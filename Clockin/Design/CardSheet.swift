@@ -2,8 +2,8 @@ import SwiftUI
 
 /// The one recipe for a small modal: a close button, a centred header (a
 /// symbol, a tinted overline, the title), grouped rows, then the actions.
-/// Presented with `fittedSheet()`, iOS floats it inset on glass at the
-/// height of its content.
+/// Presented with `fittedSheet()`, iOS floats it inset at the height of its
+/// content, on the app's paper.
 struct CardSheet<Title: View, Rows: View, Actions: View>: View {
     var symbol: String?
     var tint: Color = Retro.orangeText
@@ -39,7 +39,7 @@ struct CardSheet<Title: View, Rows: View, Actions: View>: View {
                     }
                 }
             }
-            // A wash of ink rather than paper: it reads on the glass in both appearances.
+            // A wash of ink rather than paper: it reads on the paper in both appearances.
             .background(Retro.ink.opacity(0.06), in: .rect(cornerRadius: Radius.card))
             VStack(spacing: Space.xxs) {
                 actions
@@ -193,9 +193,18 @@ struct CloseButton: View {
 
 extension View {
     /// Presents this as a sheet exactly as tall as its content, which iOS
-    /// floats inset on glass. Scrolls if it won't fit.
+    /// floats inset. Scrolls if it won't fit.
     func fittedSheet() -> some View {
         modifier(FittedSheet())
+    }
+}
+
+extension View {
+    /// Paper behind a sheet or popover, not glass: what's behind it (the
+    /// orange Start button) never shows through to look like a picked row,
+    /// and the words sit on the paper their contrast is checked against.
+    func paperPresentation() -> some View {
+        presentationBackground { PaperBackground().paperGrain() }
     }
 }
 
@@ -210,5 +219,6 @@ private struct FittedSheet: ViewModifier {
         .scrollBounceBehavior(.basedOnSize)
         .presentationDetents([.height(height)])
         .presentationDragIndicator(.hidden)
+        .paperPresentation()
     }
 }

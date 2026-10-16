@@ -62,6 +62,7 @@ struct SymbolPicker: View {
         .frame(idealWidth: 340)
         .presentationCompactAdaptation(dynamicTypeSize.isAccessibilitySize ? .sheet : .popover)
         .presentationDetents([.large])
+        .paperPresentation()
     }
 }
 
