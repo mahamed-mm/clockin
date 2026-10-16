@@ -1,7 +1,8 @@
 #if DEBUG
 import Foundation
 
-/// Six believable weeks of focus, for screenshots: recurring names, busy
+/// Fourteen believable weeks of focus (three full months for the subject
+/// pages), for screenshots: recurring names, busy
 /// weekdays and quiet weekends, a few empty days, one long day, an early
 /// and a late session, and two that ended early. The same `now` always gives
 /// the same sessions.
@@ -22,7 +23,7 @@ enum DemoHistory {
     /// Symbols picked by hand: one overriding its suggestion, one the same as it.
     static let picks = ["Thesis outline": "pencil", "Emails": "envelope.fill"]
 
-    private static let weeks = 6
+    private static let weeks = 14
     private static let minute: TimeInterval = 60
 
     static func make(now: Date, calendar: Calendar) -> [Session] {

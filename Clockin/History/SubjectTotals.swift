@@ -81,11 +81,14 @@ enum SubjectFilter: Equatable {
 
 /// "By subject": the week's top names with their symbols and time, as thin
 /// ink bars against the biggest. No other week to compare with. Tapping a
-/// row shows only its sessions; tapping it again shows them all.
+/// subject opens its page; "Show in week" (its long-press, and on the page)
+/// shows only its sessions. "Other" isn't a subject, so a tap filters.
 struct WeekSubjects: View {
     let totals: SubjectTotals
     var filter: SubjectFilter?
     var pick: (SubjectFilter) -> Void = { _ in }
+    /// Opens a subject's page, by key and name.
+    var open: ((String, String) -> Void)?
     @Environment(AppServices.self) private var services
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .footnote) private var symbolWidth: CGFloat = 22
@@ -109,16 +112,37 @@ struct WeekSubjects: View {
     private func row(_ choice: SubjectFilter, symbol: String?, seconds: TimeInterval, share: Double) -> some View {
         let picked = filter?.id == choice.id
         let subject = choice == .other ? nil : choice.title
-        return Button { pick(choice) } label: {
+        let page = Self.route(for: choice, opens: open != nil)
+        return Button {
+            if let page { open?(page.key, page.name) } else { pick(choice) }
+        } label: {
             label(name: choice.title, symbol: symbol, seconds: seconds, share: share, picked: picked)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            if page != nil {
+                Button(picked ? Copy.showsEverySession : Copy.showInWeek, systemImage: "calendar") { pick(choice) }
+            }
+        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(choice.title + ", " + TimeFormat.spokenDuration(seconds))
-        .accessibilityHint(picked ? Copy.showsEverySession : Copy.showsOnly(subject))
+        .accessibilityHint(page.map { Copy.opensSubject($0.name) }
+                           ?? (picked ? Copy.showsEverySession : Copy.showsOnly(subject)))
         .accessibilityAddTraits(picked ? [.isButton, .isSelected] : .isButton)
         .accessibilityInputLabels([choice.title])
+        .accessibilityActions {
+            if page != nil {
+                Button(picked ? Copy.showsEverySession : Copy.showInWeek) { pick(choice) }
+            }
+        }
+    }
+
+    /// Where a row's tap goes: a subject's page, or (for Other, or with no
+    /// pages to open) the filter. Pure, for the tests.
+    static func route(for choice: SubjectFilter, opens: Bool) -> (key: String, name: String)? {
+        guard opens, case .subject(let key, let name) = choice else { return nil }
+        return (key, name)
     }
 
     private func label(name: String, symbol: String?, seconds: TimeInterval, share: Double,

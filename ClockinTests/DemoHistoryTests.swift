@@ -14,10 +14,13 @@ struct DemoHistoryTests {
         #expect(sessions.count > 60)
     }
 
-    @Test func itSpansSixWeeks() throws {
+    @Test func itSpansFourteenWeeksForThreeFullMonths() throws {
         let first = try #require(sessions.map(\.startedAt).min())
-        let weeks = osloCalendar.dateComponents([.day], from: first, to: now).day ?? 0
-        #expect((35...42).contains(weeks))
+        let days = osloCalendar.dateComponents([.day], from: first, to: now).day ?? 0
+        #expect((88...98).contains(days))
+        // Two whole months before this one, for a subject page's three.
+        let twoMonthsBack = osloCalendar.date(byAdding: .month, value: -2, to: now)!
+        #expect(first <= osloCalendar.monthInterval(containing: twoMonthsBack).start.addingTimeInterval(3 * 86_400))
     }
 
     @Test func sessionsNeverOverlapAndStayInTheirDay() {

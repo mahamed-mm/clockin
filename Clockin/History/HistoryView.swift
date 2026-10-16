@@ -27,6 +27,8 @@ struct HistoryView: View {
     /// The subject picked in "By subject". Kept when paging and in the month,
     /// so a subject can be followed back through the weeks.
     @State private var subjectFilter: SubjectFilter?
+    /// Subject pages opened from the week.
+    @State private var path: [SubjectRoute] = []
 
     private static var newestFirst: FetchDescriptor<FocusRecord> { firstRecord(order: .reverse) }
     private static var oldestFirst: FetchDescriptor<FocusRecord> { firstRecord(order: .forward) }
@@ -38,7 +40,7 @@ struct HistoryView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollViewReader { scroll in
                 List {
                     Section {
@@ -67,7 +69,7 @@ struct HistoryView: View {
                                         canGoBack: canGoBack, canGoForward: canGoForward, page: page,
                                         scroll: scroll, pickedDay: $pickedDay, morph: reduceMotion ? nil : morph,
                                         modePicker: AnyView(modePicker), opened: $opened, zoom: zoom,
-                                        filter: $subjectFilter)
+                                        filter: $subjectFilter, openSubject: { path.append($0) })
                         case .month:
                             HistoryMonth(month: month, today: services.today, calendar: services.calendar,
                                          canGoBack: canGoBackMonth, canGoForward: canGoForwardMonth,
@@ -93,6 +95,14 @@ struct HistoryView: View {
                     }
                 }
                 .scrollContentBackground(.hidden)
+            }
+            .navigationDestination(for: SubjectRoute.self) { route in
+                SubjectPage(route: route, open: { opened = $0 }) {
+                    // Back to the week, showing only this subject.
+                    subjectFilter = .subject(key: route.key, name: route.name)
+                    mode = .week
+                    path.removeAll()
+                }
             }
             .onAppear { ClockinTips.note(ClockinTips.historyOpened) }
             .sheet(item: $opened) { card in
@@ -296,11 +306,14 @@ private struct HistoryWeek: View {
     let zoom: Namespace.ID
     /// Only this subject's sessions, when one is picked.
     @Binding var filter: SubjectFilter?
+    /// Opens a subject's page.
+    let openSubject: (SubjectRoute) -> Void
     @Environment(\.showFocus) private var showFocus
 
     init(week: DateInterval, today: Date, calendar: Calendar, canGoBack: Bool, canGoForward: Bool,
          page: @escaping (Int) -> Void, scroll: ScrollViewProxy, pickedDay: Binding<Date?>, morph: Namespace.ID?,
-         modePicker: AnyView, opened: Binding<OpenedCard?>, zoom: Namespace.ID, filter: Binding<SubjectFilter?>) {
+         modePicker: AnyView, opened: Binding<OpenedCard?>, zoom: Namespace.ID, filter: Binding<SubjectFilter?>,
+         openSubject: @escaping (SubjectRoute) -> Void) {
         self.week = week
         self.today = today
         self.calendar = calendar
@@ -314,6 +327,7 @@ private struct HistoryWeek: View {
         _opened = opened
         self.zoom = zoom
         _filter = filter
+        self.openSubject = openSubject
         _records = Query(filter: FocusRecord.completed(in: week), sort: \.completedAt, order: .reverse)
     }
 
@@ -348,7 +362,10 @@ private struct HistoryWeek: View {
                         .transition(.opacity)
                 }
                 if !subjects.top.isEmpty {
-                    WeekSubjects(totals: subjects, filter: filter, pick: pick)
+                    WeekSubjects(totals: subjects, filter: filter, pick: pick, open: { key, name in
+                        ClockinTips.note(ClockinTips.dayOrSubjectTapped)
+                        openSubject(SubjectRoute(key: key, name: name, zoomFrom: SubjectRoute.rowSource(key)))
+                    })
                         .padding(.top, Space.xs)
                         .id(week.start)
                         .transition(.opacity)

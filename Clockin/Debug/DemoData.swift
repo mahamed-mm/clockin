@@ -2,7 +2,7 @@
 import Foundation
 import SwiftData
 
-/// Fills an empty store with six believable weeks of focus sessions
+/// Fills an empty store with fourteen believable weeks of focus sessions
 /// (`DemoHistory`), for screenshots. Runs only with the `-DemoData` launch
 /// argument, and only when no sessions are saved yet, so it can never mix
 /// with real history. Also plans today's set.

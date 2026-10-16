@@ -57,6 +57,22 @@
         }
       }
     },
+    "%@ over %@ since %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ over %2$@ since %3$@."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@ fordelt på %2$@ siden %3$@."
+          }
+        }
+      }
+    },
     "%@ remaining" : {
       "localizations" : {
         "nb" : {
@@ -115,6 +131,22 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@ · %@ igjen"
+          }
+        }
+      }
+    },
+    "%@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@, %2$@"
           }
         }
       }
@@ -614,7 +646,18 @@
         }
       }
     },
+    "A day shows its sessions on the ribbon. A subject opens its page." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En dag viser øktene sine på båndet. Et emne åpner sin egen side."
+          }
+        }
+      }
+    },
     "A day shows its sessions on the ribbon. A subject shows only its sessions." : {
+      "extractionState" : "stale",
       "localizations" : {
         "nb" : {
           "stringUnit" : {
@@ -1930,6 +1973,16 @@
         }
       }
     },
+    "Last three months" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siste tre måneder"
+          }
+        }
+      }
+    },
     "Last week" : {
       "localizations" : {
         "nb" : {
@@ -2547,6 +2600,26 @@
         }
       }
     },
+    "Open thoughts" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Åpne tanker"
+          }
+        }
+      }
+    },
+    "Opens %@'s page" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Åpner siden for %@"
+          }
+        }
+      }
+    },
     "Opens Clockin to put a thought aside for after the session." : {
       "localizations" : {
         "nb" : {
@@ -2940,6 +3013,16 @@
         }
       }
     },
+    "Recent sessions" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siste økter"
+          }
+        }
+      }
+    },
     "Reduce Motion" : {
       "shouldTranslate" : false
     },
@@ -3257,6 +3340,16 @@
     },
     "Show first-launch hints again" : {
       "shouldTranslate" : false
+    },
+    "Show in week" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vis i uka"
+          }
+        }
+      }
     },
     "Show the envelope" : {
       "shouldTranslate" : false
@@ -4053,6 +4146,46 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Bruker dette navnet"
+          }
+        }
+      }
+    },
+    "Usually about %@." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vanligvis rundt %@."
+          }
+        }
+      }
+    },
+    "Usually in the afternoon, about %@." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vanligvis på ettermiddagen, rundt %@."
+          }
+        }
+      }
+    },
+    "Usually in the evening, about %@." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vanligvis på kvelden, rundt %@."
+          }
+        }
+      }
+    },
+    "Usually in the morning, about %@." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vanligvis om morgenen, rundt %@."
           }
         }
       }

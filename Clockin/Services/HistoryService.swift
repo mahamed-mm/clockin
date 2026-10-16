@@ -43,6 +43,22 @@ final class HistoryService {
         return Set(try context.fetch(descriptor).map(\.name))
     }
 
+    /// Every spelling saved for a subject: the names whose `SymbolBook.key`
+    /// is `key`. SwiftData can't fold case in a query, so the names alone
+    /// are fetched and matched here.
+    func spellings(of key: String) throws -> Set<String> {
+        try distinctNames().filter { SymbolBook.key(for: $0) == key }
+    }
+
+    /// Every saved session of a subject, newest first.
+    func sessions(ofSubject key: String) throws -> [CompletedFocus] {
+        let names = try spellings(of: key)
+        guard !names.isEmpty else { return [] }
+        let descriptor = FetchDescriptor<FocusRecord>(predicate: #Predicate { names.contains($0.name) },
+                                                      sortBy: [SortDescriptor(\.completedAt, order: .reverse)])
+        return try context.fetch(descriptor).map(\.completedFocus)
+    }
+
     /// Deletes every saved session. Returns how many there were.
     @discardableResult
     func deleteAll() throws -> Int {

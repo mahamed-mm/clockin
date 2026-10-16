@@ -353,6 +353,34 @@ enum Copy {
     /// "2 thoughts parked", the chip read aloud.
     static func parkedSpoken(_ count: Int) -> String { String(localized: "\(count) thoughts parked") }
 
+    // MARK: A subject's page
+
+    /// "4 h 35 min over 11 sessions since 3 August."
+    static func subjectTotal(seconds: TimeInterval, sessions count: Int, since date: Date) -> String {
+        let since = date.formatted(.dateTime.day().month(.wide))
+        return String(localized: "\(TimeFormat.duration(seconds)) over \(sessions(count)) since \(since).")
+    }
+    /// The same, read aloud: durations in words.
+    static func subjectTotalSpoken(seconds: TimeInterval, sessions count: Int, since date: Date) -> String {
+        let since = date.formatted(.dateTime.day().month(.wide))
+        return String(localized: "\(TimeFormat.spokenDuration(seconds)) over \(sessions(count)) since \(since).")
+    }
+    /// "Usually in the morning, about 25 min."
+    static func subjectHabit(part: WeekFacts.PartOfDay?, length: String) -> String {
+        switch part {
+        case .morning: String(localized: "Usually in the morning, about \(length).")
+        case .afternoon: String(localized: "Usually in the afternoon, about \(length).")
+        case .evening: String(localized: "Usually in the evening, about \(length).")
+        case nil: String(localized: "Usually about \(length).")
+        }
+    }
+    static var lastThreeMonths: String { String(localized: "Last three months") }
+    static var recentSessions: String { String(localized: "Recent sessions") }
+    static var openThoughtsTitle: String { String(localized: "Open thoughts") }
+    static var showInWeek: String { String(localized: "Show in week") }
+    /// A By subject row's hint.
+    static func opensSubject(_ name: String) -> String { String(localized: "Opens \(displayName(name))'s page") }
+
     // MARK: Today's plan
 
     static var planTheSet: String { String(localized: "Plan the set") }
@@ -387,7 +415,7 @@ enum Copy {
     }
     static var tipHistoryTapTitle: String { String(localized: "Tap a day or a subject") }
     static var tipHistoryTapMessage: String {
-        String(localized: "A day shows its sessions on the ribbon. A subject shows only its sessions.")
+        String(localized: "A day shows its sessions on the ribbon. A subject opens its page.")
     }
     static var tipHistoryMenuTitle: String { String(localized: "Hold a session") }
     static var tipHistoryMenuMessage: String {
