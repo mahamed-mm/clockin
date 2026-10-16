@@ -1486,17 +1486,21 @@ struct RecentNames: View {
     let typed: String
     var plan: (() -> Void)? = nil
     let pick: (String) -> Void
-    @Environment(AppServices.self) private var services
     @Query(RecentNames.newestFirst) private var records: [FocusRecord]
 
-    private static var newestFirst: FetchDescriptor<FocusRecord> {
+    static var newestFirst: FetchDescriptor<FocusRecord> {
         var descriptor = FetchDescriptor<FocusRecord>(sortBy: [SortDescriptor(\.completedAt, order: .reverse)])
         descriptor.fetchLimit = 30
         return descriptor
     }
 
+    /// The names it offers: up to four, newest first, not the one typed.
+    static func names(_ records: [FocusRecord], typed: String) -> [String] {
+        HistoryService.recentNames(records.map(\.name), excluding: typed, limit: 4)
+    }
+
     var body: some View {
-        let names = HistoryService.recentNames(records.map(\.name), excluding: typed, limit: 4)
+        let names = Self.names(records, typed: typed)
         if !names.isEmpty || plan != nil {
             ScrollView(.horizontal) {
                 HStack(spacing: Space.xs) {
@@ -1512,21 +1516,7 @@ struct RecentNames: View {
                         .buttonStyle(.plain)
                     }
                     ForEach(names, id: \.self) { name in
-                        Button { pick(name) } label: {
-                            HStack(spacing: Space.xxs) {
-                                Image(systemName: services.symbol(for: name))
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Retro.inkSoft)
-                                    .accessibilityHidden(true)
-                                Text(name)
-                                    .font(.retro(.meta))
-                                    .foregroundStyle(Retro.ink)
-                                    .lineLimit(1)
-                            }
-                            .retroChip()
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityHint(String(localized: "Uses this name"))
+                        RecentNameChip(name: name) { pick(name) }
                     }
                 }
                 .padding(Space.xxs)
@@ -1535,6 +1525,31 @@ struct RecentNames: View {
             .accessibilityElement(children: .contain)
             .accessibilityLabel(String(localized: "Recent names"))
         }
+    }
+}
+
+/// A recent name with its symbol; a tap fills the name field.
+struct RecentNameChip: View {
+    let name: String
+    let pick: () -> Void
+    @Environment(AppServices.self) private var services
+
+    var body: some View {
+        Button(action: pick) {
+            HStack(spacing: Space.xxs) {
+                Image(systemName: services.symbol(for: name))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Retro.inkSoft)
+                    .accessibilityHidden(true)
+                Text(name)
+                    .font(.retro(.meta))
+                    .foregroundStyle(Retro.ink)
+                    .lineLimit(1)
+            }
+            .retroChip()
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(String(localized: "Uses this name"))
     }
 }
 

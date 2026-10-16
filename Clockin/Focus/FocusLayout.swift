@@ -23,6 +23,13 @@ enum FocusLayout {
         viewportHeight >= 700
     }
 
+    /// With a plan, whether the row under the name field shows recent names
+    /// instead of the plan's chips: while the name is being typed, if
+    /// there are any. The plan's button stays either way.
+    static func showsRecentNames(fieldFocused: Bool, hasRecent: Bool) -> Bool {
+        fieldFocused && hasRecent
+    }
+
     /// Dial beside the controls rather than above them: a wide scene, or one
     /// on its side. `height` includes the keyboard's space, so opening the
     /// name or park field never flips the page.

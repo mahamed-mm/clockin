@@ -387,6 +387,13 @@ struct PlanStripTests {
                 == "Today's plan: Chemistry, done; Thesis outline, up next; Spanish")
     }
 
+    @Test func recentNamesTakeTheChipsPlaceOnlyWhileTyping() {
+        #expect(FocusLayout.showsRecentNames(fieldFocused: true, hasRecent: true))
+        #expect(!FocusLayout.showsRecentNames(fieldFocused: false, hasRecent: true))
+        #expect(!FocusLayout.showsRecentNames(fieldFocused: true, hasRecent: false), "Nothing to show: the plan stays")
+        #expect(!FocusLayout.showsRecentNames(fieldFocused: false, hasRecent: false))
+    }
+
     @Test func slotsAreReadWithTheirPlace() {
         #expect(Copy.planSlotSpoken("Chemistry", position: 1, of: 4, done: true) == "Chemistry, 1 of 4, done")
         #expect(Copy.planSlotSpoken("Thesis", position: 2, of: 4, done: false) == "Thesis, 2 of 4")

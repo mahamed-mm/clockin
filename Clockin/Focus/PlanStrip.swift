@@ -1,19 +1,29 @@
+import SwiftData
 import SwiftUI
 
 /// Today's plan under the name field, in place of the recent names: one
 /// small chip per slot in order, done ones ticked in soft ink, the one in
-/// the field picked out like a chosen length. A tap on one still to do puts it in the field; the
-/// last chip opens the plan. No set colours: a plan's order isn't the set's.
+/// the field picked out like a chosen length. A tap on one still to do puts
+/// it in the field. The plan's button stays put in front, where "Plan the
+/// set" is among the recent names, so a full plan never scrolls it away.
+/// While the name is being typed, the recent names take the chips' place.
+/// No set colours: a plan's order isn't the set's.
 struct PlanStrip: View {
     let plan: SetPlan
     /// The name in the field.
     let typed: String
+    /// The name field has the keyboard.
+    var fieldFocused = false
     /// Where each slot's name is, in global space: where a name moving
     /// into the field starts from.
     var report: (UUID, CGRect) -> Void = { _, _ in }
     let pick: (SetPlan.Slot) -> Void
+    /// A recent name, tapped while typing.
+    var pickRecent: (String) -> Void = { _ in }
     let edit: () -> Void
     @Environment(AppServices.self) private var services
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Query(RecentNames.newestFirst) private var records: [FocusRecord]
 
     enum ChipState: Equatable { case done, inField, toDo }
 
@@ -46,27 +56,49 @@ struct PlanStrip: View {
     }
 
     var body: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: Space.xs) {
-                ForEach(plan.slots) { slot in
-                    chip(slot)
+        let recent = RecentNames.names(records, typed: typed)
+        let showsRecent = FocusLayout.showsRecentNames(fieldFocused: fieldFocused, hasRecent: !recent.isEmpty)
+        HStack(spacing: Space.xs) {
+            editButton
+            ScrollView(.horizontal) {
+                // Both rows are chips of one height, so swapping them never
+                // moves the dial.
+                HStack(spacing: Space.xs) {
+                    if showsRecent {
+                        ForEach(recent, id: \.self) { name in
+                            RecentNameChip(name: name) { pickRecent(name) }
+                        }
+                    } else {
+                        ForEach(plan.slots) { slot in
+                            chip(slot)
+                        }
+                    }
                 }
-                Button(action: edit) {
-                    Image(systemName: "list.bullet")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Retro.ink)
-                        .frame(minWidth: 20)
-                        .retroChip()
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Copy.editPlan)
-                .accessibilityShowsLargeContentViewer { Label(Copy.editPlan, systemImage: "list.bullet") }
+                .padding(.vertical, Space.xxs)
+                .padding(.trailing, Space.xxs)
+                .id(showsRecent)
+                .transition(.opacity)
             }
-            .padding(Space.xxs)
+            .scrollIndicators(.hidden)
         }
-        .scrollIndicators(.hidden)
+        .padding(.leading, Space.xxs)
+        .animation(Motion.calm(reduceMotion), value: showsRecent)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(Copy.todaysPlan)
+        .accessibilityLabel(showsRecent ? String(localized: "Recent names") : Copy.todaysPlan)
+    }
+
+    private var editButton: some View {
+        Button(action: edit) {
+            Image(systemName: "list.bullet")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Retro.ink)
+                .frame(minWidth: 20)
+                .retroChip()
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Copy.editPlan)
+        .accessibilityInputLabels([Copy.editPlan, Copy.planTheSet])
+        .accessibilityShowsLargeContentViewer { Label(Copy.editPlan, systemImage: "list.bullet") }
     }
 
     private func chip(_ slot: SetPlan.Slot) -> some View {

@@ -59,6 +59,11 @@ struct FocusView: View {
     @State private var contentHeight: CGFloat = 0
     /// The whole window, in global space: a slip only flies to a Tick inside it.
     @State private var window: CGRect = .zero
+    /// The foot of the chips under the name field, in the page: kept above
+    /// the keyboard while a name is typed, so the recent names can be reached.
+    @State private var nameRowBottom: CGFloat = 0
+    /// How far the page went down for them, to come back up by once the name's done.
+    @State private var nameScroll: CGFloat = 0
     @State private var headerHeight: CGFloat = 0
     @State private var slotHeight: CGFloat = 0
     @State private var controlsHeight: CGFloat = 0
@@ -179,6 +184,7 @@ struct FocusView: View {
             if !Task.isCancelled { engine.reconcile() }
         }
         .task(id: stepBackWindow) { await stepBack(during: stepBackWindow) }
+        .onChange(of: nameFocused) { _, focused in nameFocusChanged(focused) }
         .environment(\.tickWatchesName, nameFocused)
         .environment(\.tickNodAt, symbolNodAt)
         .onChange(of: services.symbol(for: sessionName)) { old, new in
@@ -229,8 +235,28 @@ struct FocusView: View {
             let foot = Self.margins.top + headerHeight + spacing + dialSide + Space.s
             let offset = FocusLayout.keepInSight(foot: foot, visibleHeight: size.height, scrolled: scrolled)
             if offset != scrolled { withAnimation(Motion.calm(reduceMotion)) { scroll.scrollTo(y: offset) } }
+        } else if nameFocused, nameRowBottom > 0 {
+            // The keyboard came up over the name: down just far enough for
+            // the chips under it, never back up.
+            let offset = FocusLayout.keepInSight(foot: nameRowBottom + Space.s, visibleHeight: size.height,
+                                                 scrolled: scrolled)
+            if offset > scrolled {
+                nameScroll += offset - scrolled
+                withAnimation(Motion.calm(reduceMotion)) { scroll.scrollTo(y: offset) }
+            }
         }
     }
+
+    /// The name's done: back up by what the keyboard took.
+    private func nameFocusChanged(_ focused: Bool) {
+        guard !focused, nameScroll > 0 else { return }
+        let back = max(0, scrolled - nameScroll)
+        nameScroll = 0
+        withAnimation(Motion.calm(reduceMotion)) { scroll.scrollTo(y: back) }
+    }
+
+    /// The compact page's own coordinates, from the top of its content.
+    private static let page = "focusPage"
 
     @ViewBuilder
     private var slipInFlight: some View {
@@ -354,6 +380,7 @@ struct FocusView: View {
                     .measuredHeight($controlsHeight)
             }
             .padding(Self.margins)
+            .coordinateSpace(.named(Self.page))
             .frame(minHeight: viewport.height)
             .contentShape(.rect)
             .onTapGesture { nameFocused = false }
@@ -419,12 +446,22 @@ struct FocusView: View {
                     nameField
                         .glassEffectID("session", in: glass)
                         .glassEffectTransition(.matchedGeometry)
-                    if let plan = services.todaysSet {
-                        PlanStrip(plan: plan, typed: sessionName, report: { chipFrames[$0] = $1 },
-                                  pick: { moveIntoField($0) }, edit: { planning = true })
-                            .transition(.opacity)
-                    } else {
-                        RecentNames(typed: sessionName, plan: { planning = true }) { sessionName = $0 }
+                    Group {
+                        if let plan = services.todaysSet {
+                            PlanStrip(plan: plan, typed: sessionName, fieldFocused: nameFocused,
+                                      report: { chipFrames[$0] = $1 }, pick: { moveIntoField($0) },
+                                      pickRecent: { name in
+                                          sessionName = name
+                                          nameFocused = false
+                                      },
+                                      edit: { planning = true })
+                                .transition(.opacity)
+                        } else {
+                            RecentNames(typed: sessionName, plan: { planning = true }) { sessionName = $0 }
+                        }
+                    }
+                    .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(Self.page)).maxY } action: {
+                        nameRowBottom = $0
                     }
                     // Below the field, so the dial (and Tick on it) keeps its room.
                     if let tip = idleTips.currentTip {
