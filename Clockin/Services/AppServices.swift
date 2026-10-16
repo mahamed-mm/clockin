@@ -43,6 +43,8 @@ enum AlertStatus: Equatable, Sendable {
 enum HistoryUndo: Equatable {
     case deletion([CompletedFocus])
     case rename(SubjectRename)
+    /// Thoughts ticked off or cleared, with the book as it was.
+    case thoughts(ThoughtBook, cleared: Bool)
 }
 
 /// What "Rename everywhere" changed, to put back.
@@ -468,6 +470,47 @@ final class AppServices: SessionEffects {
 
     func clearUnfiledThoughts() { thoughts.clearUnfiled() }
 
+    /// Ticked off in History's open thoughts: Undo brings it back.
+    func tickOffThought(_ id: UUID) {
+        let before = thoughts
+        thoughts.setDone(true, thought: id)
+        guard thoughts != before else { return }
+        settleHistoryUndo()
+        historyUndo = .thoughts(before, cleared: false)
+        openHistoryUndoWindow()
+    }
+
+    /// Forgets the thoughts already ticked off, with Undo.
+    func clearTickedThoughts() {
+        let before = thoughts
+        thoughts.clearDone()
+        guard thoughts != before else { return }
+        settleHistoryUndo()
+        historyUndo = .thoughts(before, cleared: true)
+        announce(String(localized: "Ticked thoughts cleared. Undo is available for a few seconds."))
+        openHistoryUndoWindow()
+    }
+
+    /// The thoughts still open, by subject, with the cancelled sessions'
+    /// last. Sessions waiting in a delete's Undo are left out; `keeping`
+    /// are ticked off but still folding away.
+    func openThoughts(keeping: Set<UUID> = []) -> OpenThoughts {
+        let filed = Set(thoughts.bySession.keys)
+        var names: [UUID: String] = [:]
+        if !filed.isEmpty, let saved = try? history?.sessions(ids: filed) {
+            for (id, focus) in saved { names[id] = focus.name }
+        }
+        for focus in engine.pendingRecords where filed.contains(focus.id) { names[focus.id] = focus.name }
+        if let focus = engine.stage.completedFocus { names[focus.id] = focus.name }
+        let hidden = Set(undoableDeletion.map(\.id))
+        return OpenThoughts(book: thoughts, names: names.filter { !hidden.contains($0.key) }, keeping: keeping)
+    }
+
+    #if DEBUG
+    /// `-DemoData`: thoughts kept with demo sessions.
+    func seedThoughts(_ book: ThoughtBook) { thoughts.merge(book) }
+    #endif
+
     /// Keeps thoughts with their session when it finishes, and unfiled when
     /// it's cancelled, so none is lost; Undo puts them back on the session.
     private func keepThoughts(after event: SessionEvent) {
@@ -628,7 +671,7 @@ final class AppServices: SessionEffects {
     func expireHistoryUndo() {
         switch historyUndo {
         case .deletion: expireDeletion()
-        case .rename: historyUndo = nil
+        case .rename, .thoughts: historyUndo = nil
         case nil: break
         }
     }
@@ -645,6 +688,9 @@ final class AppServices: SessionEffects {
         switch historyUndo {
         case .deletion: undoDelete()
         case .rename(let rename): undoRename(rename)
+        case .thoughts(let book, _):
+            clearUndoableDeletion()
+            thoughts = book
         case nil: break
         }
     }

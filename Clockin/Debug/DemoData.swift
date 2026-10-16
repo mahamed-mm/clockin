@@ -15,8 +15,10 @@ enum DemoData {
         guard isRequested, (try? context.fetchCount(FetchDescriptor<FocusRecord>())) == 0 else { return }
         let today = services.calendar.startOfDay(for: now)
         var doneToday: [String: UUID] = [:]
+        var newest: [String: (id: UUID, at: Date)] = [:]
         for session in DemoHistory.make(now: now, calendar: services.calendar) {
             let id = UUID()
+            if session.completedAt > newest[session.name]?.at ?? .distantPast { newest[session.name] = (id, session.completedAt) }
             context.insert(FocusRecord(id: id, name: session.name, startedAt: session.startedAt,
                                        completedAt: session.completedAt, focusSeconds: session.focusSeconds,
                                        plannedSeconds: session.plannedSeconds,
@@ -27,6 +29,30 @@ enum DemoData {
         try? context.save()
         for (name, symbol) in DemoHistory.picks { services.setSymbol(symbol, for: name) }
         services.editSet(demoPlan(day: today, doneToday: doneToday))
+        services.seedThoughts(demoThoughtBook(sessions: newest.mapValues(\.id), now: now))
+    }
+
+    /// Thoughts kept with recent sessions, two of them ticked off, and one
+    /// from a cancelled session, for History's open thoughts.
+    static func demoThoughtBook(sessions: [String: UUID], now: Date) -> ThoughtBook {
+        func thought(_ text: String, hoursAgo: Double, done: Bool = false) -> ParkedThought {
+            ParkedThought(id: UUID(), text: text, parkedAt: now.addingTimeInterval(-hoursAgo * 3_600),
+                          done: done ? true : nil)
+        }
+        var book = ThoughtBook()
+        let kept: [(String, [ParkedThought])] = [
+            ("Chemistry", [thought("Ask about the titration lab", hoursAgo: 1.8),
+                           thought("Print the periodic table", hoursAgo: 1.7, done: true)]),
+            ("Thesis outline", [thought("Email Sam about Friday", hoursAgo: 26),
+                                thought("Find the 2019 survey", hoursAgo: 27),
+                                thought("Book a library room", hoursAgo: 28, done: true)]),
+            ("Spanish vocab", [thought("Renew the flashcard app", hoursAgo: 50)]),
+        ]
+        for (name, thoughts) in kept {
+            if let id = sessions[name] { book.file(thoughts, under: id) }
+        }
+        book.unfile([thought("Book the dentist", hoursAgo: 75)])
+        return book
     }
 
     /// Today's plan: Chemistry, done this morning, then three still to do.

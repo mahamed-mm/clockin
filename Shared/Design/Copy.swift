@@ -340,8 +340,6 @@ enum Copy {
     static var parkedThoughts: String { String(localized: "Parked thoughts") }
     /// Read on the folded row.
     static var showsParked: String { String(localized: "Shows them to tick off, copy or share") }
-    /// A cancelled session's thoughts, kept on the Focus screen.
-    static var parkedEarlier: String { String(localized: "Parked earlier") }
     static var copyAll: String { String(localized: "Copy all") }
     static var copied: String { String(localized: "Copied") }
     static var share: String { String(localized: "Share") }
@@ -377,6 +375,16 @@ enum Copy {
     static var lastThreeMonths: String { String(localized: "Last three months") }
     static var recentSessions: String { String(localized: "Recent sessions") }
     static var openThoughtsTitle: String { String(localized: "Open thoughts") }
+    /// "3 open thoughts", at the top of History.
+    static func openThoughtsCount(_ count: Int) -> String { String(localized: "\(count) open thoughts") }
+    static var showsOpenThoughts: String { String(localized: "Shows them, to tick off, copy or share") }
+    static var fromCancelledSessions: String { String(localized: "From cancelled sessions") }
+    static var noOpenThoughts: String { String(localized: "Nothing left open.") }
+    static var clearTicked: String { String(localized: "Clear ticked") }
+    static var thoughtTicked: String { String(localized: "Thought ticked off") }
+    static var tickedCleared: String { String(localized: "Ticked thoughts cleared") }
+    static var putsItBack: String { String(localized: "Puts it back") }
+    static var putsThemBack: String { String(localized: "Puts them back") }
     static var showInWeek: String { String(localized: "Show in week") }
     static var startAgain: String { String(localized: "Start again") }
     static var renameEverywhere: String { String(localized: "Rename everywhere") }

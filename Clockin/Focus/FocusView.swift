@@ -431,12 +431,6 @@ struct FocusView: View {
                         TipView(tip)
                             .tipViewStyle(RetroTipStyle())
                     }
-                    if !services.thoughts.unfiled.isEmpty {
-                        ParkedList(thoughts: services.thoughts.unfiled, title: Copy.parkedEarlier,
-                                   toggle: toggleThought, clear: services.clearUnfiledThoughts)
-                            .padding(.top, Space.xs)
-                            .transition(.opacity)
-                    }
                 }
             case .active(let session):
                 VStack(spacing: Space.s) {

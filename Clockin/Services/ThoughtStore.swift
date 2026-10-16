@@ -46,6 +46,21 @@ struct ThoughtBook: Codable, Equatable, Sendable {
 
     mutating func clearUnfiled() { unfiled = [] }
 
+    /// Forgets every thought already ticked off, filed or not.
+    mutating func clearDone() {
+        bySession = bySession.compactMapValues { thoughts in
+            let open = thoughts.filter { $0.done != true }
+            return open.isEmpty ? nil : open
+        }
+        unfiled.removeAll { $0.done == true }
+    }
+
+    /// Some are ticked off, for Clear ticked.
+    var hasDone: Bool {
+        unfiled.contains { $0.done == true } || bySession.values.contains { $0.contains { $0.done == true } }
+    }
+
+
     /// Forgets thoughts of sessions that are gone.
     mutating func prune(keeping sessions: Set<UUID>) {
         bySession = bySession.filter { sessions.contains($0.key) }

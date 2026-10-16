@@ -247,26 +247,15 @@ private struct SubjectPageContent: View {
                     .accessibilityAddTraits(.isHeader)
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(open) { thought in
-                        Button { services.setThoughtDone(true, thought.id) } label: {
-                            HStack(alignment: .firstTextBaseline, spacing: Space.s) {
-                                Image(systemName: "circle")
-                                    .foregroundStyle(Retro.ink)
-                                Text(thought.text)
-                                    .font(.retro(.body))
-                                    .foregroundStyle(Retro.ink)
-                                    .multilineTextAlignment(.leading)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                Spacer(minLength: 0)
-                            }
-                            .frame(minHeight: 44)
-                            .contentShape(.rect)
+                        OpenThoughtRow(thought: thought, struck: false,
+                                       date: OpenThoughts.dateText(thought.parkedAt, today: services.today,
+                                                                   calendar: services.calendar)) {
+                            withAnimation(Motion.calm(reduceMotion)) { services.tickOffThought(thought.id) }
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(thought.text)
-                        .accessibilityHint(Copy.markDone)
                     }
                 }
-                .padding(Space.m)
+                .padding(.horizontal, Space.m)
+                .padding(.vertical, Space.xs)
                 .background(Retro.ink.opacity(0.06), in: .rect(cornerRadius: Radius.card))
             }
         }

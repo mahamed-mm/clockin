@@ -479,6 +479,46 @@
         }
       }
     },
+    "%lld open thoughts" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld open thought"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld open thoughts"
+                }
+              }
+            }
+          }
+        },
+        "nb" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld åpen tanke"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : "%lld åpne tanker"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld parked" : {
       "localizations" : {
         "nb" : {
@@ -1302,6 +1342,16 @@
         }
       }
     },
+    "Clear ticked" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fjern avkryssede"
+          }
+        }
+      }
+    },
     "Clockin" : {
       "localizations" : {
         "nb" : {
@@ -1889,6 +1939,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Kniv og gaffel"
+          }
+        }
+      }
+    },
+    "From cancelled sessions" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fra avbrutte økter"
           }
         }
       }
@@ -2526,6 +2586,16 @@
         }
       }
     },
+    "Nothing left open." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ingenting står åpent."
+          }
+        }
+      }
+    },
     "Nothing to restore" : {
       "localizations" : {
         "nb" : {
@@ -2777,6 +2847,7 @@
       }
     },
     "Parked earlier" : {
+      "extractionState" : "stale",
       "localizations" : {
         "nb" : {
           "stringUnit" : {
@@ -2989,6 +3060,16 @@
         }
       }
     },
+    "Puts it back" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Setter den tilbake"
+          }
+        }
+      }
+    },
     "Puts it back on the list" : {
       "localizations" : {
         "nb" : {
@@ -3025,6 +3106,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Legger økten tilbake"
+          }
+        }
+      }
+    },
+    "Puts them back" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Setter dem tilbake"
           }
         }
       }
@@ -3530,6 +3621,16 @@
         }
       }
     },
+    "Shows them, to tick off, copy or share" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Viser dem, så du kan krysse av, kopiere eller dele"
+          }
+        }
+      }
+    },
     "Shows this day" : {
       "localizations" : {
         "nb" : {
@@ -3980,6 +4081,16 @@
         }
       }
     },
+    "Thought ticked off" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tanke krysset av"
+          }
+        }
+      }
+    },
     "Tick" : {
       "localizations" : {
         "nb" : {
@@ -4019,6 +4130,26 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Tikk-takk"
+          }
+        }
+      }
+    },
+    "Ticked thoughts cleared" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avkryssede tanker fjernet"
+          }
+        }
+      }
+    },
+    "Ticked thoughts cleared. Undo is available for a few seconds." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Avkryssede tanker fjernet. Du kan angre i noen sekunder."
           }
         }
       }

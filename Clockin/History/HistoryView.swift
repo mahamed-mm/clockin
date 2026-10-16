@@ -29,6 +29,8 @@ struct HistoryView: View {
     @State private var subjectFilter: SubjectFilter?
     /// Subject pages opened from the week.
     @State private var path: [SubjectRoute] = []
+    /// The open thoughts are shown.
+    @State private var showingThoughts = false
     /// A subject page to open once the session card it was asked for from has gone.
     @State private var subjectAfterCard: SubjectRoute?
 
@@ -50,6 +52,14 @@ struct HistoryView: View {
                                       showsTotals: !services.historyUnavailable)
                             .listRowBackground(Color.clear)
                             .listRowInsets(EdgeInsets(top: Space.xs, leading: 0, bottom: Space.xxs, trailing: 0))
+                        let open = services.openThoughts().openCount
+                        if open > 0 {
+                            OpenThoughtsLink(count: open) { showingThoughts = true }
+                                .matchedTransitionSource(id: Self.thoughtsSource, in: zoom)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                                .transition(.opacity)
+                        }
                     }
                     .listRowSeparator(.hidden)
 
@@ -98,6 +108,10 @@ struct HistoryView: View {
                 }
                 .scrollContentBackground(.hidden)
             }
+            .navigationDestination(isPresented: $showingThoughts) {
+                OpenThoughtsView()
+                    .modifier(ZoomFrom(source: reduceMotion ? nil : Self.thoughtsSource, in: zoom))
+            }
             .navigationDestination(for: SubjectRoute.self) { route in
                 SubjectPage(route: route, open: { opened = $0 }) { shown in
                     // Back to the week, showing only this subject.
@@ -144,6 +158,8 @@ struct HistoryView: View {
         .animation(Motion.calm(reduceMotion), value: services.historyUndo == nil)
     }
 
+    private static let thoughtsSource: AnyHashable = "openThoughts"
+
     private func openSubjectAfterCard() {
         guard let route = subjectAfterCard else { return }
         subjectAfterCard = nil
@@ -157,6 +173,8 @@ struct HistoryView: View {
             (String(localized: "Session deleted"), String(localized: "Puts the session back"))
         case .rename(let rename):
             (Copy.renamedTo(rename.name), Copy.putsNamesBack)
+        case .thoughts(_, let cleared):
+            cleared ? (Copy.tickedCleared, Copy.putsThemBack) : (Copy.thoughtTicked, Copy.putsItBack)
         }
     }
 
