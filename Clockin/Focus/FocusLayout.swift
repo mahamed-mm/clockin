@@ -56,6 +56,14 @@ enum FocusLayout {
         return needed > scrolled ? needed : min(scrolled, max(0, needed))
     }
 
+    /// Whether the header steps aside: while a keyboard field (a thought
+    /// being parked, a name being typed) has scrolled the page, so the
+    /// title never slides under the status bar. Opacity only, so the dial
+    /// and Tick stay where they are.
+    static func headerFaded(keyboardField: Bool, scrolled: CGFloat) -> Bool {
+        keyboardField && scrolled > 0.5
+    }
+
     /// How far a held page will scroll back down once the keyboard has gone:
     /// all of it when the page then fits, less when it's still taller.
     static func scrollUnwind(scrolled: CGFloat, contentHeight: CGFloat, viewportHeight: CGFloat) -> CGFloat {

@@ -145,6 +145,13 @@ struct FocusLayoutTests {
         #expect(FocusLayout.keepInSight(foot: 520, visibleHeight: 418, scrolled: 300) == 102)
     }
 
+    @Test func theHeaderStepsAsideOnlyWhileAFieldHasScrolledThePage() {
+        #expect(FocusLayout.headerFaded(keyboardField: true, scrolled: 102))
+        #expect(!FocusLayout.headerFaded(keyboardField: true, scrolled: 0), "Nothing under the status bar")
+        #expect(!FocusLayout.headerFaded(keyboardField: false, scrolled: 102), "Scrolled by hand")
+        #expect(!FocusLayout.headerFaded(keyboardField: false, scrolled: 0))
+    }
+
     @Test func theSlipLandsWhereTickWillBe() {
         let window = CGRect(x: 0, y: 0, width: 402, height: 874)
         let tick = CGRect(x: 280, y: 380, width: 100, height: 100)

@@ -361,6 +361,12 @@ struct FocusView: View {
     /// Between the header, dial, slot and controls: tighter on short screens.
     private var spacing: CGFloat { FocusLayout.spacing(viewportHeight: viewport.height) }
 
+    /// The header steps aside while the park or name field has scrolled
+    /// the page, rather than sit under the status bar.
+    private var headerFaded: Bool {
+        FocusLayout.headerFaded(keyboardField: parking || nameFocused, scrolled: scrolled)
+    }
+
     /// The compact layout's dial: the height left over, within its bounds.
     private var dialSide: CGFloat {
         let chrome = headerHeight + slotHeight + controlsHeight + 3 * spacing
@@ -376,7 +382,9 @@ struct FocusView: View {
                 FocusHeader(stage: engine.stage, nextName: sessionName)
                     .fixedSize(horizontal: false, vertical: true)
                     .measuredHeight($headerHeight)
-                    .opacity(chromeOpacity)
+                    .opacity(headerFaded ? 0 : chromeOpacity)
+                    .allowsHitTesting(!headerFaded)
+                    .animation(Motion.calm(reduceMotion), value: headerFaded)
                 DialFace(stage: engine.stage, size: side, celebration: services.celebrations, teaches: teachesDial,
                          crown: tickCrown)
                     .equatable()
