@@ -35,6 +35,12 @@ struct RootView: View {
         .tint(Retro.orangeText)
         .onReceive(NotificationCenter.default.publisher(for: QuickActionInbox.arrived)) { _ in takeQuickAction() }
         .onAppear(perform: takeQuickAction)
+        #if DEBUG
+        // The debug menu's postcard: History shows it.
+        .onChange(of: DevSettings.shared.postcardWeeksBack, initial: true) { _, back in
+            if back != nil { tab = .history }
+        }
+        #endif
         .onOpenURL { url in
             guard url.scheme == "clockin" else { return }
             tab = url.host() == "history" ? .history : .focus

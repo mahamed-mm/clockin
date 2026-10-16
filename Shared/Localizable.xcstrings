@@ -669,6 +669,9 @@
         }
       }
     },
+    "%lld week%@ back" : {
+      "shouldTranslate" : false
+    },
     "%lld×" : {
       "shouldTranslate" : false
     },
@@ -3072,6 +3075,9 @@
           }
         }
       }
+    },
+    "Postcard for a week" : {
+      "shouldTranslate" : false
     },
     "Previous" : {
       "shouldTranslate" : false

@@ -66,3 +66,13 @@ struct WeekPostcardTests {
 
     }
 }
+
+/// The preview settles from a tilt, unless motion should stay still.
+@MainActor
+struct PostcardPreviewTests {
+    @Test func itOnlyTiltsWhenThingsMayMove() {
+        #expect(PostcardPreview.startTilt(reduceMotion: false, constrained: false) != 0)
+        #expect(PostcardPreview.startTilt(reduceMotion: true, constrained: false) == 0)
+        #expect(PostcardPreview.startTilt(reduceMotion: false, constrained: true) == 0)
+    }
+}

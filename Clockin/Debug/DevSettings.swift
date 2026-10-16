@@ -35,6 +35,15 @@ struct DevMenu: View {
             } label: {
                 Label("Tick gallery", systemImage: "face.smiling")
             }
+            Menu {
+                ForEach(0..<16, id: \.self) { back in
+                    Button(back == 0 ? "This week" : "\(back) week\(back == 1 ? "" : "s") back") {
+                        settings.postcardWeeksBack = back
+                    }
+                }
+            } label: {
+                Label("Postcard for a week", systemImage: "photo")
+            }
             Button {
                 UserDefaults.standard.set(true, forKey: ClockinTips.resetKey)
                 Onboarding.reset()
@@ -91,6 +100,9 @@ final class DevSettings {
     var shortTimers = ProcessInfo.processInfo.arguments.contains("-ShortTimers")
     /// Stretches every app animation ×4 so motion can be inspected frame by frame.
     var slowAnimations = ProcessInfo.processInfo.arguments.contains("-SlowAnimations")
+    /// Opens History's postcard this many weeks back (0 for this week), via
+    /// this menu or `-DemoPostcard N`. History takes it and clears it.
+    var postcardWeeksBack: Int? = UserDefaults.standard.string(forKey: "DemoPostcard").flatMap { Int($0) }
 
     private init() {
         // Clear the flag older builds persisted.

@@ -31,6 +31,8 @@ struct HistoryView: View {
     @State private var path: [SubjectRoute] = []
     /// The open thoughts are shown.
     @State private var showingThoughts = false
+    /// The week's postcard, shown before it's shared.
+    @State private var postcard: PostcardFacts?
     /// A subject page to open once the session card it was asked for from has gone.
     @State private var subjectAfterCard: SubjectRoute?
 
@@ -81,7 +83,8 @@ struct HistoryView: View {
                                         canGoBack: canGoBack, canGoForward: canGoForward, page: page,
                                         scroll: scroll, pickedDay: $pickedDay, morph: reduceMotion ? nil : morph,
                                         modePicker: AnyView(modePicker), opened: $opened, zoom: zoom,
-                                        filter: $subjectFilter, openSubject: { path.append($0) })
+                                        filter: $subjectFilter, openSubject: { path.append($0) },
+                                        sharePostcard: { postcard = $0 })
                         case .month:
                             HistoryMonth(month: month, today: services.today, calendar: services.calendar,
                                          canGoBack: canGoBackMonth, canGoForward: canGoForwardMonth,
@@ -108,6 +111,19 @@ struct HistoryView: View {
                 }
                 .scrollContentBackground(.hidden)
             }
+            .sheet(item: $postcard) { facts in
+                PostcardPreview(facts: facts)
+                    .fittedSheet()
+            }
+            #if DEBUG
+            .onChange(of: DevSettings.shared.postcardWeeksBack, initial: true) { _, back in
+                guard let back else { return }
+                // To that week, then the week shares itself (see HistoryWeek).
+                mode = .week
+                path.removeAll()
+                page(by: -back - (shownDay == nil ? 0 : weeksBack))
+            }
+            #endif
             .navigationDestination(isPresented: $showingThoughts) {
                 OpenThoughtsView()
                     .modifier(ZoomFrom(source: reduceMotion ? nil : Self.thoughtsSource, in: zoom))
@@ -245,6 +261,12 @@ struct HistoryView: View {
         week.end <= services.today
     }
 
+    /// How many weeks back the week shown is.
+    private var weeksBack: Int {
+        let thisWeek = services.calendar.weekInterval(containing: services.today).start
+        return services.calendar.dateComponents([.weekOfYear], from: week.start, to: thisWeek).weekOfYear ?? 0
+    }
+
     private func page(by weeks: Int) {
         guard let day = services.calendar.date(byAdding: .weekOfYear, value: weeks, to: week.start) else { return }
         // Back on this week, follow it again so it moves on at midnight.
@@ -352,12 +374,14 @@ private struct HistoryWeek: View {
     @Binding var filter: SubjectFilter?
     /// Opens a subject's page.
     let openSubject: (SubjectRoute) -> Void
+    /// Shows the week's postcard, to share.
+    let sharePostcard: (PostcardFacts) -> Void
     @Environment(\.showFocus) private var showFocus
 
     init(week: DateInterval, today: Date, calendar: Calendar, canGoBack: Bool, canGoForward: Bool,
          page: @escaping (Int) -> Void, scroll: ScrollViewProxy, pickedDay: Binding<Date?>, morph: Namespace.ID?,
          modePicker: AnyView, opened: Binding<OpenedCard?>, zoom: Namespace.ID, filter: Binding<SubjectFilter?>,
-         openSubject: @escaping (SubjectRoute) -> Void) {
+         openSubject: @escaping (SubjectRoute) -> Void, sharePostcard: @escaping (PostcardFacts) -> Void) {
         self.week = week
         self.today = today
         self.calendar = calendar
@@ -372,6 +396,7 @@ private struct HistoryWeek: View {
         self.zoom = zoom
         _filter = filter
         self.openSubject = openSubject
+        self.sharePostcard = sharePostcard
         _records = Query(filter: FocusRecord.completed(in: week), sort: \.completedAt, order: .reverse)
     }
 
@@ -414,12 +439,28 @@ private struct HistoryWeek: View {
                         .id(week.start)
                         .transition(.opacity)
                 }
+                if !weekSessions.isEmpty {
+                    Button(Copy.shareThisWeek, systemImage: "square.and.arrow.up") { sharePostcard(postcardFacts) }
+                        .font(.retro(.meta).weight(.semibold))
+                        .foregroundStyle(Retro.orangeText)
+                        .buttonStyle(.borderless)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                }
                 if let tip = tips.currentTip {
                     TipView(tip)
                         .tipViewStyle(RetroTipStyle())
                 }
             }
             .listRowBackground(Color.clear)
+            #if DEBUG
+            .task(id: week.start) {
+                // The debug menu's postcard, once its week is showing.
+                guard DevSettings.shared.postcardWeeksBack != nil else { return }
+                DevSettings.shared.postcardWeeksBack = nil
+                try? await Task.sleep(for: .milliseconds(300))
+                sharePostcard(postcardFacts)
+            }
+            #endif
             .listRowInsets(EdgeInsets(top: Space.xs, leading: 0, bottom: Space.s, trailing: 0))
             .onAppear { appeared = true }
             .animation(Motion.calm(reduceMotion), value: selectedDay)
@@ -589,6 +630,11 @@ private struct HistoryWeek: View {
         } + waiting.map {
             SubjectTotals.Session(name: $0.name, completedAt: $0.completedAt, seconds: $0.focusSeconds)
         }
+    }
+
+    /// The week as a postcard: its days, total and biggest subjects.
+    private var postcardFacts: PostcardFacts {
+        PostcardFacts(week: week, days: totals, sessions: weekSessions, today: today, symbol: services.symbol(for:))
     }
 
     /// A "By subject" row tapped: only its sessions, or all of them again.

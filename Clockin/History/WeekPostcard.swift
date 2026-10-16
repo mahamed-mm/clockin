@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 /// What a week's postcard says: its dates, its total, its pills and its
 /// three biggest subjects. Facts only; names only when asked for. Pure, so
 /// it can be tested.
-struct PostcardFacts: Equatable {
+struct PostcardFacts: Equatable, Identifiable {
     struct Subject: Equatable {
         var name: String
         var symbol: String
@@ -35,6 +35,7 @@ struct PostcardFacts: Equatable {
     }
 
     var isEmpty: Bool { sessions == 0 }
+    var id: Date { week.start }
 
     /// Tick on the card: feet up with the mug once the week's work is put
     /// down, ready while it's still going. Never a jump or a streak: there's
