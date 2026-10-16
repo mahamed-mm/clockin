@@ -105,6 +105,7 @@ struct HistoryView: View {
                     mode = .week
                     path.removeAll()
                 }
+                .modifier(ZoomFrom(source: route.zoomSource(reduceMotion: reduceMotion), in: zoom))
             }
             .onAppear { ClockinTips.note(ClockinTips.historyOpened) }
             .sheet(item: $opened, onDismiss: openSubjectAfterCard) { card in
@@ -119,7 +120,7 @@ struct HistoryView: View {
                             // Not from the subject's own page: it's already open.
                             allSessions: key.isEmpty || path.last?.key == key ? nil : {
                                 subjectAfterCard = SubjectRoute(key: key, name: summary.name,
-                                                                zoomFrom: card.fromRow ? summary.id.uuidString : nil)
+                                                                zoomFrom: card.fromRow ? summary.id : nil)
                             })
                     .fittedSheet()
                     .modifier(ZoomFromRow(id: card.id, in: zoom, enabled: card.fromRow && !reduceMotion))
@@ -387,7 +388,7 @@ private struct HistoryWeek: View {
                         .transition(.opacity)
                 }
                 if !subjects.top.isEmpty {
-                    WeekSubjects(totals: subjects, filter: filter, pick: pick, open: { key, name in
+                    WeekSubjects(totals: subjects, filter: filter, pick: pick, zoom: zoom, open: { key, name in
                         ClockinTips.note(ClockinTips.dayOrSubjectTapped)
                         openSubject(SubjectRoute(key: key, name: name, zoomFrom: SubjectRoute.rowSource(key)))
                     })
@@ -524,6 +525,11 @@ private struct HistoryWeek: View {
         if !SymbolBook.key(for: record.name).isEmpty {
             Button(Copy.changeSymbol, systemImage: "square.grid.2x2") {
                 opened = OpenedCard(SessionSummary(record), mode: .pickingSymbol)
+            }
+        }
+        if !SymbolBook.key(for: record.name).isEmpty {
+            Button(Copy.openSubject(record.name), systemImage: "rectangle.stack") {
+                openSubject(SubjectRoute(key: SymbolBook.key(for: record.name), name: record.name, zoomFrom: record.id))
             }
         }
         Button(String(localized: "Start again"), systemImage: "arrow.counterclockwise") {
@@ -693,6 +699,25 @@ struct OpenedCard: Identifiable {
         self.summary = summary
         self.mode = mode
         self.fromRow = fromRow
+    }
+}
+
+/// A subject's page zooms out of the row it was opened from, when there is one.
+private struct ZoomFrom: ViewModifier {
+    let source: AnyHashable?
+    let namespace: Namespace.ID
+
+    init(source: AnyHashable?, in namespace: Namespace.ID) {
+        self.source = source
+        self.namespace = namespace
+    }
+
+    func body(content: Content) -> some View {
+        if let source {
+            content.navigationTransition(.zoom(sourceID: source, in: namespace))
+        } else {
+            content
+        }
     }
 }
 

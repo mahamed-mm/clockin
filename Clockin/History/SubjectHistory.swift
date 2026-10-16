@@ -7,11 +7,16 @@ struct SubjectRoute: Hashable {
     var key: String
     /// As the newest session spells it.
     var name: String
-    /// The view the page zooms out of, if any.
-    var zoomFrom: String?
+    /// The view the page zooms out of, if any: a By subject row, or the
+    /// session row a card or a menu was opened from.
+    var zoomFrom: AnyHashable?
 
     /// The By subject row's zoom source.
-    static func rowSource(_ key: String) -> String { "subject:" + key }
+    static func rowSource(_ key: String) -> AnyHashable { "subject:" + key }
+
+    /// What the page zooms out of: nothing with Reduce Motion, which
+    /// pushes it plainly.
+    func zoomSource(reduceMotion: Bool) -> AnyHashable? { reduceMotion ? nil : zoomFrom }
 }
 
 /// Everything saved under one subject (a name, matched the way symbols are,

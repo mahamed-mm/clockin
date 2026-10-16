@@ -2646,6 +2646,16 @@
         }
       }
     },
+    "Open %@" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Åpne %@"
+          }
+        }
+      }
+    },
     "Open Settings" : {
       "localizations" : {
         "nb" : {

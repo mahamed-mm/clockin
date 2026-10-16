@@ -127,3 +127,17 @@ struct SubjectQueryTests {
         #expect(elapsed < .milliseconds(250), "Took \(elapsed)")
     }
 }
+
+/// What a subject's page zooms out of.
+struct HistoryRouteTests {
+    @Test func itZoomsFromWhereItWasOpenedUnlessMotionIsReduced() {
+        let row = SubjectRoute(key: "essay", name: "Essay", zoomFrom: SubjectRoute.rowSource("essay"))
+        #expect(row.zoomSource(reduceMotion: false) == SubjectRoute.rowSource("essay"))
+        #expect(row.zoomSource(reduceMotion: true) == nil)
+        let session = UUID()
+        let fromCard = SubjectRoute(key: "essay", name: "Essay", zoomFrom: session)
+        #expect(fromCard.zoomSource(reduceMotion: false) == AnyHashable(session))
+        // From a ribbon block there's no row to zoom out of.
+        #expect(SubjectRoute(key: "essay", name: "Essay").zoomSource(reduceMotion: false) == nil)
+    }
+}

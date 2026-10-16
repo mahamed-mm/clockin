@@ -88,6 +88,7 @@ struct WeekSubjects: View {
     var filter: SubjectFilter?
     var pick: (SubjectFilter) -> Void = { _ in }
     /// Opens a subject's page, by key and name.
+    var zoom: Namespace.ID?
     var open: ((String, String) -> Void)?
     @Environment(AppServices.self) private var services
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -120,6 +121,7 @@ struct WeekSubjects: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .modifier(ZoomSource(id: page.map { SubjectRoute.rowSource($0.key) }, in: zoom))
         .contextMenu {
             if page != nil {
                 Button(picked ? Copy.showsEverySession : Copy.showInWeek, systemImage: "calendar") { pick(choice) }
@@ -134,6 +136,25 @@ struct WeekSubjects: View {
         .accessibilityActions {
             if page != nil {
                 Button(picked ? Copy.showsEverySession : Copy.showInWeek) { pick(choice) }
+            }
+        }
+    }
+
+    /// The row a subject's page zooms out of.
+    private struct ZoomSource: ViewModifier {
+        let id: AnyHashable?
+        let namespace: Namespace.ID?
+
+        init(id: AnyHashable?, in namespace: Namespace.ID?) {
+            self.id = id
+            self.namespace = namespace
+        }
+
+        func body(content: Content) -> some View {
+            if let id, let namespace {
+                content.matchedTransitionSource(id: id, in: namespace)
+            } else {
+                content
             }
         }
     }

@@ -393,6 +393,8 @@ enum Copy {
         String(localized: "\(sessions(count)) named \(displayName(old)) will be called \(displayName(name)). Its symbol stays.")
     }
     static var merge: String { String(localized: "Merge") }
+    /// A session's long-press: "Open Chemistry".
+    static func openSubject(_ name: String) -> String { String(localized: "Open \(displayName(name))") }
     /// The session card's way to its subject: "All Chemistry sessions".
     static func allSessionsOf(_ name: String) -> String { String(localized: "All \(displayName(name)) sessions") }
     /// A By subject row's hint.
