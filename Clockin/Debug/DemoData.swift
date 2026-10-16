@@ -55,7 +55,8 @@ enum DemoData {
         return book
     }
 
-    /// Today's plan: Chemistry, done this morning, then three still to do.
+    /// Today's plan: Chemistry, done this morning, then three still to do
+    /// (Thesis outline twice).
     static func demoPlan(day: Date, doneToday: [String: UUID]) -> SetPlan {
         var plan = SetPlan(day: day)
         for name in DemoHistory.plan { plan.add(name) }

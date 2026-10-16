@@ -18,8 +18,9 @@ enum DemoHistory {
 
     static let names = ["Chemistry", "Spanish vocab", "Thesis outline", "Linear algebra",
                         "Reading: Dune", "Journaling", "Piano practice", "Emails"]
-    /// Today's plan, as `-DemoData` sets it: the first one done this morning.
-    static let plan = ["Chemistry", "Thesis outline", "Linear algebra", "Piano practice"]
+    /// Today's plan, as `-DemoData` sets it: the first one done this morning,
+    /// and one subject twice.
+    static let plan = ["Chemistry", "Thesis outline", "Linear algebra", "Thesis outline"]
     /// Symbols picked by hand: one overriding its suggestion, one the same as it.
     static let picks = ["Thesis outline": "pencil", "Emails": "envelope.fill"]
 
