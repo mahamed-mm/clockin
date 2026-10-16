@@ -9,6 +9,47 @@ enum FocusLayout {
         guard width > 0 else { return 0 }
         return min(width, max(minimum, viewportHeight - chrome))
     }
+
+    /// Dial beside the controls rather than above them: a wide scene, or one
+    /// on its side. `height` includes the keyboard's space, so opening the
+    /// name or park field never flips the page.
+    static func isWide(width: CGFloat, height: CGFloat) -> Bool {
+        width > 640 || width > height * 1.15
+    }
+
+    /// The size the page lays out to, and whether it's being held. While
+    /// the park field is open, and while the keyboard is still going after
+    /// it, the page keeps the size it had before (`current`), so the dial
+    /// and Tick stay put and the keyboard covers what's below. A new width
+    /// (rotation, a resized scene) or the height coming back lets go.
+    static func layoutViewport(measured: CGSize, current: CGSize, held: Bool,
+                               fieldOpen: Bool) -> (size: CGSize, held: Bool) {
+        let narrower = measured.height < current.height - 0.5
+        guard measured.width == current.width, narrower, fieldOpen || held else { return (measured, false) }
+        return (current, true)
+    }
+
+    /// Where to scroll so `foot` (in the page) sits at the bottom of what's
+    /// visible: down only as far as needed, never past the top.
+    static func keepInSight(foot: CGFloat, visibleHeight: CGFloat, scrolled: CGFloat) -> CGFloat {
+        let needed = foot - visibleHeight
+        return needed > scrolled ? needed : min(scrolled, max(0, needed))
+    }
+
+    /// How far a held page will scroll back down once the keyboard has gone:
+    /// all of it when the page then fits, less when it's still taller.
+    static func scrollUnwind(scrolled: CGFloat, contentHeight: CGFloat, viewportHeight: CGFloat) -> CGFloat {
+        max(0, scrolled - max(0, contentHeight - viewportHeight))
+    }
+
+    /// Where a parked thought lands: on Tick, where it will be once the page
+    /// has scrolled back by `unwind`. Nil when Tick isn't on screen, or
+    /// won't be, so the slip fades where it is instead.
+    static func slipLanding(tick: CGRect, unwind: CGFloat, window: CGRect) -> CGPoint? {
+        guard tick != .zero else { return nil }
+        let landing = CGPoint(x: tick.midX, y: tick.minY + tick.height * 0.3 + unwind)
+        return window.contains(landing) ? landing : nil
+    }
 }
 
 /// Setting the length by dragging the knob round the dial. The face is a

@@ -620,6 +620,8 @@ private struct DialTick: View, Equatable {
                             soundPlaying: services.focusSound.state.isPlaying))
             .equatable()
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { services.tickFrame = $0 }
+            // Off the dial, there's nowhere for a parked thought to fly.
+            .onDisappear { services.tickFrame = .zero }
             .onChange(of: pose, initial: true) { show(pose) }
     }
 

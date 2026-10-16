@@ -36,6 +36,17 @@ struct FocusView: View {
     /// The visible area and what the pieces around the dial take, measured,
     /// so the dial gets what's left and the page scrolls when nothing is.
     @State private var viewport: CGSize = .zero
+    /// The scroll view's own size as last measured. While the park field is
+    /// open the page keeps laying out to the size from before (`viewport`).
+    @State private var measuredViewport: CGSize = .zero
+    @State private var viewportHeld = false
+    @State private var scroll = ScrollPosition()
+    /// How far the page is scrolled and how tall it is, for where a parked
+    /// thought lands once the keyboard has gone.
+    @State private var scrolled: CGFloat = 0
+    @State private var contentHeight: CGFloat = 0
+    /// The whole window, in global space: a slip only flies to a Tick inside it.
+    @State private var window: CGRect = .zero
     @State private var headerHeight: CGFloat = 0
     @State private var slotHeight: CGFloat = 0
     @State private var controlsHeight: CGFloat = 0
@@ -97,6 +108,20 @@ struct FocusView: View {
         .onChange(of: engine.active?.phase) { _, phase in
             if phase != .focus { services.parkFieldOpen = false }
         }
+        .task(id: services.parkFieldOpen) {
+            // Closed: once the keyboard has had time to go, the page lays
+            // out to what it measures again, in case it never came all the way back.
+            guard !services.parkFieldOpen, viewportHeld else { return }
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled, viewportHeld else { return }
+            viewport = measuredViewport
+            viewportHeld = false
+        }
+        .background {
+            Color.clear
+                .ignoresSafeArea()
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { window = $0 }
+        }
 
         .toolbar(bedsideSession == nil ? .visible : .hidden, for: .tabBar)
         .onChange(of: BedsideController.keepsScreenOn(showing: bedsideSession != nil, session: engine.active),
@@ -145,29 +170,46 @@ struct FocusView: View {
 
     // MARK: Parking a thought
 
-    /// Parks the line, then, once the keyboard has gone and the dial has
-    /// grown back, sends a slip from where the field was to Tick, who
-    /// catches it. With Reduce Motion or Low Power Mode the slip just fades
-    /// where it is and Tick stays still.
+    /// Parks the line and sends a slip from where the field was straight to
+    /// Tick, who catches it. The dial kept its size while the field was
+    /// open, so the slip aims for where Tick will be once the page has
+    /// scrolled back. With Reduce Motion or Low Power Mode, or with Tick
+    /// out of sight, the slip just fades where it is and Tick stays still.
     private func parkFromField(_ text: String, from field: CGRect) {
         guard services.parkFromField(text) else { return }
         touched()
         let still = reduceMotion || services.power.isConstrained
         let id = (flight?.id ?? 0) + 1
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(0.35))
-            let tick = services.tickFrame
-            let from = CGPoint(x: field.minX + 40, y: field.midY)
-            let flies = !still && tick != .zero
-            let to = flies ? CGPoint(x: tick.midX, y: tick.minY + tick.height * 0.3) : from
-            if flies { services.catchThought(at: Date.now.addingTimeInterval(TickCatch.flight)) }
-            flight = (id, from, to)
-            flightProgress = 0
-            withAnimation(flies ? .timingCurve(0.3, 0, 0.4, 1, duration: TickCatch.flight) : .easeOut(duration: 0.4)) {
-                flightProgress = 1
-            } completion: {
-                if flight?.id == id { flight = nil }
-            }
+        let from = CGPoint(x: field.minX + 40, y: field.midY)
+        let unwind = FocusLayout.scrollUnwind(scrolled: scrolled, contentHeight: contentHeight,
+                                              viewportHeight: viewport.height)
+        let landing = still ? nil : FocusLayout.slipLanding(tick: services.tickFrame, unwind: unwind, window: window)
+        if landing != nil { services.catchThought(at: Date.now.addingTimeInterval(TickCatch.flight)) }
+        flight = (id, from, landing ?? from)
+        flightProgress = 0
+        withAnimation(landing != nil ? .timingCurve(0.3, 0, 0.4, 1, duration: TickCatch.flight) : .easeOut(duration: 0.4)) {
+            flightProgress = 1
+        } completion: {
+            if flight?.id == id { flight = nil }
+        }
+    }
+
+    /// The park field is open over a focus session.
+    private var parking: Bool { services.parkFieldOpen && engine.active?.phase == .focus }
+
+    /// A new size from the scroll view: laid out to, unless the park field
+    /// holds the page, which then scrolls just enough to keep Tick in sight.
+    private func measure(_ size: CGSize) {
+        measuredViewport = size
+        let laidOut = FocusLayout.layoutViewport(measured: size, current: viewport, held: viewportHeld,
+                                                 fieldOpen: parking)
+        viewport = laidOut.size
+        viewportHeld = laidOut.held
+        if parking, laidOut.held {
+            // The dial's foot, with Tick's feet, just above the field.
+            let foot = Self.margins.top + headerHeight + Self.spacing + dialSide + Space.s
+            let offset = FocusLayout.keepInSight(foot: foot, visibleHeight: size.height, scrolled: scrolled)
+            if offset != scrolled { withAnimation(Motion.calm(reduceMotion)) { scroll.scrollTo(y: offset) } }
         }
     }
 
@@ -217,7 +259,8 @@ struct FocusView: View {
 
     private var standardLayout: some View {
         GeometryReader { geo in
-            let wide = geo.size.width > 640 || geo.size.width > geo.size.height * 1.15
+            // Measured without the keyboard, so typing never turns the page on its side.
+            let wide = FocusLayout.isWide(width: geo.size.width, height: geo.size.height + geo.safeAreaInsets.bottom)
             ZStack {
                 PaperBackground(wash: wash)
                     .paperGrain()
@@ -256,11 +299,16 @@ struct FocusView: View {
     /// so the name field keeps its keyboard and its glass morph; the dial
     /// takes the height left over, and below its minimum the page scrolls,
     /// which keeps Start reachable at the largest text sizes on a small phone.
-    private var compactLayout: some View {
+    /// The compact layout's dial: the height left over, within its bounds.
+    private var dialSide: CGFloat {
         let chrome = headerHeight + slotHeight + controlsHeight + 3 * Self.spacing
             + Self.margins.top + Self.margins.bottom
-        let side = FocusLayout.dialSide(viewportHeight: viewport.height, chrome: chrome, minimum: dialMinimum,
-                                        width: viewport.width - Self.margins.leading - Self.margins.trailing)
+        return FocusLayout.dialSide(viewportHeight: viewport.height, chrome: chrome, minimum: dialMinimum,
+                                    width: viewport.width - Self.margins.leading - Self.margins.trailing)
+    }
+
+    private var compactLayout: some View {
+        let side = dialSide
         return ScrollView {
             VStack(spacing: Self.spacing) {
                 FocusHeader(stage: engine.stage, nextName: sessionName)
@@ -289,11 +337,20 @@ struct FocusView: View {
             .onTapGesture { nameFocused = false }
         }
         .scrollBounceBehavior(.basedOnSize)
-        .scrollDismissesKeyboard(.interactively)
+        .scrollPosition($scroll)
+        // While a thought is being typed, a drag can't take the keyboard
+        // (and the half-typed line) away.
+        .scrollDismissesKeyboard(parking ? .never : .interactively)
         .onScrollPhaseChange { _, phase in
             if phase.isScrolling { touched() }
         }
-        .onGeometryChange(for: CGSize.self) { $0.size } action: { viewport = $0 }
+        .onScrollGeometryChange(for: [CGFloat].self) { geometry in
+            [geometry.contentOffset.y + geometry.contentInsets.top, geometry.contentSize.height]
+        } action: { _, metrics in
+            scrolled = metrics[0]
+            contentHeight = metrics[1]
+        }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { measure($0) }
     }
 
     /// A soft colour wash at the top of the page for each phase.

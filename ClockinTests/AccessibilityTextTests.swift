@@ -77,6 +77,70 @@ struct FocusLayoutTests {
     @Test func nothingIsDrawnBeforeTheFirstMeasurement() {
         #expect(FocusLayout.dialSide(viewportHeight: 0, chrome: 0, minimum: 160, width: 0) == 0)
     }
+
+    private let full = CGSize(width: 402, height: 729)
+    private let withKeyboard = CGSize(width: 402, height: 340)
+
+    @Test func theParkFieldHoldsThePageAtItsSize() {
+        let opened = FocusLayout.layoutViewport(measured: withKeyboard, current: full, held: false, fieldOpen: true)
+        #expect(opened.size == full && opened.held)
+        // The suggestions bar comes and goes: still held.
+        let again = FocusLayout.layoutViewport(measured: CGSize(width: 402, height: 300), current: opened.size,
+                                               held: opened.held, fieldOpen: true)
+        #expect(again.size == full && again.held)
+    }
+
+    @Test func itStaysHeldWhileTheKeyboardLeaves() {
+        let leaving = FocusLayout.layoutViewport(measured: CGSize(width: 402, height: 600), current: full,
+                                                 held: true, fieldOpen: false)
+        #expect(leaving.size == full && leaving.held)
+        let back = FocusLayout.layoutViewport(measured: full, current: full, held: true, fieldOpen: false)
+        #expect(back.size == full && !back.held)
+    }
+
+    @Test func aNewWidthLetsGo() {
+        let rotated = CGSize(width: 874, height: 300)
+        let laidOut = FocusLayout.layoutViewport(measured: rotated, current: full, held: true, fieldOpen: true)
+        #expect(laidOut.size == rotated && !laidOut.held)
+    }
+
+    @Test func otherKeyboardsStillShrinkThePage() {
+        // The name field's keyboard, with no park field: the page follows it as before.
+        let laidOut = FocusLayout.layoutViewport(measured: withKeyboard, current: full, held: false, fieldOpen: false)
+        #expect(laidOut.size == withKeyboard && !laidOut.held)
+    }
+
+    @Test func aHeldPageScrollsBackAsFarAsItWillFit() {
+        // Fits once the keyboard has gone: all the way back.
+        #expect(FocusLayout.scrollUnwind(scrolled: 80, contentHeight: 729, viewportHeight: 729) == 80)
+        // Still 50 taller than the screen at large sizes: it stops there.
+        #expect(FocusLayout.scrollUnwind(scrolled: 80, contentHeight: 779, viewportHeight: 729) == 30)
+        #expect(FocusLayout.scrollUnwind(scrolled: 0, contentHeight: 729, viewportHeight: 729) == 0)
+    }
+
+    @Test func onlyAWideOrSidewaysSceneGoesSideBySide() {
+        #expect(!FocusLayout.isWide(width: 375, height: 583))
+        #expect(FocusLayout.isWide(width: 874, height: 360))
+        #expect(FocusLayout.isWide(width: 700, height: 1000))
+    }
+
+    @Test func theParkFieldScrollsJustEnoughToKeepTickInSight() {
+        // Tick's feet at 520 in the page, 418 visible above the field: down 102.
+        #expect(FocusLayout.keepInSight(foot: 520, visibleHeight: 418, scrolled: 0) == 102)
+        // Already in sight: stays put.
+        #expect(FocusLayout.keepInSight(foot: 400, visibleHeight: 418, scrolled: 0) == 0)
+        // Scrolled further than needed at a large size: back up until the foot is at the bottom.
+        #expect(FocusLayout.keepInSight(foot: 520, visibleHeight: 418, scrolled: 300) == 102)
+    }
+
+    @Test func theSlipLandsWhereTickWillBe() {
+        let window = CGRect(x: 0, y: 0, width: 402, height: 874)
+        let tick = CGRect(x: 280, y: 380, width: 100, height: 100)
+        #expect(FocusLayout.slipLanding(tick: tick, unwind: 60, window: window) == CGPoint(x: 330, y: 470))
+        // Tick off the dial, or out of sight: no flight.
+        #expect(FocusLayout.slipLanding(tick: .zero, unwind: 0, window: window) == nil)
+        #expect(FocusLayout.slipLanding(tick: tick.offsetBy(dx: 0, dy: -500), unwind: 0, window: window) == nil)
+    }
 }
 
 /// With Differentiate Without Color, the session in progress is dashed.
