@@ -353,6 +353,28 @@ enum Copy {
     /// "2 thoughts parked", the chip read aloud.
     static func parkedSpoken(_ count: Int) -> String { String(localized: "\(count) thoughts parked") }
 
+    // MARK: Today's plan
+
+    static var planTheSet: String { String(localized: "Plan the set") }
+    static var planOverline: String { String(localized: "Today") }
+    static var planHint: String { String(localized: "Up to four, in the order you'll do them.") }
+    static var addAName: String { String(localized: "Add a name") }
+    static var clearPlan: String { String(localized: "Clear plan") }
+    static var editPlan: String { String(localized: "Edit plan") }
+    static var todaysPlan: String { String(localized: "Today's plan") }
+    static var moveUp: String { String(localized: "Move up") }
+    static var moveDown: String { String(localized: "Move down") }
+    static var remove: String { String(localized: "Remove") }
+    /// A slot read aloud: "Chemistry, 1 of 4, done".
+    static func planSlotSpoken(_ name: String, position: Int, of count: Int, done: Bool) -> String {
+        done ? String(localized: "\(displayName(name)), \(position) of \(count), done")
+            : String(localized: "\(displayName(name)), \(position) of \(count)")
+    }
+    /// A slot's state in the strip under the name field.
+    static var planDone: String { String(localized: "Done") }
+    static var planInField: String { String(localized: "Up next") }
+    static var putsInField: String { String(localized: "Puts it in the name field") }
+
     // MARK: Tips
 
     static var tipCrownTitle: String { String(localized: "Tick's crown is a button") }

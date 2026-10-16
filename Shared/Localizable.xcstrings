@@ -167,6 +167,38 @@
         }
       }
     },
+    "%@, %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld of %3$lld"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@, %2$lld av %3$lld"
+          }
+        }
+      }
+    },
+    "%@, %lld of %lld, done" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$lld of %3$lld, done"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@, %2$lld av %3$lld, ferdig"
+          }
+        }
+      }
+    },
     "%@, %lld points, %@" : {
       "localizations" : {
         "en" : {
@@ -648,6 +680,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Legg til fem minutter"
+          }
+        }
+      }
+    },
+    "Add a name" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Legg til et navn"
           }
         }
       }
@@ -1171,6 +1213,16 @@
         }
       }
     },
+    "Clear plan" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tøm planen"
+          }
+        }
+      }
+    },
     "Clockin" : {
       "localizations" : {
         "nb" : {
@@ -1403,6 +1455,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Tidlig, med Avslutt nå"
+          }
+        }
+      }
+    },
+    "Edit plan" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Endre planen"
           }
         }
       }
@@ -2107,6 +2169,26 @@
         }
       }
     },
+    "Move down" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Flytt ned"
+          }
+        }
+      }
+    },
+    "Move up" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Flytt opp"
+          }
+        }
+      }
+    },
     "Moves" : {
       "shouldTranslate" : false
     },
@@ -2705,6 +2787,16 @@
         }
       }
     },
+    "Plan the set" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Planlegg settet"
+          }
+        }
+      }
+    },
     "Planned" : {
       "localizations" : {
         "nb" : {
@@ -2754,6 +2846,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Setter den tilbake på listen"
+          }
+        }
+      }
+    },
+    "Puts it in the name field" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Setter det inn i navnefeltet"
           }
         }
       }
@@ -2830,6 +2932,16 @@
     },
     "Reduce Motion" : {
       "shouldTranslate" : false
+    },
+    "Remove" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fjern"
+          }
+        }
+      }
     },
     "Rename" : {
       "localizations" : {
@@ -3805,6 +3917,16 @@
         }
       }
     },
+    "Today's plan" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dagens plan"
+          }
+        }
+      }
+    },
     "Today: %@ of focus" : {
       "localizations" : {
         "nb" : {
@@ -3891,6 +4013,26 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Til %@"
+          }
+        }
+      }
+    },
+    "Up next" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Neste"
+          }
+        }
+      }
+    },
+    "Up to four, in the order you'll do them." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Opptil fire, i den rekkefølgen du tar dem."
           }
         }
       }

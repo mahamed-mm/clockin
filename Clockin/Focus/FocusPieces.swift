@@ -1473,8 +1473,10 @@ struct BreakStyleChips: View {
 // MARK: - Recent names
 
 /// Up to four recent session names under the name field; a tap fills it in.
+/// With `plan`, a first, quieter chip offers to plan today's set.
 struct RecentNames: View {
     let typed: String
+    var plan: (() -> Void)? = nil
     let pick: (String) -> Void
     @Environment(AppServices.self) private var services
     @Query(RecentNames.newestFirst) private var records: [FocusRecord]
@@ -1487,9 +1489,20 @@ struct RecentNames: View {
 
     var body: some View {
         let names = HistoryService.recentNames(records.map(\.name), excluding: typed, limit: 4)
-        if !names.isEmpty {
+        if !names.isEmpty || plan != nil {
             ScrollView(.horizontal) {
                 HStack(spacing: Space.xs) {
+                    // First, so it's found; quiet, so the names still lead.
+                    if let plan {
+                        Button(action: plan) {
+                            Label(Copy.planTheSet, systemImage: "list.bullet")
+                                .font(.retro(.meta))
+                                .foregroundStyle(Retro.inkSoft)
+                                .lineLimit(1)
+                                .retroChip()
+                        }
+                        .buttonStyle(.plain)
+                    }
                     ForEach(names, id: \.self) { name in
                         Button { pick(name) } label: {
                             HStack(spacing: Space.xxs) {

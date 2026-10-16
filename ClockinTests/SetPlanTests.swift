@@ -271,3 +271,49 @@ struct SetPlanServicesTests {
         #expect(String(data: data, encoding: .utf8)?.contains("Chemistry") == false)
     }
 }
+
+/// The plan sheet's recent names and the strip under the name field.
+@MainActor
+struct PlanStripTests {
+    let day = osloCalendar.startOfDay(for: Date(timeIntervalSince1970: 1_800_000_000))
+
+    @Test func recentNamesLeaveOutWhatsStillPlanned() {
+        var plan = SetPlan(day: day)
+        plan.add("Chemistry")
+        plan.add("Thesis")
+        plan.finish(name: "Thesis", session: UUID())
+        let recent = ["chemistry", "Thesis", "Spanish", "Piano", "Emails", "Journal", "Reading", "Algebra"]
+        #expect(plan.suggestions(from: recent) == ["Thesis", "Spanish", "Piano", "Emails", "Journal", "Reading"])
+        plan.add("Spanish")
+        plan.add("Piano")
+        #expect(plan.suggestions(from: recent).isEmpty, "A full plan offers nothing")
+    }
+
+    @Test func eachChipSaysWhereItStands() {
+        var plan = SetPlan(day: day)
+        plan.add("Chemistry")
+        plan.add("Thesis outline")
+        plan.add("Spanish")
+        plan.finish(name: "Chemistry", session: UUID())
+        let slots = plan.slots
+        #expect(PlanStrip.state(of: slots[0], typed: "Chemistry") == .done)
+        #expect(PlanStrip.state(of: slots[1], typed: " thesis OUTLINE") == .inField)
+        #expect(PlanStrip.state(of: slots[2], typed: "Thesis outline") == .toDo)
+        #expect(PlanStrip.state(of: slots[2], typed: "") == .toDo)
+    }
+
+    @Test func theStripReadsAsOneLine() {
+        var plan = SetPlan(day: day)
+        plan.add("Chemistry")
+        plan.add("Thesis outline")
+        plan.add("Spanish")
+        plan.finish(name: "Chemistry", session: UUID())
+        #expect(PlanStrip.spoken(plan, typed: "Thesis outline")
+                == "Today's plan: Chemistry, done; Thesis outline, up next; Spanish")
+    }
+
+    @Test func slotsAreReadWithTheirPlace() {
+        #expect(Copy.planSlotSpoken("Chemistry", position: 1, of: 4, done: true) == "Chemistry, 1 of 4, done")
+        #expect(Copy.planSlotSpoken("Thesis", position: 2, of: 4, done: false) == "Thesis, 2 of 4")
+    }
+}

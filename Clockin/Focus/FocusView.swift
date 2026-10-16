@@ -19,6 +19,16 @@ struct FocusView: View {
     @State private var pickingSymbol = false
     /// The finished session's parked thoughts, opened from their folded row.
     @State private var parkedOpen = false
+    /// The plan sheet is open.
+    @State private var planning = false
+    /// A planned name moving from its chip into the name field, and whether it's there yet.
+    @State private var movingSlot: SetPlan.Slot?
+    @State private var moveLanded = false
+    /// Where the plan's chips and the field's text are, in global space, for the move.
+    @State private var chipFrames: [UUID: CGRect] = [:]
+    @State private var fieldTextFrame: CGRect = .zero
+    /// The field's text, hidden while a planned name moves in, faded in with Reduce Motion.
+    @State private var fieldTextShown = true
     /// The idle screen's hints, one at a time.
     @State private var idleTips = TipGroup(.ordered) {
         CrownTip()
@@ -103,6 +113,7 @@ struct FocusView: View {
                         }
                     }
                     .overlay { slipInFlight }
+                    .overlay { nameInFlight }
             }
         }
         .animation(Motion.calm(reduceMotion), value: services.parkFieldOpen)
@@ -141,11 +152,16 @@ struct FocusView: View {
         .animation(Motion.calm(reduceMotion), value: bedsideSession != nil)
         .onChange(of: engine.stage) { old, new in
             touched()
+            if new == .idle { showHandoff() }
             // A new stage starts with the parked thoughts folded again.
             if old.completedFocus?.id != new.completedFocus?.id { parkedOpen = false }
             // Each first-launch hint goes once its moment has passed.
             if case .idle = old, new != .idle { dialHintSeen = true }
             if case .focusComplete = old, new.completedFocus == nil { welcomeSeen = true }
+        }
+        .sheet(isPresented: $planning) {
+            PlanSheet(day: services.today, initial: services.todaysSet, save: savePlan)
+                .fittedSheet()
         }
         .onChange(of: services.settings.length) {
             dialHintSeen = true
@@ -403,7 +419,13 @@ struct FocusView: View {
                     nameField
                         .glassEffectID("session", in: glass)
                         .glassEffectTransition(.matchedGeometry)
-                    RecentNames(typed: sessionName) { sessionName = $0 }
+                    if let plan = services.todaysSet {
+                        PlanStrip(plan: plan, typed: sessionName, report: { chipFrames[$0] = $1 },
+                                  pick: { moveIntoField($0) }, edit: { planning = true })
+                            .transition(.opacity)
+                    } else {
+                        RecentNames(typed: sessionName, plan: { planning = true }) { sessionName = $0 }
+                    }
                     // Below the field, so the dial (and Tick on it) keeps its room.
                     if let tip = idleTips.currentTip {
                         TipView(tip)
@@ -475,6 +497,83 @@ struct FocusView: View {
         }
     }
 
+    // MARK: Today's plan
+
+    /// A planned name on its way from its chip into the name field: placed
+    /// on the chip's label, then moved by translation, growing to the
+    /// field's size, so nothing is laid out again on the way.
+    @ViewBuilder
+    private var nameInFlight: some View {
+        if let slot = movingSlot, let chip = chipFrames[slot.id], fieldTextFrame != .zero {
+            GeometryReader { proxy in
+                let origin = proxy.frame(in: .global).origin
+                // From the chip's name to the field's text.
+                let from = CGPoint(x: chip.minX - origin.x, y: chip.midY - origin.y)
+                let to = CGPoint(x: fieldTextFrame.minX - origin.x, y: fieldTextFrame.midY - origin.y)
+                let height: CGFloat = 28
+                PlanLabel(name: slot.name, symbol: services.symbol(for: slot.name), large: true, showsSymbol: false)
+                    .fixedSize()
+                    .frame(height: height, alignment: .leading)
+                    .scaleEffect(moveLanded ? 1 : 0.88, anchor: .leading)
+                    .offset(x: moveLanded ? to.x : from.x, y: (moveLanded ? to.y : from.y) - height / 2)
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+
+    /// Puts a planned name in the field, moving it there from its chip after
+    /// `delay`. Reduce Motion fades the field's text in instead; Low Power
+    /// Mode just changes it.
+    private func moveIntoField(_ slot: SetPlan.Slot, after delay: Double = 0) {
+        services.planHandoff = nil
+        sessionName = slot.name
+        if services.power.isConstrained { return }
+        fieldTextShown = false
+        guard !reduceMotion else {
+            withAnimation(Motion.calm(true).delay(delay)) { fieldTextShown = true }
+            return
+        }
+        Task { @MainActor in
+            // Once the screen has settled and the chip is laid out: the label
+            // appears on the chip, then moves.
+            try? await Task.sleep(for: .seconds(delay))
+            movingSlot = slot
+            moveLanded = false
+            try? await Task.sleep(for: .milliseconds(50))
+            withAnimation(Motion.calm(false)) {
+                moveLanded = true
+            } completion: {
+                guard movingSlot?.id == slot.id else { return }
+                movingSlot = nil
+                withAnimation(Motion.snappy(false)) { fieldTextShown = true }
+            }
+        }
+    }
+
+    /// The plan sheet closed: with nothing in the field yet, the first
+    /// planned name moves into it.
+    private func savePlan(_ plan: SetPlan?) {
+        services.editSet(plan)
+        guard ActiveSession.cleanName(sessionName).isEmpty, engine.stage == .idle,
+              let next = services.nextPlanned else { return }
+        moveIntoField(next, after: 0.35 * Motion.speed)
+    }
+
+    /// Back on the idle screen after a planned session: the next planned
+    /// name, already in the field, moves in from the plan once the screen
+    /// has settled. Not if the field has been changed since.
+    private func showHandoff() {
+        guard engine.stage == .idle, let id = services.planHandoff,
+              let slot = services.todaysSet?.slots.first(where: { $0.id == id }) else { return }
+        guard SymbolBook.key(for: sessionName) == SymbolBook.key(for: slot.name) else {
+            services.planHandoff = nil
+            return
+        }
+        moveIntoField(slot, after: 0.45 * Motion.speed)
+    }
+
     private func toggleThought(_ thought: ParkedThought) {
         services.setThoughtDone(thought.done != true, thought.id)
     }
@@ -485,6 +584,8 @@ struct FocusView: View {
             TextField("What are you focusing on?", text: $sessionName)
                 .font(.retro(.body))
                 .foregroundStyle(Retro.ink)
+                .opacity(fieldTextShown ? 1 : 0)
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { fieldTextFrame = $0 }
                 .submitLabel(.go)
                 .focused($nameFocused)
                 .onSubmit(start)
