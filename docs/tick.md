@@ -56,7 +56,7 @@ A break is rest, a stretch or breathing (Settings › Break › During breaks, o
 ## Waiting, watching and catching
 
 - **Fidgets.** Ready and idle, Tick fidgets on its own beat (`FidgetSchedule` in `Shared/Mascot/TickFidget.swift`): it taps or polishes its crown, checks the dial, stretches, looks round, and from 20:00 yawns. Each Tick's seed sets the order and the 8–20 s gaps between them, never the same kind twice in a row, so it doesn't read as a loop. Frames are drawn only during a fidget, the same as a blink. Never during focus, asleep or hello; dozing after ten minutes still comes from `TickDirector`.
-- **Watching.** While the knob is dragged Tick's eyes follow it round the dial (`TickAttention`, with the face's new `gazeY`), and the brow goes up at 5 and 60. While a name is typed it glances at the field and nods when the name finds its symbol. The face springs there and back, so this only draws while it moves; Reduce Motion and Low Power Mode keep Tick still. (With the keyboard up, today's iPhones shrink the dial below the size where Tick shows, so the glance and nod are mostly unseen there.)
+- **Watching.** While the knob is dragged Tick's eyes follow it round the dial (`TickAttention`, with the face's new `gazeY`), and the brow goes up at 5 and 60. While a name is typed it glances at the field and nods when the name finds its symbol. The face springs there and back, so this only draws while it moves; Reduce Motion and Low Power Mode keep Tick still. (With the name field's keyboard up, today's iPhones shrink the dial below the size where Tick shows, so the glance and nod are mostly unseen there. The park field is different: the page keeps its size, so Tick stays to catch the thought.)
 - **Catching.** A parked thought flies to Tick as a slip of paper (`ParkedSlip`, an Animatable curve), and Tick reaches up, catches it and tucks it away (`TickCatch`, 0.9 s of frames). Mid-combo it just nods so the round isn't broken. With Reduce Motion or Low Power Mode the slip fades where it is and Tick stays still.
 - **Headphones.** In Calm and Off, Tick wears its headphones only while a focus sound plays; the workout always has them.
 
@@ -114,7 +114,9 @@ So stretching and breathing cost no more than resting.
 
 **Idle with fidgets:** about 5% averaged over 30 s in the simulator, close to the old fixed crown tap's 6%; between fidgets nothing is drawn.
 
-**Sounds and paper:** the timer's sounds are system sounds (`SystemTimerSounds`): loaded once, no audio session, nothing running between them. The paper grain is a Metal `colorEffect` (`Clockin/Design/PaperGrain.metal`) with no time input, so it's drawn with the page and never on its own; the dial's Bakelite shine is one static stroke on its track. The widget and Live Activity keep plain paper: they're drawn by the system from an archived view, often tinted or clear, where a grain would be flattened or lost.
+**Sounds and paper:** the timer's sounds are system sounds (`SystemTimerSounds`): loaded once, no audio session, nothing running between them. The paper grain is a Metal `colorEffect` (`Clockin/Design/PaperGrain.metal`) with no time input, so it's drawn with the page and never on its own; the dial's Bakelite shine is one static stroke on its track. The widget and Live Activity keep plain paper: they're drawn by the system from an archived view, often tinted or clear, where a grain would be flattened or lost. The week's postcard is drawn once with `ImageRenderer`, and the grain comes through there (a test checks the paper isn't one flat shade); Tick on it is a still `TickFigure`: feet up with the mug for a finished week, ready for this one, never a jump or a streak.
+
+**Moving names and ticks:** a planned name moving into the name field, the pen line through a ticked-off thought and a subject's page zooming open each draw frames only while they move, and stand still with Reduce Motion and in Low Power Mode.
 
 ## Checking on a phone
 
