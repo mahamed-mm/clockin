@@ -5,7 +5,7 @@ import SwiftData
 /// Fills an empty store with six believable weeks of focus sessions
 /// (`DemoHistory`), for screenshots. Runs only with the `-DemoData` launch
 /// argument, and only when no sessions are saved yet, so it can never mix
-/// with real history.
+/// with real history. Also plans today's set.
 enum DemoData {
     static var isRequested: Bool { ProcessInfo.processInfo.arguments.contains("-DemoData") }
 
@@ -13,15 +13,28 @@ enum DemoData {
     static func seedIfRequested(into services: AppServices, now: Date = DemoClock.now) {
         let context = services.container.mainContext
         guard isRequested, (try? context.fetchCount(FetchDescriptor<FocusRecord>())) == 0 else { return }
+        let today = services.calendar.startOfDay(for: now)
+        var doneToday: [String: UUID] = [:]
         for session in DemoHistory.make(now: now, calendar: services.calendar) {
-            context.insert(FocusRecord(id: UUID(), name: session.name, startedAt: session.startedAt,
+            let id = UUID()
+            context.insert(FocusRecord(id: id, name: session.name, startedAt: session.startedAt,
                                        completedAt: session.completedAt, focusSeconds: session.focusSeconds,
                                        plannedSeconds: session.plannedSeconds,
                                        timeZoneIdentifier: services.calendar.timeZone.identifier,
                                        outcome: session.outcome))
+            if session.completedAt >= today { doneToday[session.name] = id }
         }
         try? context.save()
         for (name, symbol) in DemoHistory.picks { services.setSymbol(symbol, for: name) }
+        services.editSet(demoPlan(day: today, doneToday: doneToday))
+    }
+
+    /// Today's plan: Chemistry, done this morning, then three still to do.
+    static func demoPlan(day: Date, doneToday: [String: UUID]) -> SetPlan {
+        var plan = SetPlan(day: day)
+        for name in DemoHistory.plan { plan.add(name) }
+        if let chemistry = doneToday["Chemistry"] { plan.finish(name: "Chemistry", session: chemistry) }
+        return plan
     }
 
     /// `-DemoSound rain` (or tickTock, brownNoise, fireplace, off): the focus

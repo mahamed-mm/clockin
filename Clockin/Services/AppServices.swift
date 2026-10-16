@@ -87,6 +87,15 @@ final class AppServices: SessionEffects {
         didSet { if symbolBook != oldValue { symbolStore.save(symbolBook) } }
     }
 
+    /// The optional plan for today's set. Dropped quietly when the day moves on.
+    private(set) var plannedSet: SetPlan? {
+        didSet { if plannedSet != oldValue { planStore.save(plannedSet) } }
+    }
+    @ObservationIgnored private let planStore: SetPlanStoring
+    /// The slot whose name just went into the name field when a session
+    /// finished, for the Focus screen to show it moving there. Cleared once shown.
+    var planHandoff: UUID?
+
     /// Sessions deleted from History moments ago, so they can be put back.
     /// Cleared when the undo window closes.
     private(set) var undoableDeletion: [CompletedFocus] = []
@@ -136,6 +145,7 @@ final class AppServices: SessionEffects {
          settingsStore: SettingsStoring = InMemorySettingsStore(),
          symbolStore: SymbolBookStoring = InMemorySymbolBookStore(),
          thoughtStore: ThoughtStoring = InMemoryThoughtStore(),
+         planStore: SetPlanStoring = InMemorySetPlanStore(),
          power: PowerState? = nil,
          orientation: OrientationRequesting = SystemOrientation(),
          now: @escaping () -> Date = Date.init,
@@ -170,6 +180,7 @@ final class AppServices: SessionEffects {
         self.settingsStore = settingsStore
         self.symbolStore = symbolStore
         self.thoughtStore = thoughtStore
+        self.planStore = planStore
         self.power = power ?? PowerState(read: { false })
         bedside = BedsideController(orientation: orientation)
         self.schedulesTimers = schedulesCompletion
@@ -178,6 +189,7 @@ final class AppServices: SessionEffects {
         symbolBook = symbolStore.load()
         thoughts = thoughtStore.load()
         today = calendar.startOfDay(for: now())
+        plannedSet = planStore.load()
         let log: FocusLogging = historyUnavailable ? UnavailableFocusLog() : SwiftDataFocusLog(container: container)
         engine = SessionEngine(now: now, calendar: calendar, store: stateStore, log: log,
                                schedulesCompletion: schedulesCompletion)
@@ -202,6 +214,7 @@ final class AppServices: SessionEffects {
         let services = AppServices(container: container, historyUnavailable: historyUnavailable,
                                    stateStore: DefaultsSessionStateStore(), settingsStore: DefaultsSettingsStore(),
                                    symbolStore: DefaultsSymbolBookStore(), thoughtStore: FileThoughtStore(),
+                                   planStore: DefaultsSetPlanStore(),
                                    power: PowerState(),
                                    liveActivity: LiveActivityController(), notifications: EndNotifier(),
                                    alarm: EndAlarm(), mindful: MindfulMinutes(), widgets: SystemWidgets(),
@@ -274,6 +287,7 @@ final class AppServices: SessionEffects {
         if let sound = TimerSound.for(event) { playSound(sound) }
         if let fade = FocusSoundFade.for(event) { focusSound.follow(focusSoundCue, fade: fade, chosen: false) }
         keepThoughts(after: event)
+        tickPlan(after: event)
         noteForTips(event)
         switch event {
         case .started, .resumed, .breakStarted, .restored, .extended:
@@ -457,6 +471,56 @@ final class AppServices: SessionEffects {
         }
     }
 
+    // MARK: Today's plan
+
+    /// The plan, if it's today's.
+    var todaysSet: SetPlan? {
+        guard let plannedSet, plannedSet.isFor(day: today, calendar: calendar) else { return nil }
+        return plannedSet
+    }
+
+    /// The next planned session, if there's a plan with one still to do.
+    var nextPlanned: SetPlan.Slot? { todaysSet?.next }
+
+    /// What comes after a session called `name`: the next planned one, or the same again.
+    func nextName(after name: String) -> String { nextPlanned?.name ?? name }
+
+    /// The plan sheet's changes. An empty plan is no plan.
+    func editSet(_ plan: SetPlan?) {
+        let edited = plan.flatMap { $0.isEmpty ? nil : $0 }
+        guard edited != plannedSet else { return }
+        plannedSet = edited
+        planChanged()
+    }
+
+    /// "Next" is said in more places than the app: the Lock Screen during a
+    /// break, the break's alert and the widget.
+    private func planChanged() {
+        resyncSurfaces()
+    }
+
+    /// A finished focus session ticks its planned slot, on the day it
+    /// finished, and puts the next planned name in the field.
+    private func tickPlan(after event: SessionEvent) {
+        switch event {
+        case .focusCompleted, .finishedEarly: break
+        default: return
+        }
+        guard let focus = engine.stage.completedFocus, var plan = plannedSet,
+              plan.isFor(day: focus.completedAt, calendar: calendar),
+              plan.finish(name: focus.name, session: focus.id) else { return }
+        plannedSet = plan
+        if let next = plan.next {
+            setLastSessionName(next.name)
+            planHandoff = next.id
+        }
+    }
+
+    /// Yesterday's plan goes without a word.
+    private func dropStalePlan() {
+        if let plannedSet, !plannedSet.isFor(day: today, calendar: calendar) { self.plannedSet = nil }
+    }
+
     // MARK: Focus sound
 
     /// What should be playing now: the running focus session's sound, if it has one.
@@ -523,7 +587,16 @@ final class AppServices: SessionEffects {
     /// Undo for a delete has run out: what's gone stays gone, with its
     /// symbols and parked thoughts.
     func expireDeletion() {
+        let gone = Set(undoableDeletion.map(\.id))
         undoableDeletion = []
+        // A planned slot those sessions ticked is to do again.
+        if var plan = plannedSet, !gone.isEmpty {
+            plan.reopen(sessions: gone)
+            if plan != plannedSet {
+                plannedSet = plan
+                planChanged()
+            }
+        }
         pruneSymbols()
         pruneThoughts()
     }
@@ -579,6 +652,8 @@ final class AppServices: SessionEffects {
             }
             if let moment = engine.breakOver { names.insert(moment.name) }
             names.insert(lastSessionName())
+            // Planned and not yet run: a symbol picked for it is kept.
+            names.formUnion(plannedSet?.slots.map(\.name) ?? [])
             symbolBook.prune(keeping: names)
         } catch {
             Log.store.error("Couldn't read names to tidy symbols: \(error, privacy: .public)")
@@ -599,6 +674,7 @@ final class AppServices: SessionEffects {
         clearUndoableDeletion()
         symbolBook = SymbolBook()
         thoughts = ThoughtBook()
+        plannedSet = nil
         historyChanged()
     }
 
@@ -636,6 +712,7 @@ final class AppServices: SessionEffects {
 
     /// Restores the engine at launch, then clears anything it no longer explains.
     func restore() {
+        dropStalePlan()
         engine.restore()
         endOrphanedActivities()
         // An alarm left from a session that's gone. One ringing for a finished
@@ -947,6 +1024,7 @@ final class AppServices: SessionEffects {
         let start = calendar.startOfDay(for: engine.now())
         guard start != today else { return false }
         today = start
+        dropStalePlan()
         return true
     }
 
