@@ -30,6 +30,14 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     var writtenAt: Date
     /// The week the snapshot was written in. Nil in older snapshots.
     var week: [Day]?
+    /// The next planned session, for the large widget. Nil without a plan
+    /// and in older snapshots.
+    var next: NextUp?
+
+    /// The next planned session at `date`: only on the day it was planned.
+    func next(at date: Date, calendar: Calendar = .autoupdatingCurrent) -> NextUp? {
+        calendar.isDate(writtenAt, inSameDayAs: date) ? next : nil
+    }
 
     init(rows: [FocusRow], writtenAt: Date) {
         sessions = rows.map {

@@ -5,7 +5,8 @@ import UserNotifications
 protocol EndNotifying: AnyObject {
     /// `completedToday` (full focus sessions so far) lets a break's alert say
     /// which session comes next; nothing is saved during a break, so it holds.
-    func schedule(for session: ActiveSession, completedToday: Int)
+    /// `nextName` is the next planned session, when there's a plan.
+    func schedule(for session: ActiveSession, completedToday: Int, nextName: String?)
     func cancel()
     func authorizationStatus() async -> UNAuthorizationStatus
     /// Waits until a schedule still in flight has reached the system.
@@ -28,10 +29,10 @@ final class EndNotifier: EndNotifying {
     /// at launch, then schedules the alert for the phase's end. Once permission
     /// is known, the request goes out in the caller's turn, which matters when
     /// a Lock Screen intent resumes the session and the app may be suspended next.
-    func schedule(for session: ActiveSession, completedToday: Int) {
+    func schedule(for session: ActiveSession, completedToday: Int, nextName: String?) {
         cancel()
         guard let end = session.endDate, end.timeIntervalSinceNow > 1 else { return }
-        let content = Self.content(for: session, completedToday: completedToday)
+        let content = Self.content(for: session, completedToday: completedToday, nextName: nextName)
         if isAuthorized {
             add(content, endingAt: end)
             return
@@ -93,7 +94,8 @@ final class EndNotifier: EndNotifying {
         }
     }
 
-    static func content(for session: ActiveSession, completedToday: Int) -> UNMutableNotificationContent {
+    static func content(for session: ActiveSession, completedToday: Int,
+                        nextName: String? = nil) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         switch session.phase {
         case .focus:
@@ -102,7 +104,7 @@ final class EndNotifier: EndNotifying {
             content.body = Copy.breakLine(seconds: session.nextBreakSeconds ?? Preset.classic.shortBreak)
         case .rest:
             content.title = Copy.breakOver
-            content.subtitle = BreakOverMoment.nextLine(name: session.name, fullToday: completedToday,
+            content.subtitle = BreakOverMoment.nextLine(name: nextName ?? session.name, fullToday: completedToday,
                                                         afterLong: session.isLongBreak == true)
             content.body = Copy.readyWhenYouAre
         }

@@ -30,10 +30,18 @@ struct FocusHeader: View {
                 // being recent; everything else is a stage change.
                 LiveTimeline(TickSchedule(wakeDates: metaChanges)) { context in
                     if let line = meta(at: context.date) {
-                        let meta = Text(line)
-                            .font(.retro(.meta))
-                            .foregroundStyle(Retro.inkSoft)
-                            .contentTransition(.numericText())
+                        // Break's over leads with the next session's symbol.
+                        let meta = HStack(alignment: .firstTextBaseline, spacing: Space.xxs) {
+                            if engine.breakOver != nil, stage == .idle {
+                                Image(systemName: services.symbol(for: nextName))
+                                    .foregroundStyle(Retro.inkSoft)
+                                    .accessibilityHidden(true)
+                            }
+                            Text(line)
+                                .contentTransition(.numericText())
+                        }
+                        .font(.retro(.meta))
+                        .foregroundStyle(Retro.inkSoft)
                         // One line when it fits, today's total under it when not.
                         ViewThatFits(in: .horizontal) {
                             HStack(spacing: Space.xs) {

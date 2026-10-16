@@ -13,6 +13,8 @@ struct TodayEntry: TimelineEntry {
     /// For the large widget: the week so far, and today's sessions, newest first.
     var week: [DayTotal] = []
     var sessions: [WidgetSnapshot.Session] = []
+    /// The next planned session, while today's plan has one to do.
+    var next: NextUp?
 }
 
 struct TodayProvider: TimelineProvider {
@@ -44,9 +46,11 @@ struct TodayProvider: TimelineProvider {
                 session.symbol = session.symbol ?? book.symbol(for: session.name ?? "")
                 return session
             }
+            // While a focus session runs, it's the one being done, not next.
+            let next = stillRunning?.phase == .focus ? nil : snapshot.next(at: date)
             return TodayEntry(date: date, stats: snapshot.stats(at: date, active: active), active: stillRunning,
                               symbol: symbol, face: ControlFace(state: state, now: date),
-                              week: snapshot.week(at: date, active: active), sessions: sessions)
+                              week: snapshot.week(at: date, active: active), sessions: sessions, next: next)
         }
     }
 

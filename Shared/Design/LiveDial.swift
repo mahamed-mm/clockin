@@ -234,7 +234,8 @@ struct LiveNextAction: View {
                                  title: Copy.startBreakShort, symbol: "cup.and.saucer.fill", tint: Retro.avocado,
                                  iconOnly: iconOnly, height: height)
             } else {
-                LiveActionButton(intent: StartFocusIntent(name: sessionName), title: Copy.startFocus,
+                // The next planned session, or the same one again.
+                LiveActionButton(intent: StartFocusIntent(name: state.next?.name ?? sessionName), title: Copy.startFocus,
                                  symbol: "play.fill", tint: Retro.orange, iconOnly: iconOnly, height: height)
             }
         } else if state.phase == .focus, state.canExtend == true {

@@ -317,3 +317,104 @@ struct PlanStripTests {
         #expect(Copy.planSlotSpoken("Thesis", position: 2, of: 4, done: false) == "Thesis, 2 of 4")
     }
 }
+
+/// The plan's next session wherever "next" is said: the break's card and
+/// alert, quick actions and the large widget.
+@MainActor
+struct PlanNextTests {
+    let clock = FakeClock()
+    let live = SpyLiveActivity()
+    let notifier = SpyNotifier()
+    let widgets = SpyWidgets()
+
+    func makeServices() -> AppServices {
+        let services = AppServices(container: AppServices.makeEmptyContainer(), stateStore: InMemorySessionStateStore(),
+                                   planStore: InMemorySetPlanStore(), now: { [clock] in clock.now },
+                                   calendar: osloCalendar, schedulesCompletion: false,
+                                   liveActivity: live, notifications: notifier, widgets: widgets,
+                                   haptics: SpyHaptics(), announce: { _ in })
+        var field = ""
+        services.lastSessionName = { field }
+        services.setLastSessionName = { field = $0 }
+        return services
+    }
+
+    func plan(_ services: AppServices, _ names: [String]) {
+        var plan = SetPlan(day: services.today)
+        for name in names { plan.add(name) }
+        services.editSet(plan)
+    }
+
+    @Test func aBreakCarriesTheNextPlannedSession() {
+        let services = makeServices()
+        plan(services, ["Chemistry", "Thesis"])
+        services.engine.start(name: "Chemistry")
+        clock.advance(Preset.classic.focus)
+        services.reconcile()
+        services.engine.startBreak()
+        #expect(live.lastNext?.name == "Thesis")
+        #expect(notifier.nextName == "Thesis")
+        // A plan changed during the break: the card and the alert follow.
+        plan(services, ["Chemistry", "Piano"])
+        #expect(live.lastNext?.name == "Chemistry")
+        #expect(notifier.nextName == "Chemistry")
+    }
+
+    @Test func focusNeverCarriesANextName() {
+        let services = makeServices()
+        plan(services, ["Chemistry"])
+        services.engine.start(name: "Emails")
+        #expect(live.lastNext == nil)
+        #expect(notifier.nextName == nil)
+    }
+
+    @Test func withoutAPlanABreakStartsTheSameAgain() {
+        let services = makeServices()
+        services.engine.start(name: "Essay")
+        clock.advance(Preset.classic.focus)
+        services.reconcile()
+        services.engine.startBreak()
+        #expect(live.lastNext == nil)
+        #expect(notifier.nextName == nil)
+    }
+
+    @Test func theBreaksCardAndAlertNameIt() {
+        let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let rest = ActiveSession(id: UUID(), name: "Chemistry", phase: .rest, plannedDuration: 300,
+                                 focusStartedAt: start, state: .running(endDate: start.addingTimeInterval(300)))
+        let next = NextUp(name: "Thesis", symbol: "graduationcap.fill")
+        let card = FocusActivityAttributes.ContentState(session: rest, completedToday: 1, breakDuration: 300, next: next)
+        #expect(card.doneLine == "Next: Thesis · session 2 of 4")
+        let plain = FocusActivityAttributes.ContentState(session: rest, completedToday: 1, breakDuration: 300)
+        #expect(plain.doneLine == "Next: session 2 of 4")
+        #expect(EndNotifier.content(for: rest, completedToday: 1, nextName: "Thesis").subtitle
+                == "Next: Thesis · session 2 of 4")
+        #expect(EndNotifier.content(for: rest, completedToday: 1).subtitle == "Next: Chemistry · session 2 of 4")
+    }
+
+    @Test func olderCardsAndSnapshotsLoadWithoutIt() throws {
+        let rest = #"{"phase":"rest","plannedDuration":300,"endDate":0}"#
+        let card = try JSONDecoder().decode(FocusActivityAttributes.ContentState.self, from: Data(rest.utf8))
+        #expect(card.next == nil)
+        let snapshot = #"{"sessions":[],"writtenAt":0}"#
+        #expect(try JSONDecoder().decode(WidgetSnapshot.self, from: Data(snapshot.utf8)).next == nil)
+    }
+
+    @Test func theWidgetShowsItOnlyOnItsDay() {
+        let services = makeServices()
+        plan(services, ["Chemistry"])
+        let snapshot = services.widgetSnapshot()
+        #expect(snapshot.next?.name == "Chemistry")
+        #expect(snapshot.next(at: clock.now, calendar: osloCalendar)?.name == "Chemistry")
+        #expect(snapshot.next(at: clock.now.addingTimeInterval(2 * 86_400), calendar: osloCalendar) == nil)
+    }
+
+    @Test func theNextPlannedSessionIsTheFirstQuickAction() {
+        #expect(QuickAction.available(focusing: false, next: "Chemistry", recentNames: ["Essay", "Piano"])
+                == [.start(name: "Chemistry"), .start(name: "Essay"), .history])
+        #expect(QuickAction.available(focusing: false, next: "essay", recentNames: ["Essay", "Piano"])
+                == [.start(name: "essay"), .start(name: "Piano"), .history])
+        #expect(QuickAction.available(focusing: true, next: "Chemistry", recentNames: ["Essay"])
+                == [.pause, .park, .history])
+    }
+}

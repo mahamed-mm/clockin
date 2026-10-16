@@ -169,8 +169,8 @@ struct FocusView: View {
             engine.dismissBreakOver()
         }
         .onChange(of: engine.breakOver?.endedAt, initial: true) {
-            // Break's over: the next session is the last one again.
-            if let name = engine.breakOver?.name, !name.isEmpty { sessionName = name }
+            // Break's over: the next planned session, or the last one again.
+            if let name = engine.breakOver?.name, !name.isEmpty { sessionName = services.nextName(after: name) }
         }
         .task(id: engine.breakOverEnds) {
             // Ten minutes on, or at midnight, it goes back to plain waiting.

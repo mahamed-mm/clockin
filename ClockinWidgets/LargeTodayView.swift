@@ -31,6 +31,18 @@ struct LargeTodayView: View {
                     .font(.retro(.meta))
                     .foregroundStyle(Retro.inkSoft)
                     .accessibilityHidden(true)
+                if let next = entry.next {
+                    // Today's plan: what comes next, one quiet line.
+                    HStack(spacing: 4) {
+                        Image(systemName: next.symbol)
+                            .font(.caption.weight(.semibold))
+                            .accessibilityHidden(true)
+                        Text(Copy.nextName(next.name))
+                            .lineLimit(1)
+                    }
+                    .font(.retro(.meta))
+                    .foregroundStyle(Retro.ink)
+                }
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 8) {
@@ -55,7 +67,8 @@ struct LargeTodayView: View {
                     .font(.retro(.body))
                     .foregroundStyle(Retro.inkSoft)
             }
-            let shown = entry.sessions.prefix(entry.active == nil ? Self.rows : Self.rows - 1)
+            // One row fewer for the active line, and one for the plan's next line.
+            let shown = entry.sessions.prefix(Self.rows - (entry.active == nil ? 0 : 1) - (entry.next == nil ? 0 : 1))
             ForEach(Array(shown), id: \.id) { session in
                 row(session)
             }

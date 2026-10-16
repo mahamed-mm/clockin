@@ -27,6 +27,10 @@ struct FocusActivityAttributes: ActivityAttributes {
         /// Break only: how it's spent, sent again when a chip changes it.
         /// Optional for older activities, which rest.
         var breakStyle: BreakStyle?
+        /// Break only: the next planned session, for Start focus and the
+        /// line under the name once it's over. Nil without a plan, and in
+        /// older activities, which start the same name again.
+        var next: NextUp?
 
         var isPaused: Bool { pausedRemaining != nil }
 
@@ -49,7 +53,12 @@ struct FocusActivityAttributes: ActivityAttributes {
         var doneLine: String {
             switch phase {
             case .focus: Copy.breakLine(seconds: breakDuration ?? Preset.classic.shortBreak)
-            case .rest: BreakOverMoment.nextCardLine(fullToday: completedToday ?? 0, afterLong: isLongBreak == true)
+            case .rest:
+                if let next {
+                    BreakOverMoment.nextLine(name: next.name, fullToday: completedToday ?? 0, afterLong: isLongBreak == true)
+                } else {
+                    BreakOverMoment.nextCardLine(fullToday: completedToday ?? 0, afterLong: isLongBreak == true)
+                }
             }
         }
 
@@ -60,7 +69,7 @@ struct FocusActivityAttributes: ActivityAttributes {
         }
 
         init(session: ActiveSession, completedToday: Int? = nil, breakDuration: TimeInterval? = nil,
-             symbol: String? = nil, canExtend: Bool? = nil) {
+             symbol: String? = nil, canExtend: Bool? = nil, next: NextUp? = nil) {
             phase = session.phase
             plannedDuration = session.plannedDuration
             self.completedToday = completedToday
@@ -69,6 +78,7 @@ struct FocusActivityAttributes: ActivityAttributes {
             self.canExtend = canExtend
             isLongBreak = session.isLongBreak
             breakStyle = session.phase == .rest ? session.breakStyle : nil
+            self.next = session.phase == .rest ? next : nil
             switch session.state {
             case .running(let end):
                 endDate = end

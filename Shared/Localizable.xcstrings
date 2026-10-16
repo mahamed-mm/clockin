@@ -2245,6 +2245,16 @@
         }
       }
     },
+    "Next: %@" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Neste: %@"
+          }
+        }
+      }
+    },
     "Next: %@ · new set" : {
       "localizations" : {
         "nb" : {

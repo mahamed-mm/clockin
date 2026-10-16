@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 /// The Home Screen's quick actions (touch and hold the icon): when idle,
-/// start one of the last two sessions again, or open History; during focus,
+/// start the next planned session or one of the last ones again, or open History; during focus,
 /// pause, park a thought, or open History. Never a thought's text.
 enum QuickAction: Equatable, Sendable {
     case start(name: String)
@@ -36,10 +36,12 @@ enum QuickAction: Equatable, Sendable {
         self.init(type: item.type, userInfo: item.userInfo)
     }
 
-    /// What the icon offers now.
-    static func available(focusing: Bool, recentNames: [String]) -> [QuickAction] {
+    /// What the icon offers now: the next planned session first, if
+    /// there's a plan, then recent names, two in all.
+    static func available(focusing: Bool, next: String? = nil, recentNames: [String]) -> [QuickAction] {
         if focusing { return [.pause, .park, .history] }
-        return recentNames.prefix(2).map { .start(name: $0) } + [.history]
+        let names = HistoryService.recentNames((next.map { [$0] } ?? []) + recentNames, excluding: "", limit: 2)
+        return names.map { .start(name: $0) } + [.history]
     }
 
     var title: String {

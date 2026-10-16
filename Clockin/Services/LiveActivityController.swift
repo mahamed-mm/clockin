@@ -5,7 +5,7 @@ import Foundation
 @MainActor
 protocol LiveActivityControlling: AnyObject {
     func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String,
-              canExtend: Bool)
+              canExtend: Bool, next: NextUp?)
     /// Turns the session's card to a "focus done" note naming the break it
     /// earned, with Start break. With `lingers` it stays on the Lock Screen,
     /// still live so its button works, until the user moves on; without, it
@@ -28,10 +28,10 @@ final class LiveActivityController: LiveActivityControlling {
     private var queue: Task<Void, Never>?
 
     func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String,
-              canExtend: Bool) {
+              canExtend: Bool, next: NextUp?) {
         let state = FocusActivityAttributes.ContentState(session: session, completedToday: completedToday,
                                                          breakDuration: breakDuration, symbol: symbol,
-                                                         canExtend: canExtend ? true : nil)
+                                                         canExtend: canExtend ? true : nil, next: next)
         let content = ActivityContent(state: state, staleDate: session.endDate)
         // Capped here too, for a long name saved by a build that didn't cap.
         let attributes = FocusActivityAttributes(sessionName: ActiveSession.cleanName(session.name),

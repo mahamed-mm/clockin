@@ -59,12 +59,14 @@ final class SpyLiveActivity: LiveActivityControlling {
     var lastSymbol: String?
     var lastCanExtend: Bool?
     var lastSession: ActiveSession?
+    var lastNext: NextUp?
     var enabled = true
     var flushes = 0
 
     func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String,
-              canExtend: Bool) {
+              canExtend: Bool, next: NextUp?) {
         calls.append("sync")
+        lastNext = next
         lastSession = session
         lastSymbol = symbol
         lastCanExtend = canExtend
@@ -91,10 +93,13 @@ final class SpyNotifier: EndNotifying {
 
     /// The count the last schedule was given.
     var completedToday: Int?
+    /// The next planned name the last schedule was given.
+    var nextName: String?
 
-    func schedule(for session: ActiveSession, completedToday: Int) {
+    func schedule(for session: ActiveSession, completedToday: Int, nextName: String?) {
         calls.append("schedule")
         self.completedToday = completedToday
+        self.nextName = nextName
     }
     func cancel() { calls.append("cancel") }
     func authorizationStatus() async -> UNAuthorizationStatus { status }

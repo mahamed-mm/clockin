@@ -356,6 +356,8 @@ enum Copy {
     // MARK: Today's plan
 
     static var planTheSet: String { String(localized: "Plan the set") }
+    /// The large widget's line for today's plan: "Next: Chemistry".
+    static func nextName(_ name: String) -> String { String(localized: "Next: \(displayName(name))") }
     static var planOverline: String { String(localized: "Today") }
     static var planHint: String { String(localized: "Up to four, in the order you'll do them.") }
     static var addAName: String { String(localized: "Add a name") }

@@ -357,8 +357,9 @@ final class AppServices: SessionEffects {
 
     /// Refreshes the Home Screen icon's quick actions for what's going on now.
     func refreshQuickActions() {
-        let recent = (try? history?.recentNames(limit: 2)) ?? []
-        let actions = QuickAction.available(focusing: engine.active?.phase == .focus, recentNames: recent)
+        let recent = (try? history?.recentNames(limit: 3)) ?? []
+        let actions = QuickAction.available(focusing: engine.active?.phase == .focus, next: nextPlanned?.name,
+                                            recentNames: recent)
         UIApplication.shared.shortcutItems = actions.map { $0.shortcutItem(symbol: symbol(for:)) }
     }
 
@@ -368,7 +369,10 @@ final class AppServices: SessionEffects {
         engine.reconcile()
         switch action {
         case .start(let name):
-            if !engine.hasActiveSession { engine.start(name: name) }
+            guard !engine.hasActiveSession else { break }
+            // The field follows, so the screen and what's next agree.
+            setLastSessionName(name)
+            engine.start(name: name)
         case .pause:
             engine.pause()
         case .park:
@@ -481,6 +485,9 @@ final class AppServices: SessionEffects {
 
     /// The next planned session, if there's a plan with one still to do.
     var nextPlanned: SetPlan.Slot? { todaysSet?.next }
+
+    /// The next planned session with its symbol, for the Lock Screen and the widget.
+    var nextUp: NextUp? { nextPlanned.map { NextUp(name: $0.name, symbol: symbol(for: $0.name)) } }
 
     /// What comes after a session called `name`: the next planned one, or the same again.
     func nextName(after name: String) -> String { nextPlanned?.name ?? name }
@@ -821,7 +828,8 @@ final class AppServices: SessionEffects {
             alarm.schedule(for: session)
         } else {
             alarm.cancel()
-            notifications.schedule(for: session, completedToday: completedToday)
+            notifications.schedule(for: session, completedToday: completedToday,
+                                   nextName: session.phase == .rest ? nextPlanned?.name : nil)
         }
     }
 
@@ -1042,7 +1050,8 @@ final class AppServices: SessionEffects {
         liveActivity.sync(with: session, completedToday: completedToday,
                           breakDuration: session.nextBreakSeconds ?? plan.shortBreak,
                           symbol: symbol(for: session.name),
-                          canExtend: session.phase == .focus && engine.canExtend(at: now))
+                          canExtend: session.phase == .focus && engine.canExtend(at: now),
+                          next: session.phase == .rest ? nextUp : nil)
         scheduleExtendOffer(for: session, now: now)
     }
 
@@ -1086,7 +1095,9 @@ final class AppServices: SessionEffects {
             predicate: FocusRecord.completed(in: week)))) ?? []
         let totals = TodayStats.weekTotals(saved: weekRecords.map(\.row), pending: engine.pendingRecords,
                                            containing: now, calendar: calendar)
-        return WidgetSnapshot(sessions: sessions, week: totals, writtenAt: now)
+        var snapshot = WidgetSnapshot(sessions: sessions, week: totals, writtenAt: now)
+        snapshot.next = nextUp
+        return snapshot
     }
 
     /// Focus sessions finished today, saved or waiting.
@@ -1122,13 +1133,13 @@ final class AppServices: SessionEffects {
 @MainActor
 private final class SilentEffects: LiveActivityControlling, EndNotifying, WidgetReloading, CompletionFeedback {
     func sync(with session: ActiveSession, completedToday: Int, breakDuration: TimeInterval, symbol: String,
-              canExtend: Bool) {}
+              canExtend: Bool, next: NextUp?) {}
     func showFocusDone(completedToday: Int, breakDuration: TimeInterval, lingers: Bool) {}
     func showBreakDone() {}
     func endAll() {}
     func areActivitiesEnabled() async -> Bool { true }
     func flush() async {}
-    func schedule(for session: ActiveSession, completedToday: Int) {}
+    func schedule(for session: ActiveSession, completedToday: Int, nextName: String?) {}
     func cancel() {}
     func authorizationStatus() async -> UNAuthorizationStatus { .authorized }
     func reload(with snapshot: WidgetSnapshot) {}
