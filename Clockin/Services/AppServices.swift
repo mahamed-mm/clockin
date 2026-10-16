@@ -39,6 +39,25 @@ enum AlertStatus: Equatable, Sendable {
     case alarmsOff
 }
 
+/// A History change that can be undone for a few seconds.
+enum HistoryUndo: Equatable {
+    case deletion([CompletedFocus])
+    case rename(SubjectRename)
+}
+
+/// What "Rename everywhere" changed, to put back.
+struct SubjectRename: Equatable {
+    /// The new name, for the undo bar.
+    var name: String
+    /// Saved sessions' old names, by id.
+    var records: [UUID: String]
+    var engine: SessionEngine.NameChanges
+    /// The two names' symbol picks before, by key.
+    var symbols: [String: String?]
+    var plan: SetPlan?
+    var field: String
+}
+
 /// Wires the engine to its side effects: Live Activity, notifications,
 /// widget reloads, the completion haptic, and VoiceOver announcements.
 @MainActor
@@ -96,9 +115,15 @@ final class AppServices: SessionEffects {
     /// finished, for the Focus screen to show it moving there. Cleared once shown.
     var planHandoff: UUID?
 
+    /// The History change made moments ago that can still be undone: the
+    /// newest only, as one bar shows it. Cleared when the undo window closes.
+    private(set) var historyUndo: HistoryUndo?
+
     /// Sessions deleted from History moments ago, so they can be put back.
-    /// Cleared when the undo window closes.
-    private(set) var undoableDeletion: [CompletedFocus] = []
+    var undoableDeletion: [CompletedFocus] {
+        if case .deletion(let sessions)? = historyUndo { return sessions }
+        return []
+    }
 
     /// The lengths a new session gets: Settings, or seconds-long test timers.
     var plan: TimerPlan {
@@ -135,7 +160,7 @@ final class AppServices: SessionEffects {
     /// Nil when the store couldn't be opened: History can't be changed then.
     @ObservationIgnored let history: HistoryService?
     @ObservationIgnored private let schedulesTimers: Bool
-    @ObservationIgnored private var deletionExpiry: Task<Void, Never>?
+    @ObservationIgnored private var historyUndoExpiry: Task<Void, Never>?
     @ObservationIgnored private var extendOffer: Task<Void, Never>?
     @ObservationIgnored private var timeObservers: [NSObjectProtocol] = []
 
@@ -572,30 +597,64 @@ final class AppServices: SessionEffects {
     /// for a few seconds (longer with assistive technologies).
     func deleteSessions(_ ids: Set<UUID>) {
         guard let history, !ids.isEmpty else { return }
+        let removed: [CompletedFocus]
         do {
-            undoableDeletion = try history.delete(ids: ids)
+            removed = try history.delete(ids: ids)
         } catch {
             Log.store.error("Couldn't delete sessions: \(error, privacy: .public)")
             return
         }
+        settleHistoryUndo()
+        historyUndo = .deletion(removed)
         if writesHealth { mindful.remove(ids: Array(ids)) }
         historyChanged()
         announce(String(localized: "Session deleted. Undo is available for a few seconds."))
+        openHistoryUndoWindow()
+    }
+
+    /// Undo stays on offer for a few seconds (longer with assistive technologies).
+    private func openHistoryUndoWindow() {
         let window = engine.undoWindow()
-        deletionExpiry?.cancel()
+        historyUndoExpiry?.cancel()
         guard schedulesTimers else { return }
-        deletionExpiry = Task { [weak self] in
+        historyUndoExpiry = Task { [weak self] in
             try? await Task.sleep(for: .seconds(window))
             guard !Task.isCancelled else { return }
-            self?.expireDeletion()
+            self?.expireHistoryUndo()
+        }
+    }
+
+    /// Undo has run out: the change stands.
+    func expireHistoryUndo() {
+        switch historyUndo {
+        case .deletion: expireDeletion()
+        case .rename: historyUndo = nil
+        case nil: break
+        }
+    }
+
+    /// A newer change takes the undo bar: the one before stands now.
+    private func settleHistoryUndo() {
+        historyUndoExpiry?.cancel()
+        historyUndoExpiry = nil
+        expireHistoryUndo()
+    }
+
+    /// Puts back whatever the bar offers.
+    func undoHistoryChange() {
+        switch historyUndo {
+        case .deletion: undoDelete()
+        case .rename(let rename): undoRename(rename)
+        case nil: break
         }
     }
 
     /// Undo for a delete has run out: what's gone stays gone, with its
     /// symbols and parked thoughts.
     func expireDeletion() {
-        let gone = Set(undoableDeletion.map(\.id))
-        undoableDeletion = []
+        guard case .deletion(let removed)? = historyUndo else { return }
+        let gone = Set(removed.map(\.id))
+        historyUndo = nil
         // A planned slot those sessions ticked is to do again.
         if var plan = plannedSet, !gone.isEmpty {
             plan.reopen(sessions: gone)
@@ -610,14 +669,88 @@ final class AppServices: SessionEffects {
 
     func undoDelete() {
         guard let history, !undoableDeletion.isEmpty else { return }
+        let removed = undoableDeletion
         do {
-            try history.restore(undoableDeletion)
+            try history.restore(removed)
         } catch {
             Log.store.error("Couldn't put deleted sessions back: \(error, privacy: .public)")
             return
         }
-        if writesHealth { undoableDeletion.forEach(mindful.save) }
+        if writesHealth { removed.forEach(mindful.save) }
         clearUndoableDeletion()
+        historyChanged()
+    }
+
+    // MARK: Rename everywhere
+
+    /// Every session called `key` (as `SymbolBook.key`) is now `name`: in
+    /// History, the session running or waiting to be saved, today's plan and
+    /// the name field; the symbol follows. If `name` is another subject's,
+    /// the two become one. Undo puts it all back. False when nothing could
+    /// be renamed (a blank name, or History can't be changed).
+    @discardableResult
+    func renameSubject(key: String, to name: String) -> Bool {
+        let cleaned = ActiveSession.cleanName(name)
+        let newKey = SymbolBook.key(for: cleaned)
+        guard let history, !key.isEmpty, !newKey.isEmpty else { return false }
+        let merges = mergesInto(cleaned, from: key)
+        let records: [UUID: String]
+        do {
+            records = try history.renameAll(history.spellings(of: key), to: cleaned)
+        } catch {
+            Log.store.error("Couldn't rename a subject: \(error, privacy: .public)")
+            return false
+        }
+        settleHistoryUndo()
+        // Both names' picks as they were (one name when only the spelling changes).
+        var symbols: [String: String?] = [:]
+        for name in [key, newKey] { symbols.updateValue(symbolBook.picks[name], forKey: name) }
+        let planBefore = plannedSet
+        let fieldBefore = lastSessionName()
+        let shown = symbolBook.symbol(for: key)
+        symbolBook.rename(from: key, to: cleaned)
+        // The symbol it showed goes with it, even one only suggested by the
+        // old name; merging into another subject keeps that one's.
+        if !merges, symbolBook.picks[newKey] == nil, shown != SymbolCatalog.unnamed {
+            symbolBook.pick(shown, for: cleaned)
+        }
+        let engineChanges = engine.rename(key: key, to: cleaned)
+        if var plan = plannedSet {
+            plan.rename(key: key, to: cleaned)
+            plannedSet = plan
+        }
+        if SymbolBook.key(for: fieldBefore) == key { setLastSessionName(cleaned) }
+        historyUndo = .rename(SubjectRename(name: cleaned, records: records, engine: engineChanges,
+                                            symbols: symbols, plan: planBefore, field: fieldBefore))
+        historyChanged()
+        // A break's alert names what's next, which may have been renamed.
+        if let session = engine.active, session.phase == .rest { scheduleEndAlert(for: session) }
+        announce(String(localized: "Renamed to \(Copy.displayName(cleaned)). Undo is available for a few seconds."))
+        openHistoryUndoWindow()
+        return true
+    }
+
+    /// Whether `name` is already another subject's, so renaming to it merges the two.
+    func mergesInto(_ name: String, from key: String) -> Bool {
+        let newKey = SymbolBook.key(for: name)
+        guard !newKey.isEmpty, newKey != key, let history else { return false }
+        return !((try? history.spellings(of: newKey)) ?? []).isEmpty
+    }
+
+    private func undoRename(_ rename: SubjectRename) {
+        do {
+            try history?.restoreNames(rename.records)
+        } catch {
+            Log.store.error("Couldn't put names back: \(error, privacy: .public)")
+            return
+        }
+        clearUndoableDeletion()
+        engine.restoreNames(rename.engine)
+        var book = symbolBook
+        for (key, pick) in rename.symbols { book.picks[key] = pick }
+        symbolBook = book
+        if rename.plan == nil || rename.plan?.isFor(day: today, calendar: calendar) == true { plannedSet = rename.plan }
+        if lastSessionName() == rename.name { setLastSessionName(rename.field) }
         historyChanged()
     }
 
@@ -709,10 +842,12 @@ final class AppServices: SessionEffects {
         refreshWidgets()
     }
 
+    /// Undo is gone without the change being settled: it was undone, or
+    /// History was erased or restored.
     private func clearUndoableDeletion() {
-        deletionExpiry?.cancel()
-        deletionExpiry = nil
-        undoableDeletion = []
+        historyUndoExpiry?.cancel()
+        historyUndoExpiry = nil
+        historyUndo = nil
     }
 
     // MARK: Lifecycle

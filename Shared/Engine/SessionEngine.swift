@@ -414,6 +414,80 @@ final class SessionEngine {
         return thought
     }
 
+    /// What a rename changed in the sessions the engine holds, so Undo can
+    /// put each name back exactly.
+    struct NameChanges: Equatable, Sendable {
+        /// Old names, by session id: the running or finished session, ones
+        /// waiting to be saved, and the one Undo would bring back.
+        var byID: [UUID: String] = [:]
+        /// The "Break's over" moment's old name.
+        var breakOver: String?
+
+        var isEmpty: Bool { byID.isEmpty && breakOver == nil }
+    }
+
+    /// Every subject called `key` (as `SymbolBook.key`) is now called `name`:
+    /// the session running or just finished, ones waiting to be saved, the
+    /// one Undo would bring back and the "Break's over" moment. Names only:
+    /// no date, length or phase changes, no event, and an open Undo stays open.
+    @discardableResult
+    func rename(key: String, to name: String) -> NameChanges {
+        let cleaned = ActiveSession.cleanName(name)
+        guard !key.isEmpty, !cleaned.isEmpty else { return NameChanges() }
+        var changes = NameChanges()
+        func renamed(_ old: String, id: UUID) -> String {
+            guard SymbolBook.key(for: old) == key, old != cleaned else { return old }
+            changes.byID[id] = changes.byID[id] ?? old
+            return cleaned
+        }
+        rewriteNames({ renamed($0, id: $1) }, breakOver: { old in
+            guard SymbolBook.key(for: old) == key, old != cleaned else { return old }
+            changes.breakOver = old
+            return cleaned
+        })
+        return changes
+    }
+
+    /// Puts names back as they were before `rename(key:to:)`.
+    func restoreNames(_ changes: NameChanges) {
+        guard !changes.isEmpty else { return }
+        rewriteNames({ old, id in changes.byID[id] ?? old }, breakOver: { changes.breakOver ?? $0 })
+    }
+
+    private func rewriteNames(_ names: (String, UUID) -> String, breakOver newBreakOver: (String) -> String) {
+        switch stage {
+        case .idle: break
+        case .active(var session):
+            session.name = names(session.name, session.id)
+            stage = .active(session)
+        case .focusComplete(var focus):
+            focus.name = names(focus.name, focus.id)
+            stage = .focusComplete(focus)
+        }
+        pendingRecords = pendingRecords.map { focus in
+            var focus = focus
+            focus.name = names(focus.name, focus.id)
+            return focus
+        }
+        switch undoable {
+        case .cancel(var session):
+            session.name = names(session.name, session.id)
+            undoable = .cancel(session)
+        case .skip(var session):
+            session.name = names(session.name, session.id)
+            undoable = .skip(session)
+        case .dismiss(var focus):
+            focus.name = names(focus.name, focus.id)
+            undoable = .dismiss(focus)
+        case nil: break
+        }
+        if var moment = breakOver {
+            moment.name = newBreakOver(moment.name)
+            breakOver = moment
+        }
+        persist()
+    }
+
     /// Plays another sound through this focus session, or none. Nothing
     /// about its time changes, so nothing outside the app hears of it.
     func setFocusSound(_ sound: FocusSound) {

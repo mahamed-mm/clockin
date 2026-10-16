@@ -6,19 +6,29 @@ import SwiftUI
 /// latest sessions and the thoughts still open from them. Facts only:
 /// nothing to beat, nothing compared.
 struct SubjectPage: View {
-    let route: SubjectRoute
+    /// The subject shown: the route it was opened with, until it's renamed.
+    @State private var route: SubjectRoute
     /// Opens a session's card.
     let open: (OpenedCard) -> Void
     /// Back to the week, showing only this subject.
-    let showInWeek: () -> Void
+    let showInWeek: (SubjectRoute) -> Void
     @Environment(AppServices.self) private var services
     /// Every spelling of the name, looked up once the page opens.
     @State private var spellings: Set<String>?
 
+    init(route: SubjectRoute, open: @escaping (OpenedCard) -> Void,
+         showInWeek: @escaping (SubjectRoute) -> Void) {
+        _route = State(initialValue: route)
+        self.open = open
+        self.showInWeek = showInWeek
+    }
+
     var body: some View {
         Group {
             if let spellings {
-                SubjectPageContent(route: route, spellings: spellings, open: open, showInWeek: showInWeek)
+                SubjectPageContent(route: route, spellings: spellings, open: open,
+                                   showInWeek: { showInWeek(route) }, renamed: renamed)
+                    .id(route.key)
             } else {
                 Color.clear
             }
@@ -30,24 +40,35 @@ struct SubjectPage: View {
             spellings = (try? services.history?.spellings(of: route.key)) ?? [route.name]
         }
     }
+
+    /// Renamed everywhere: the page follows the new name.
+    private func renamed(_ name: String) {
+        route = SubjectRoute(key: SymbolBook.key(for: name), name: ActiveSession.cleanName(name),
+                             zoomFrom: route.zoomFrom)
+    }
 }
 
 private struct SubjectPageContent: View {
     let route: SubjectRoute
     let open: (OpenedCard) -> Void
     let showInWeek: () -> Void
+    let renamed: (String) -> Void
     @Query private var records: [FocusRecord]
     @Environment(AppServices.self) private var services
     @Environment(SessionEngine.self) private var engine
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.showFocus) private var showFocus
     @ScaledMetric(relativeTo: .title) private var badge: CGFloat = 52
+    @State private var renaming = false
+    @State private var pickingSymbol = false
 
     init(route: SubjectRoute, spellings: Set<String>, open: @escaping (OpenedCard) -> Void,
-         showInWeek: @escaping () -> Void) {
+         showInWeek: @escaping () -> Void, renamed: @escaping (String) -> Void) {
         self.route = route
         self.open = open
         self.showInWeek = showInWeek
+        self.renamed = renamed
         _records = Query(filter: #Predicate<FocusRecord> { spellings.contains($0.name) },
                          sort: \.completedAt, order: .reverse)
     }
@@ -111,14 +132,48 @@ private struct SubjectPageContent: View {
                     .foregroundStyle(Retro.inkSoft)
                     .accessibilityLabel(Copy.subjectHabit(part: part, length: TimeFormat.spokenDuration(length)))
             }
-            Button(Copy.showInWeek, systemImage: "calendar", action: showInWeek)
-                .font(.retro(.meta).weight(.semibold))
-                .foregroundStyle(Retro.orangeText)
-                .buttonStyle(.borderless)
-                .frame(minHeight: 44)
+            actions(history)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, Space.xs)
+        .sheet(isPresented: $renaming) {
+            RenameSubjectSheet(key: route.key, name: history.name, sessions: history.sessionCount,
+                               symbol: services.symbol(for: history.name), renamed: renamed)
+                .fittedSheet()
+        }
+        .sheet(isPresented: $pickingSymbol) {
+            SubjectSymbolSheet(name: history.name)
+                .fittedSheet()
+        }
+    }
+
+    /// Start again, Change symbol, Rename everywhere and Show in week: quiet
+    /// text buttons that wrap onto more lines as the text grows.
+    private func actions(_ history: SubjectHistory) -> some View {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
+            : AnyLayout(HStackLayout(spacing: Space.l))
+        return VStack(alignment: .leading, spacing: 0) {
+            layout {
+                action(Copy.startAgain, symbol: "arrow.counterclockwise") {
+                    if services.prepareFocus(name: history.name, planned: history.lastPlanned) { showFocus() }
+                }
+                .disabled(engine.active != nil)
+                action(Copy.showInWeek, symbol: "calendar", run: showInWeek)
+            }
+            layout {
+                action(Copy.changeSymbol, symbol: "square.grid.2x2") { pickingSymbol = true }
+                action(Copy.renameEverywhere, symbol: "pencil") { renaming = true }
+            }
+        }
+    }
+
+    private func action(_ title: String, symbol: String, run: @escaping () -> Void) -> some View {
+        Button(title, systemImage: symbol, action: run)
+            .font(.retro(.meta).weight(.semibold))
+            .foregroundStyle(Retro.orangeText)
+            .buttonStyle(.borderless)
+            .frame(minHeight: 44)
     }
 
     // MARK: Months

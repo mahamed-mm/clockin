@@ -18,6 +18,8 @@ struct SessionCard: View {
     let setSymbol: (String) -> Void
     /// Deletes the session; History offers Undo.
     let delete: () -> Void
+    /// Opens the page of every session with this name, once the card has gone.
+    var allSessions: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var mode: Mode
@@ -26,7 +28,7 @@ struct SessionCard: View {
 
     init(summary: SessionSummary, now: Date, calendar: Calendar, symbol: String, thoughts: [ParkedThought] = [],
          opening mode: Mode = .viewing, rename: @escaping (String) -> Void, setSymbol: @escaping (String) -> Void,
-         delete: @escaping () -> Void) {
+         delete: @escaping () -> Void, allSessions: (() -> Void)? = nil) {
         self.summary = summary
         self.now = now
         self.calendar = calendar
@@ -35,6 +37,7 @@ struct SessionCard: View {
         self.rename = rename
         self.setSymbol = setSymbol
         self.delete = delete
+        self.allSessions = allSessions
         _mode = State(initialValue: mode)
         _draft = State(initialValue: mode == .renaming ? summary.name : "")
     }
@@ -97,6 +100,12 @@ struct SessionCard: View {
                 }
                 if !SymbolBook.key(for: summary.name).isEmpty {
                     CardAction(title: Copy.changeSymbol) { mode = .pickingSymbol }
+                }
+                if let allSessions {
+                    CardAction(title: Copy.allSessionsOf(summary.name)) {
+                        allSessions()
+                        dismiss()
+                    }
                 }
                 CardAction(title: String(localized: "Delete session"), role: .destructive) {
                     dismiss()

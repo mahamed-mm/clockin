@@ -29,6 +29,8 @@ struct HistoryView: View {
     @State private var subjectFilter: SubjectFilter?
     /// Subject pages opened from the week.
     @State private var path: [SubjectRoute] = []
+    /// A subject page to open once the session card it was asked for from has gone.
+    @State private var subjectAfterCard: SubjectRoute?
 
     private static var newestFirst: FetchDescriptor<FocusRecord> { firstRecord(order: .reverse) }
     private static var oldestFirst: FetchDescriptor<FocusRecord> { firstRecord(order: .forward) }
@@ -97,22 +99,28 @@ struct HistoryView: View {
                 .scrollContentBackground(.hidden)
             }
             .navigationDestination(for: SubjectRoute.self) { route in
-                SubjectPage(route: route, open: { opened = $0 }) {
+                SubjectPage(route: route, open: { opened = $0 }) { shown in
                     // Back to the week, showing only this subject.
-                    subjectFilter = .subject(key: route.key, name: route.name)
+                    subjectFilter = .subject(key: shown.key, name: shown.name)
                     mode = .week
                     path.removeAll()
                 }
             }
             .onAppear { ClockinTips.note(ClockinTips.historyOpened) }
-            .sheet(item: $opened) { card in
+            .sheet(item: $opened, onDismiss: openSubjectAfterCard) { card in
                 let summary = card.summary
+                let key = SymbolBook.key(for: summary.name)
                 SessionCard(summary: summary, now: services.today, calendar: services.calendar,
                             symbol: services.symbol(for: summary.name),
                             thoughts: services.thoughts.thoughts(for: summary.id), opening: card.mode,
                             rename: { services.renameSession(summary.id, to: $0) },
                             setSymbol: { services.setSymbol($0, for: summary.name) },
-                            delete: { services.deleteSessions([summary.id]) })
+                            delete: { services.deleteSessions([summary.id]) },
+                            // Not from the subject's own page: it's already open.
+                            allSessions: key.isEmpty || path.last?.key == key ? nil : {
+                                subjectAfterCard = SubjectRoute(key: key, name: summary.name,
+                                                                zoomFrom: card.fromRow ? summary.id.uuidString : nil)
+                            })
                     .fittedSheet()
                     .modifier(ZoomFromRow(id: card.id, in: zoom, enabled: card.fromRow && !reduceMotion))
             }
@@ -120,17 +128,34 @@ struct HistoryView: View {
             .contentMargins(.horizontal, Space.gutter, for: .scrollContent)
             .background(PaperBackground().paperGrain())
             .toolbar(.hidden, for: .navigationBar)
-            .safeAreaInset(edge: .bottom) {
-                if !services.undoableDeletion.isEmpty {
-                    UndoBar(message: String(localized: "Session deleted"),
-                            hint: String(localized: "Puts the session back"), undo: services.undoDelete)
-                        .padding(.horizontal, Space.l)
-                        .glassEffect(.regular, in: .capsule)
-                        .padding(.bottom, Space.xs)
-                        .transition(.bar(reduceMotion))
-                }
+        }
+        // On the week and on a subject's page alike.
+        .safeAreaInset(edge: .bottom) {
+            if let undo = services.historyUndo {
+                UndoBar(message: undoMessage(undo).message, hint: undoMessage(undo).hint,
+                        undo: services.undoHistoryChange)
+                    .padding(.horizontal, Space.l)
+                    .glassEffect(.regular, in: .capsule)
+                    .padding(.bottom, Space.xs)
+                    .transition(.bar(reduceMotion))
             }
-            .animation(Motion.calm(reduceMotion), value: services.undoableDeletion.isEmpty)
+        }
+        .animation(Motion.calm(reduceMotion), value: services.historyUndo == nil)
+    }
+
+    private func openSubjectAfterCard() {
+        guard let route = subjectAfterCard else { return }
+        subjectAfterCard = nil
+        path.append(route)
+    }
+
+    /// What the undo bar says for the change it can put back.
+    private func undoMessage(_ undo: HistoryUndo) -> (message: String, hint: String) {
+        switch undo {
+        case .deletion:
+            (String(localized: "Session deleted"), String(localized: "Puts the session back"))
+        case .rename(let rename):
+            (Copy.renamedTo(rename.name), Copy.putsNamesBack)
         }
     }
 

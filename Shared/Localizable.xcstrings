@@ -37,6 +37,22 @@
         }
       }
     },
+    "%@ named %@ will be called %@. Its symbol stays." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ named %2$@ will be called %3$@. Its symbol stays."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@ som heter %2$@, får navnet %3$@. Symbolet blir værende."
+          }
+        }
+      }
+    },
     "%@ of focus today" : {
       "localizations" : {
         "nb" : {
@@ -793,6 +809,26 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Varsler av"
+          }
+        }
+      }
+    },
+    "All %@ sessions" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle %@-økter"
+          }
+        }
+      }
+    },
+    "All %@ with this name, and any running now." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle %@ med dette navnet, og en som pågår nå."
           }
         }
       }
@@ -2122,6 +2158,26 @@
         }
       }
     },
+    "Merge" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Slå sammen"
+          }
+        }
+      }
+    },
+    "Merge into %@?" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Slå sammen med %@?"
+          }
+        }
+      }
+    },
     "Minutes" : {
       "localizations" : {
         "nb" : {
@@ -2943,6 +2999,16 @@
         }
       }
     },
+    "Puts the old names back" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Setter tilbake de gamle navnene"
+          }
+        }
+      }
+    },
     "Puts the session back" : {
       "localizations" : {
         "nb" : {
@@ -3042,6 +3108,36 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Gi nytt navn"
+          }
+        }
+      }
+    },
+    "Rename everywhere" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gi nytt navn overalt"
+          }
+        }
+      }
+    },
+    "Renamed to %@" : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nytt navn: %@"
+          }
+        }
+      }
+    },
+    "Renamed to %@. Undo is available for a few seconds." : {
+      "localizations" : {
+        "nb" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nytt navn: %@. Du kan angre i noen sekunder."
           }
         }
       }

@@ -378,6 +378,23 @@ enum Copy {
     static var recentSessions: String { String(localized: "Recent sessions") }
     static var openThoughtsTitle: String { String(localized: "Open thoughts") }
     static var showInWeek: String { String(localized: "Show in week") }
+    static var startAgain: String { String(localized: "Start again") }
+    static var renameEverywhere: String { String(localized: "Rename everywhere") }
+    /// The undo bar after Rename everywhere: "Renamed to Chemistry".
+    static func renamedTo(_ name: String) -> String { String(localized: "Renamed to \(displayName(name))") }
+    static var putsNamesBack: String { String(localized: "Puts the old names back") }
+    /// Under the rename field: every session with the name changes.
+    static func renameEverywhereNote(_ count: Int) -> String {
+        String(localized: "All \(sessions(count)) with this name, and any running now.")
+    }
+    /// Renaming into another subject's name.
+    static func mergeTitle(_ name: String) -> String { String(localized: "Merge into \(displayName(name))?") }
+    static func mergeNote(_ count: Int, from old: String, into name: String) -> String {
+        String(localized: "\(sessions(count)) named \(displayName(old)) will be called \(displayName(name)). Its symbol stays.")
+    }
+    static var merge: String { String(localized: "Merge") }
+    /// The session card's way to its subject: "All Chemistry sessions".
+    static func allSessionsOf(_ name: String) -> String { String(localized: "All \(displayName(name)) sessions") }
     /// A By subject row's hint.
     static func opensSubject(_ name: String) -> String { String(localized: "Opens \(displayName(name))'s page") }
 

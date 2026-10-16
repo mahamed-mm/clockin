@@ -43,6 +43,32 @@ final class HistoryService {
         return Set(try context.fetch(descriptor).map(\.name))
     }
 
+    /// Renames every session spelled one of `spellings`, in one save, and
+    /// returns each one's old name by id, to put back.
+    @discardableResult
+    func renameAll(_ spellings: Set<String>, to name: String) throws -> [UUID: String] {
+        let cleaned = ActiveSession.cleanName(name)
+        guard !spellings.isEmpty, !cleaned.isEmpty else { return [:] }
+        let records = try context.fetch(FetchDescriptor<FocusRecord>(predicate: #Predicate { spellings.contains($0.name) }))
+        var old: [UUID: String] = [:]
+        for record in records where record.name != cleaned {
+            old[record.id] = record.name
+            record.name = cleaned
+        }
+        try save()
+        return old
+    }
+
+    /// Puts names back by session id, in one save. Sessions gone since are skipped.
+    func restoreNames(_ names: [UUID: String]) throws {
+        guard !names.isEmpty else { return }
+        let ids = Set(names.keys)
+        for record in try context.fetch(FetchDescriptor<FocusRecord>(predicate: #Predicate { ids.contains($0.id) })) {
+            if let name = names[record.id] { record.name = name }
+        }
+        try save()
+    }
+
     /// Every spelling saved for a subject: the names whose `SymbolBook.key`
     /// is `key`. SwiftData can't fold case in a query, so the names alone
     /// are fetched and matched here.
