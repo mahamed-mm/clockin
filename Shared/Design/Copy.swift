@@ -354,13 +354,15 @@ enum Copy {
     // MARK: A subject's page
 
     /// "4 h 35 min over 11 sessions since 3 August."
-    static func subjectTotal(seconds: TimeInterval, sessions count: Int, since date: Date) -> String {
-        let since = date.formatted(.dateTime.day().month(.wide))
+    static func subjectTotal(seconds: TimeInterval, sessions count: Int, since date: Date,
+                             locale: Locale = .autoupdatingCurrent) -> String {
+        let since = date.formatted(Date.FormatStyle(locale: locale).day().month(.wide))
         return String(localized: "\(TimeFormat.duration(seconds)) over \(sessions(count)) since \(since).")
     }
     /// The same, read aloud: durations in words.
-    static func subjectTotalSpoken(seconds: TimeInterval, sessions count: Int, since date: Date) -> String {
-        let since = date.formatted(.dateTime.day().month(.wide))
+    static func subjectTotalSpoken(seconds: TimeInterval, sessions count: Int, since date: Date,
+                                   locale: Locale = .autoupdatingCurrent) -> String {
+        let since = date.formatted(Date.FormatStyle(locale: locale).day().month(.wide))
         return String(localized: "\(TimeFormat.spokenDuration(seconds)) over \(sessions(count)) since \(since).")
     }
     /// "Usually in the morning, about 25 min."
