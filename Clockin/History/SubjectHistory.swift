@@ -21,8 +21,8 @@ struct SubjectRoute: Hashable {
 
 /// Everything saved under one subject (a name, matched the way symbols are,
 /// ignoring case, width and extra spaces), as facts: how much, since when,
-/// when in the day and how long, the last three months, the latest
-/// sessions. Never a best, a streak or a comparison. Pure, so it can be tested.
+/// when in the day and how long, the latest sessions, the last three
+/// months. Never a best, a streak or a comparison. Pure, so it can be tested.
 struct SubjectHistory: Equatable {
     struct Session: Equatable, Identifiable {
         var id: UUID
@@ -76,11 +76,11 @@ struct SubjectHistory: Equatable {
         return max(step, (median / step).rounded() * step)
     }
 
-    /// The last three months, oldest first, each as its days with this
+    /// The last three months, this one first, each as its days with this
     /// subject's sessions in them.
     func months(endingAt today: Date, calendar: Calendar) -> [(month: DateInterval, days: [Date: DayTotal])] {
         let thisMonth = calendar.monthInterval(containing: today)
-        return (0..<Self.monthCount).reversed().compactMap { back in
+        return (0..<Self.monthCount).compactMap { back in
             guard let start = calendar.date(byAdding: .month, value: -back, to: thisMonth.start) else { return nil }
             let month = calendar.monthInterval(containing: start)
             var days: [Date: DayTotal] = [:]

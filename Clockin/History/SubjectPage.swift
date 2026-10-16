@@ -2,9 +2,10 @@ import SwiftData
 import SwiftUI
 
 /// One subject's page in History: facts about everything saved under its
-/// name, the last three months as small dials for this subject alone, the
-/// latest sessions and the thoughts still open from them. Facts only:
-/// nothing to beat, nothing compared.
+/// name, the latest sessions, the thoughts still open from them, then the
+/// last three months as small dials for this subject alone, this month
+/// first and the older two folded. Facts only: nothing to beat, nothing
+/// compared.
 struct SubjectPage: View {
     /// The subject shown: the route it was opened with, until it's renamed.
     @State private var route: SubjectRoute
@@ -90,12 +91,15 @@ private struct SubjectPageContent: View {
         let history = history
         ScrollView {
             VStack(alignment: .leading, spacing: Space.l) {
+                // What's useful first; the calendars, the longest part, last.
                 header(history)
                 if !history.sessions.isEmpty {
-                    months(history)
                     recent(history)
                 }
                 thoughts(history)
+                if !history.sessions.isEmpty {
+                    months(history)
+                }
             }
             .padding(.horizontal, Space.gutter)
             .padding(.bottom, Space.xl)
@@ -183,9 +187,15 @@ private struct SubjectPageContent: View {
             Text(Copy.lastThreeMonths)
                 .retroLabel()
                 .accessibilityAddTraits(.isHeader)
-            ForEach(history.months(endingAt: services.today, calendar: services.calendar), id: \.month.start) {
-                entry in
-                SubjectMonth(month: entry.month, days: entry.days, today: services.today, calendar: services.calendar)
+            let months = history.months(endingAt: services.today, calendar: services.calendar)
+            ForEach(Array(months.enumerated()), id: \.element.month.start) { index, entry in
+                if index == 0 {
+                    SubjectMonth(month: entry.month, days: entry.days, today: services.today,
+                                 calendar: services.calendar)
+                } else {
+                    OlderMonth(month: entry.month, days: entry.days, today: services.today,
+                               calendar: services.calendar)
+                }
             }
         }
     }
@@ -262,6 +272,33 @@ private struct SubjectPageContent: View {
     }
 }
 
+/// An older month, folded to one line ("August 2026 · 6 sessions") that
+/// opens to its dials. Folded again each time the page opens.
+private struct OlderMonth: View {
+    let month: DateInterval
+    let days: [Date: DayTotal]
+    let today: Date
+    let calendar: Calendar
+    @State private var open = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let title = month.start.formatted(.dateTime.month(.wide).year())
+        let count = Copy.sessions(days.values.reduce(0) { $0 + $1.sessions })
+        DisclosureGroup(isExpanded: $open.animation(Motion.calm(reduceMotion))) {
+            SubjectMonth(month: month, days: days, today: today, calendar: calendar, showsTitle: false)
+                .padding(.top, Space.xs)
+        } label: {
+            Text(title + CardOverline.separator + count)
+                .font(.retro(.meta))
+                .foregroundStyle(Retro.inkSoft)
+                .frame(minHeight: 44, alignment: .leading)
+                .accessibilityLabel(title + ", " + count)
+        }
+        .tint(Retro.inkSoft)
+    }
+}
+
 /// One month of a subject: a small dial for each day, filled to that day's
 /// sessions of it out of four. All in ink, never the set colours: these
 /// sessions weren't necessarily those places in the day's set. At the
@@ -271,15 +308,19 @@ private struct SubjectMonth: View {
     let days: [Date: DayTotal]
     let today: Date
     let calendar: Calendar
+    /// Off inside a folded month, whose line already names it.
+    var showsTitle = true
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .caption2) private var dayNumber: CGFloat = 10
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
-            Text(month.start.formatted(.dateTime.month(.wide).year()))
-                .font(.retro(.meta))
-                .foregroundStyle(Retro.inkSoft)
-                .accessibilityAddTraits(.isHeader)
+            if showsTitle {
+                Text(month.start.formatted(.dateTime.month(.wide).year()))
+                    .font(.retro(.meta))
+                    .foregroundStyle(Retro.inkSoft)
+                    .accessibilityAddTraits(.isHeader)
+            }
             if dynamicTypeSize.isAccessibilitySize {
                 list
             } else {

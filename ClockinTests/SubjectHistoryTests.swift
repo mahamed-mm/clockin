@@ -65,10 +65,10 @@ struct SubjectHistoryTests {
         ])
         let months = history.months(endingAt: now, calendar: osloCalendar)
         #expect(months.count == 3)
-        #expect(months.last?.month.contains(now) == true)
-        #expect(months.map(\.month.start) == months.map(\.month.start).sorted())
+        #expect(months.first?.month.contains(now) == true, "This month first")
+        #expect(months.map(\.month.start) == months.map(\.month.start).sorted(by: >))
         let yesterday = osloCalendar.startOfDay(for: history.sessions[0].completedAt)
-        #expect(months.last?.days[yesterday]?.sessions == 2)
+        #expect(months.first?.days[yesterday]?.sessions == 2)
         #expect(months.flatMap(\.days.values).map(\.sessions).reduce(0, +) == 3, "200 days back is too far")
     }
 
