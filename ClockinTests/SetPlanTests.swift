@@ -282,6 +282,89 @@ struct SetPlanServicesTests {
         #expect(services.nextName(after: "Thesis") == "Thesis")
     }
 
+    @Test func anEmptyFieldTakesUpThePlan() {
+        let services = makeServices()
+        planToday(services, ["Chemistry", "Thesis"])
+        #expect(services.pickUpPlan(fieldFocused: false))
+        #expect(field.name == "Chemistry")
+        // Already filled: nothing changes.
+        #expect(!services.pickUpPlan(fieldFocused: false))
+    }
+
+    @Test func aTypedNameOrAFocusedFieldIsLeftAlone() {
+        let services = makeServices()
+        planToday(services, ["Chemistry"])
+        field.name = "Emails"
+        #expect(!services.pickUpPlan(fieldFocused: false))
+        #expect(field.name == "Emails")
+        field.name = "  "
+        #expect(!services.pickUpPlan(fieldFocused: true), "Never while it's being typed in")
+        #expect(field.name == "  ")
+    }
+
+    @Test func onlyTheIdleScreenTakesUpThePlan() {
+        let services = makeServices()
+        planToday(services, ["Chemistry"])
+        services.engine.start(name: "")
+        #expect(!services.pickUpPlan(fieldFocused: false), "Running")
+        clock.advance(Preset.classic.focus)
+        services.reconcile()
+        #expect(services.engine.stage.completedFocus != nil)
+        #expect(!services.pickUpPlan(fieldFocused: false), "Focus complete")
+        #expect(field.name.isEmpty)
+    }
+
+    @Test func withNothingLeftToDoTheFieldStaysEmpty() {
+        let services = makeServices()
+        #expect(!services.pickUpPlan(fieldFocused: false), "No plan")
+        var plan = SetPlan(day: services.today)
+        plan.add("Chemistry")
+        plan.finish(name: "Chemistry", session: UUID())
+        services.editSet(plan)
+        #expect(!services.pickUpPlan(fieldFocused: false), "All done")
+        #expect(field.name.isEmpty)
+    }
+
+    @Test func aPlanChangedWithAnEmptyFieldFillsIt() {
+        let services = makeServices()
+        planToday(services, ["Chemistry"])
+        field.name = "Emails"
+        services.pickUpPlan(fieldFocused: false)
+        #expect(field.name == "Emails")
+        field.name = ""
+        planToday(services, ["Piano", "Chemistry"])
+        services.pickUpPlan(fieldFocused: false)
+        #expect(field.name == "Piano")
+    }
+
+    @Test func aFieldClearedOnPurposeStartsAnUnnamedSessionThenFillsAgain() {
+        let services = makeServices()
+        planToday(services, ["Chemistry"])
+        services.pickUpPlan(fieldFocused: false)
+        #expect(field.name == "Chemistry")
+        // Cleared, and started before anything asks again.
+        field.name = ""
+        services.engine.start(name: field.name)
+        clock.advance(Preset.classic.focus)
+        services.reconcile()
+        services.engine.skipBreak()
+        #expect(services.todaysSet?.slots.first?.isDone == false, "An unnamed session leaves the plan alone")
+        // Back on the idle screen: it's taken up again.
+        #expect(services.pickUpPlan(fieldFocused: false))
+        #expect(field.name == "Chemistry")
+    }
+
+    @Test func aFilledFieldStartsTheSessionThatTicksIt() {
+        let services = makeServices()
+        planToday(services, ["Chemistry", "Thesis"])
+        services.pickUpPlan(fieldFocused: false)
+        services.engine.start(name: field.name)
+        clock.advance(Preset.classic.focus)
+        services.reconcile()
+        #expect(services.todaysSet?.slots.first?.isDone == true)
+        #expect(field.name == "Thesis")
+    }
+
     @Test func aSessionFinishingBeforeMidnightTicksThatDaysPlan() {
         // Started at 23:30 in Oslo, done at 23:55, found at 00:10.
         clock.now = osloCalendar.date(bySettingHour: 23, minute: 30, second: 0, of: clock.now)!

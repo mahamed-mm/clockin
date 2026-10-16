@@ -560,6 +560,19 @@ final class AppServices: SessionEffects {
     /// What comes after a session called `name`: the next planned one, or the same again.
     func nextName(after name: String) -> String { nextPlanned?.name ?? name }
 
+    /// The idle Focus screen with nothing in the field takes up the plan:
+    /// the next planned name goes in, so Start ticks it. Never over a
+    /// typed name, and never while the field is being typed in. A field
+    /// cleared on purpose stays empty until this is asked again (a launch,
+    /// a return to the app or to idle, a change to the plan).
+    @discardableResult
+    func pickUpPlan(fieldFocused: Bool) -> Bool {
+        guard !fieldFocused, engine.stage == .idle, ActiveSession.cleanName(lastSessionName()).isEmpty,
+              let next = nextPlanned else { return false }
+        setLastSessionName(next.name)
+        return true
+    }
+
     /// The plan sheet's changes. An empty plan is no plan.
     func editSet(_ plan: SetPlan?) {
         let edited = plan.flatMap { $0.isEmpty ? nil : $0 }

@@ -6,6 +6,7 @@ struct FocusView: View {
     @Environment(SessionEngine.self) private var engine
     @Environment(AppServices.self) private var services
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @AppStorage("lastSessionName") private var sessionName = ""
     @AppStorage(Onboarding.dialHintKey) private var dialHintSeen = false
@@ -103,6 +104,16 @@ struct FocusView: View {
     }
 
     var body: some View {
+        screen
+            // An empty field takes up the plan whenever the screen comes back to it.
+            .onAppear(perform: pickUpPlan)
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { pickUpPlan() }
+            }
+            .onChange(of: services.todaysSet) { pickUpPlan() }
+    }
+
+    private var screen: some View {
         Group {
             if let session = bedsideSession {
                 BedsideView(session: session, day: services.today) {
@@ -157,7 +168,10 @@ struct FocusView: View {
         .animation(Motion.calm(reduceMotion), value: bedsideSession != nil)
         .onChange(of: engine.stage) { old, new in
             touched()
-            if new == .idle { showHandoff() }
+            if new == .idle {
+                pickUpPlan()
+                showHandoff()
+            }
             // A new stage starts with the parked thoughts folded again.
             if old.completedFocus?.id != new.completedFocus?.id { parkedOpen = false }
             // Each first-launch hint goes once its moment has passed.
@@ -590,6 +604,10 @@ struct FocusView: View {
         guard ActiveSession.cleanName(sessionName).isEmpty, engine.stage == .idle,
               let next = services.nextPlanned else { return }
         moveIntoField(next, after: 0.35 * Motion.speed)
+    }
+
+    private func pickUpPlan() {
+        services.pickUpPlan(fieldFocused: nameFocused)
     }
 
     /// Back on the idle screen after a planned session: the next planned
