@@ -17,6 +17,8 @@ struct FocusView: View {
     @Environment(\.accessibilitySwitchControlEnabled) private var switchControl
     @FocusState private var nameFocused: Bool
     @State private var pickingSymbol = false
+    /// The finished session's parked thoughts, opened from their folded row.
+    @State private var parkedOpen = false
     /// The idle screen's hints, one at a time.
     @State private var idleTips = TipGroup(.ordered) {
         CrownTip()
@@ -52,7 +54,6 @@ struct FocusView: View {
     @State private var controlsHeight: CGFloat = 0
     /// The smallest the dial gets before the page scrolls instead; grows with text size.
     @ScaledMetric(relativeTo: .body) private var dialMinimum: CGFloat = 160
-    private static let spacing = Space.l
     private static let margins = EdgeInsets(top: Space.xs, leading: Space.gutter,
                                             bottom: Space.l, trailing: Space.gutter)
 
@@ -140,6 +141,8 @@ struct FocusView: View {
         .animation(Motion.calm(reduceMotion), value: bedsideSession != nil)
         .onChange(of: engine.stage) { old, new in
             touched()
+            // A new stage starts with the parked thoughts folded again.
+            if old.completedFocus?.id != new.completedFocus?.id { parkedOpen = false }
             // Each first-launch hint goes once its moment has passed.
             if case .idle = old, new != .idle { dialHintSeen = true }
             if case .focusComplete = old, new.completedFocus == nil { welcomeSeen = true }
@@ -207,7 +210,7 @@ struct FocusView: View {
         viewportHeld = laidOut.held
         if parking, laidOut.held {
             // The dial's foot, with Tick's feet, just above the field.
-            let foot = Self.margins.top + headerHeight + Self.spacing + dialSide + Space.s
+            let foot = Self.margins.top + headerHeight + spacing + dialSide + Space.s
             let offset = FocusLayout.keepInSight(foot: foot, visibleHeight: size.height, scrolled: scrolled)
             if offset != scrolled { withAnimation(Motion.calm(reduceMotion)) { scroll.scrollTo(y: offset) } }
         }
@@ -299,9 +302,12 @@ struct FocusView: View {
     /// so the name field keeps its keyboard and its glass morph; the dial
     /// takes the height left over, and below its minimum the page scrolls,
     /// which keeps Start reachable at the largest text sizes on a small phone.
+    /// Between the header, dial, slot and controls: tighter on short screens.
+    private var spacing: CGFloat { FocusLayout.spacing(viewportHeight: viewport.height) }
+
     /// The compact layout's dial: the height left over, within its bounds.
     private var dialSide: CGFloat {
-        let chrome = headerHeight + slotHeight + controlsHeight + 3 * Self.spacing
+        let chrome = headerHeight + slotHeight + controlsHeight + 3 * spacing
             + Self.margins.top + Self.margins.bottom
         return FocusLayout.dialSide(viewportHeight: viewport.height, chrome: chrome, minimum: dialMinimum,
                                     width: viewport.width - Self.margins.leading - Self.margins.trailing)
@@ -310,7 +316,7 @@ struct FocusView: View {
     private var compactLayout: some View {
         let side = dialSide
         return ScrollView {
-            VStack(spacing: Self.spacing) {
+            VStack(spacing: spacing) {
                 FocusHeader(stage: engine.stage, nextName: sessionName)
                     .fixedSize(horizontal: false, vertical: true)
                     .measuredHeight($headerHeight)
@@ -426,14 +432,31 @@ struct FocusView: View {
             case .focusComplete(let focus):
                 VStack(spacing: Space.xs) {
                     CompletionSummary(focus: focus, day: services.today)
-                    OvertimeChip(focus: focus)
-                    thoughtsAfterFocus
-                    TipView(parkTip)
-                        .tipViewStyle(RetroTipStyle())
+                    if parkedOpen {
+                        OvertimeChip(focus: focus)
+                        thoughtsAfterFocus
+                    } else {
+                        // Keep +N min and the folded thoughts side by side, stacked when they won't fit.
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: Space.xs) {
+                                OvertimeChip(focus: focus)
+                                thoughtsAfterFocus
+                            }
+                            VStack(spacing: Space.xs) {
+                                OvertimeChip(focus: focus)
+                                thoughtsAfterFocus
+                            }
+                        }
+                    }
+                    // One extra at a time: the first-session line, else a tip
+                    // (never beside parked thoughts, and only with room for it).
                     if welcomes {
                         WelcomeLine()
                             .padding(.top, Space.xs)
                             .transition(.opacity)
+                    } else if FocusLayout.roomForTip(viewportHeight: viewport.height) {
+                        TipView(parkTip)
+                            .tipViewStyle(RetroTipStyle())
                     }
                 }
             }
@@ -445,10 +468,9 @@ struct FocusView: View {
     @ViewBuilder
     private var thoughtsAfterFocus: some View {
         if let after = services.thoughtsAfterFocus, !after.thoughts.isEmpty {
-            ParkedList(thoughts: after.thoughts, toggle: toggleThought) {
+            ParkedRow(thoughts: after.thoughts, toggle: toggleThought, clear: {
                 services.clearThoughts(of: after.session)
-            }
-            .padding(.top, Space.xs)
+            }, open: $parkedOpen)
             .transition(.opacity)
         }
     }
@@ -522,7 +544,8 @@ struct FocusView: View {
                 // keeps its height on Start and Cancel even when the hint wraps.
                 // At the largest text sizes it can run to several lines,
                 // so then it only takes space when it shows.
-                if (idle || !dynamicTypeSize.isAccessibilitySize) && !hidesAlertHint {
+                // Not after a session, where the room goes to the summary.
+                if (idle || !(dynamicTypeSize.isAccessibilitySize || engine.stage.completedFocus != nil)) && !hidesAlertHint {
                     AlertHint(status: services.alertStatus)
                         .opacity(idle && !undoable ? 1 : 0)
                         .allowsHitTesting(idle && !undoable)

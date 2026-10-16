@@ -118,6 +118,18 @@ struct FocusLayoutTests {
         #expect(FocusLayout.scrollUnwind(scrolled: 0, contentHeight: 729, viewportHeight: 729) == 0)
     }
 
+    @Test func shortScreensGetTighterGaps() {
+        #expect(FocusLayout.spacing(viewportHeight: 593) == Space.m)
+        #expect(FocusLayout.spacing(viewportHeight: 729) == Space.l)
+        // Before the first measurement, the usual gap.
+        #expect(FocusLayout.spacing(viewportHeight: 0) == Space.l)
+    }
+
+    @Test func aTipAfterASessionNeedsRoom() {
+        #expect(!FocusLayout.roomForTip(viewportHeight: 593))
+        #expect(FocusLayout.roomForTip(viewportHeight: 729))
+    }
+
     @Test func onlyAWideOrSidewaysSceneGoesSideBySide() {
         #expect(!FocusLayout.isWide(width: 375, height: 583))
         #expect(FocusLayout.isWide(width: 874, height: 360))

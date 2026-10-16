@@ -10,6 +10,19 @@ enum FocusLayout {
         return min(width, max(minimum, viewportHeight - chrome))
     }
 
+    /// The gap between the header, the dial, the slot and the controls:
+    /// tighter on a short screen (an iPhone SE), so the dial keeps its room.
+    /// The same in every stage, so moving between them never jumps.
+    static func spacing(viewportHeight: CGFloat) -> CGFloat {
+        viewportHeight > 0 && viewportHeight < 640 ? Space.m : Space.l
+    }
+
+    /// A tip at the end of a session only where there's room for one
+    /// without squeezing the dial (not on an iPhone SE).
+    static func roomForTip(viewportHeight: CGFloat) -> Bool {
+        viewportHeight >= 700
+    }
+
     /// Dial beside the controls rather than above them: a wide scene, or one
     /// on its side. `height` includes the keyboard's space, so opening the
     /// name or park field never flips the page.

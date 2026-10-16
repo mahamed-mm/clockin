@@ -29,22 +29,24 @@ struct FocusHeader: View {
                 // The line only changes on its own when a completion stops
                 // being recent; everything else is a stage change.
                 LiveTimeline(TickSchedule(wakeDates: metaChanges)) { context in
-                    let meta = Text(meta(at: context.date))
-                        .font(.retro(.meta))
-                        .foregroundStyle(Retro.inkSoft)
-                        .contentTransition(.numericText())
-                    // One line when it fits, today's total under it when not.
-                    ViewThatFits(in: .horizontal) {
-                        HStack(spacing: Space.xs) {
-                            meta
-                            Text(verbatim: "·").foregroundStyle(Retro.inkSoft.opacity(0.6))
-                            TodayChip(day: services.today)
-                        }
-                        .lineLimit(1)
-                        // Stacked, each may wrap: at large text sizes nothing is cut off.
-                        VStack(alignment: .leading, spacing: Space.xxs) {
-                            meta
-                            TodayChip(day: services.today)
+                    if let line = meta(at: context.date) {
+                        let meta = Text(line)
+                            .font(.retro(.meta))
+                            .foregroundStyle(Retro.inkSoft)
+                            .contentTransition(.numericText())
+                        // One line when it fits, today's total under it when not.
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: Space.xs) {
+                                meta
+                                Text(verbatim: "·").foregroundStyle(Retro.inkSoft.opacity(0.6))
+                                TodayChip(day: services.today)
+                            }
+                            .lineLimit(1)
+                            // Stacked, each may wrap: at large text sizes nothing is cut off.
+                            VStack(alignment: .leading, spacing: Space.xxs) {
+                                meta
+                                TodayChip(day: services.today)
+                            }
                         }
                     }
                 }
@@ -100,7 +102,9 @@ struct FocusHeader: View {
         return [breakOver, services.calendar.dayRange(containing: focus.completedAt).upperBound]
     }
 
-    private func meta(at now: Date) -> String {
+    /// The line under the title. None for a session just finished: the
+    /// break's length is on the button and today's total in the summary.
+    private func meta(at now: Date) -> String? {
         switch stage {
         case .idle:
             if let moment = engine.breakOver {
@@ -119,7 +123,7 @@ struct FocusHeader: View {
             // An old completion opens quietly, saying when it was.
             return engine.freshness(of: focus, at: now) == .stale
                 ? TimeFormat.finished(TimeFormat.shown(focus.completedAt), now: TimeFormat.shown(now))
-                : Copy.breakLine(seconds: engine.breakLength(after: focus))
+                : nil
         }
     }
 }
@@ -1544,7 +1548,7 @@ struct CompletionSummary: View {
             if !stacked { divider }
             stat(TimeFormat.duration(total), "Today", index: 2)
         }
-        .padding(.vertical, Space.s)
+        .padding(.vertical, Space.xs)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(String(localized: """
             Focused \(TimeFormat.spokenDuration(focus.focusSeconds)), \(Copy.displayName(focus.name)), \

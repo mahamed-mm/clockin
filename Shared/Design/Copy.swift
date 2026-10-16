@@ -338,6 +338,8 @@ enum Copy {
     static func parked(_ count: Int) -> String { String(localized: "\(count) parked") }
 
     static var parkedThoughts: String { String(localized: "Parked thoughts") }
+    /// Read on the folded row.
+    static var showsParked: String { String(localized: "Shows them to tick off, copy or share") }
     /// A cancelled session's thoughts, kept on the Focus screen.
     static var parkedEarlier: String { String(localized: "Parked earlier") }
     static var copyAll: String { String(localized: "Copy all") }

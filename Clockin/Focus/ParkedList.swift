@@ -84,6 +84,48 @@ struct ParkedList: View {
     }
 }
 
+/// The thoughts parked in the session just finished, folded into one quiet
+/// row that opens into the list in place, so the
+/// completion screen keeps its room. "2 parked", as on the session.
+struct ParkedRow: View {
+    let thoughts: [ParkedThought]
+    let toggle: (ParkedThought) -> Void
+    let clear: () -> Void
+    /// Opened into the list; kept by the screen, so it stays open when the layout around it changes.
+    @Binding var open: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        if open {
+            ParkedList(thoughts: thoughts, toggle: toggle, clear: clear)
+                .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+        } else {
+            Button {
+                withAnimation(Motion.calm(reduceMotion)) { open = true }
+            } label: {
+                Label {
+                    HStack(spacing: Space.xxs) {
+                        Text(Copy.parked(thoughts.count))
+                        Image(systemName: "chevron.down")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Retro.inkSoft)
+                            .accessibilityHidden(true)
+                    }
+                } icon: {
+                    Image(systemName: "note.text")
+                }
+                .font(.retro(.meta).weight(.semibold))
+                .foregroundStyle(Retro.ink)
+                .retroChip()
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Copy.parkedSpoken(thoughts.count))
+            .accessibilityHint(Copy.showsParked)
+            .transition(.opacity)
+        }
+    }
+}
+
 /// A session's kept thoughts on its card in History.
 struct CardThoughts: View {
     let thoughts: [ParkedThought]
